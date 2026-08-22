@@ -331,6 +331,20 @@
         </div>
 
 
+        <div id="lecturerMarkingPanel" class="panel hidden">
+
+            <div class="panel-title">
+                <div>
+                    <h3>📋 Marking Overview</h3>
+                    <p>Click a status to jump to those tasks</p>
+                </div>
+            </div>
+
+            <div id="markingOverviewGrid" class="marking-overview-grid"></div>
+
+        </div>
+
+
         <div class="panel">
 
             <div class="panel-title">
@@ -1224,6 +1238,48 @@
                 ></span>
 
             </label>
+
+
+            <!-- LECTURER MARKING -->
+
+            <div id="taskMarkingSection" class="marking-section">
+
+                <label>
+
+                    🎓 Lecturer Marking
+
+                    <span class="label-help">
+                        Official status &amp; remarks set by the lecturer
+                    </span>
+
+                </label>
+
+                <div class="marking-form-row">
+
+                    <select id="taskMarkingStatus"></select>
+
+                    <button
+                        type="button"
+                        id="taskMarkingSaveBtn"
+                        class="small-add"
+                        onclick="saveLecturerMarking()"
+                    >
+                        💾 Save Marking
+                    </button>
+
+                </div>
+
+                <textarea
+                    id="taskMarkingRemarks"
+                    rows="3"
+                    placeholder="Remarks / feedback for the group..."
+                ></textarea>
+
+                <div class="marking-history-label">Marking History</div>
+
+                <div id="taskMarkingHistory" class="marking-history-list"></div>
+
+            </div>
 
 
             <!-- COMMENTS / FEEDBACK -->
