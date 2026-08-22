@@ -3373,3 +3373,223 @@ tbody tr:last-child td {
     font-weight: 800;
     margin-top: 8px;
 }
+
+
+/* ============================================================
+   LEADER HUB (leader-only)
+============================================================ */
+
+#navLeaderHub {
+    color: #FBBF24;
+}
+
+.leaderhub-countdown-panel {
+    background: linear-gradient(135deg, #10131F 0%, #232849 100%);
+    border: none;
+}
+
+.leaderhub-countdown-panel .panel-title h3,
+.leaderhub-countdown-panel .panel-title p {
+    color: white;
+}
+
+.leaderhub-countdown-panel .panel-title p {
+    color: rgba(255,255,255,.6);
+}
+
+.leaderhub-countdown-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 22px;
+    align-items: center;
+}
+
+.leaderhub-countdown-display {
+    text-align: center;
+    padding: 20px;
+}
+
+.countdown-number {
+    font-size: 56px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -2px;
+    line-height: 1;
+}
+
+.countdown-number.countdown-urgent {
+    color: #F87171;
+}
+
+.countdown-number.countdown-warning {
+    color: #FBBF24;
+}
+
+.countdown-unit {
+    font-size: 13px;
+    color: rgba(255,255,255,.6);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-top: 6px;
+}
+
+.countdown-label {
+    margin-top: 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,.85);
+    font-weight: 700;
+}
+
+.countdown-date {
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+    margin-top: 4px;
+}
+
+.countdown-empty {
+    color: rgba(255,255,255,.6);
+    font-size: 13px;
+    padding: 20px 0;
+}
+
+.countdown-past {
+    color: #F87171;
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.leaderhub-countdown-form {
+    background: rgba(255,255,255,.06);
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.leaderhub-countdown-form label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,.75);
+    margin-bottom: 12px;
+}
+
+.leaderhub-countdown-form input {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px 11px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 9px;
+    background: rgba(255,255,255,.08);
+    color: white;
+    font-size: 13px;
+}
+
+.leaderhub-countdown-form input::placeholder {
+    color: rgba(255,255,255,.4);
+}
+
+.leaderhub-countdown-form .small-add {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.nudge-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+.nudge-item:last-child {
+    margin-bottom: 0;
+}
+
+.nudge-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nudge-name {
+    font-size: 13.5px;
+    font-weight: 800;
+}
+
+.nudge-stats {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+.nudge-stats .nudge-overdue {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.nudge-remind-btn {
+    flex-shrink: 0;
+    border: none;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 9px 14px;
+    border-radius: 9px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .15s ease;
+    white-space: nowrap;
+}
+
+.nudge-remind-btn:hover {
+    background: #DEE6FF;
+}
+
+.nudge-remind-btn:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.nudge-all-good {
+    text-align: center;
+    padding: 30px 10px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.leaderhub-notes {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #FFFDF2;
+    font-family: inherit;
+    font-size: 13.5px;
+    line-height: 1.6;
+    resize: vertical;
+    color: var(--text);
+}
+
+.leaderhub-notes:focus {
+    outline: none;
+    border-color: var(--warning);
+    background: #FFFCEB;
+}
+
+.leaderhub-notes-status {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    min-height: 14px;
+}
+
+@media (max-width: 650px) {
+
+    .leaderhub-countdown-row {
+        grid-template-columns: 1fr;
+    }
+
+}
