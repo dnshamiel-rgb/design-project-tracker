@@ -2923,6 +2923,19 @@ function openResourceModal(
 
     setModalFieldsDisabled("resourceModal", isLecturer());
 
+    populateReviewStatusSelect(
+        "resourceReviewStatus",
+        resource ? (resource.reviewStatus || "none") : "none"
+    );
+
+    const reviewSaveBtn = getElement("resourceReviewSaveBtn");
+
+    if (reviewSaveBtn) {
+
+        reviewSaveBtn.style.display = isLecturer() ? "" : "none";
+
+    }
+
     const resourceCommentInputField = getElement("resourceCommentInput");
 
     if (resourceCommentInputField) {
@@ -3453,6 +3466,8 @@ function renderChapters() {
                                                 ? `<a href="${item.url}" target="_blank" rel="noopener">${item.title}</a>`
                                                 : `<strong>${item.title}</strong>`
                                         }
+
+                                        ${renderReviewBadge(item.reviewStatus)}
 
                                         ${
                                             item.fileName
@@ -8265,6 +8280,67 @@ function openTaskModal(
 
     }
 
+    reorderTaskModalForRole();
+
+    const lecturerNotice = getElement("lecturerModalNotice");
+
+    if (lecturerNotice) {
+
+        lecturerNotice.classList.toggle("hidden", !isLecturer());
+
+    }
+
+    const taskModalBox = modal.querySelector(".modal-box");
+
+    if (taskModalBox) {
+
+        taskModalBox.scrollTop = 0;
+
+    }
+
+}
+
+
+// ============================================================
+// REORDER TASK MODAL FOR LECTURER
+// ============================================================
+//
+// Lecturer's job in this modal is just to review + set the
+// marking status/remarks. Everything else is greyed-out and
+// buried below several fields, which made lecturers think the
+// whole modal was unusable. So for the lecturer role, the
+// Lecturer Marking section is physically moved to the very top
+// of the form (right after the hidden taskId field) so it's the
+// first thing they see and interact with. For everyone else it
+// stays in its normal spot, just above Comments.
+// ============================================================
+
+function reorderTaskModalForRole() {
+
+    const form = document.querySelector("#taskModal form");
+
+    const markingSection = getElement("taskMarkingSection");
+
+    const commentsSection = getElement("taskCommentsSection");
+
+    if (!form || !markingSection) return;
+
+    if (isLecturer()) {
+
+        const taskIdField = getElement("taskId");
+
+        const insertAfter = taskIdField ? taskIdField.nextSibling : form.firstChild;
+
+        form.insertBefore(markingSection, insertAfter);
+
+    }
+
+    else if (commentsSection) {
+
+        form.insertBefore(markingSection, commentsSection);
+
+    }
+
 }
 
 
@@ -9439,6 +9515,14 @@ function toggleProfileSubtask(
     taskId,
     subtaskIndex
 ) {
+
+    if (isLecturer()) {
+
+        showToast("View-only access — lecturers cannot edit checklists.");
+
+        return;
+
+    }
 
     const task =
         tasks.find(
@@ -11852,7 +11936,10 @@ function applyRoleRestrictions() {
     );
 
     const hiddenNavIds = [
-        "navMyDay"
+        "navMyDay",
+        "navMeetings",
+        "navTeam",
+        "navActivity"
     ];
 
     hiddenNavIds.forEach(id => {
