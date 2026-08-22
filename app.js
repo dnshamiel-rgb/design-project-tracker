@@ -8249,6 +8249,22 @@ function openTaskModal(
 
     }
 
+    const taskMarkingStatusField = getElement("taskMarkingStatus");
+
+    const taskMarkingRemarksField = getElement("taskMarkingRemarks");
+
+    if (taskMarkingStatusField) {
+
+        taskMarkingStatusField.disabled = !isLecturer();
+
+    }
+
+    if (taskMarkingRemarksField) {
+
+        taskMarkingRemarksField.disabled = !isLecturer();
+
+    }
+
 }
 
 
