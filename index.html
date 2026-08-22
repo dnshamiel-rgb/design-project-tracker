@@ -984,7 +984,11 @@
 
 
         <div id="lecturerModalNotice" class="lecturer-modal-notice hidden">
-            🎓 View-only access. Check the task summary and attachments below, then set your <strong>status &amp; remarks</strong> in the Lecturer Marking section.
+            <span class="lecturer-modal-notice-icon">🎓</span>
+            <div>
+                <strong>View-only access</strong>
+                <p>Review the task summary and evidence below, then set your status &amp; remarks in the Lecturer Marking panel.</p>
+            </div>
         </div>
 
 
@@ -1274,17 +1278,18 @@
 
             <!-- LECTURER MARKING -->
 
-            <div id="taskMarkingSection" class="marking-section">
+            <div id="taskMarkingSection" class="marking-section marking-section-redesigned">
 
-                <label>
+                <div class="marking-section-header">
 
-                    🎓 Lecturer Marking
+                    <span class="marking-section-icon">🎓</span>
 
-                    <span class="label-help">
-                        Official status &amp; remarks set by the lecturer
-                    </span>
+                    <div>
+                        <div class="marking-section-title">Lecturer Marking</div>
+                        <span class="label-help">Official status &amp; remarks set by the lecturer</span>
+                    </div>
 
-                </label>
+                </div>
 
                 <div class="marking-form-row">
 
@@ -1304,10 +1309,10 @@
                 <textarea
                     id="taskMarkingRemarks"
                     rows="3"
-                    placeholder="Remarks / feedback for the group..."
+                    placeholder="Write remarks or feedback for the group..."
                 ></textarea>
 
-                <div class="marking-history-label">Marking History</div>
+                <div class="marking-history-label">📜 Marking History</div>
 
                 <div id="taskMarkingHistory" class="marking-history-list"></div>
 
