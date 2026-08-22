@@ -11387,14 +11387,6 @@ function applyRoleRestrictions() {
 
     }
 
-    const leaderNavDivider = getElement("leaderNavDivider");
-
-    if (leaderNavDivider) {
-
-        leaderNavDivider.classList.toggle("hidden", !isGroupLeader());
-
-    }
-
     renderMaintenanceOverlay();
 
     renderAnnouncementBanner();
