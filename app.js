@@ -1284,7 +1284,13 @@ function renderActivityLog() {
 
     if (activityLog.length === 0) {
 
-        container.innerHTML = "<p>No activity yet.</p>";
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🕘</div>
+                <div class="empty-state-title">No activity yet</div>
+                <div class="empty-state-text">Every task, meeting, and comment update will show up here.</div>
+            </div>
+        `;
 
         return;
 
@@ -1469,7 +1475,13 @@ function renderNotifDropdown() {
 
     if (mine.length === 0) {
 
-        list.innerHTML = `<div class="notif-empty">🔔 No notifications yet.</div>`;
+        list.innerHTML = `
+            <div class="empty-state" style="padding:34px 16px;">
+                <div class="empty-state-icon" style="font-size:30px;">🔔</div>
+                <div class="empty-state-title" style="font-size:13px;">You're all caught up</div>
+                <div class="empty-state-text" style="font-size:11.5px;">No notifications right now.</div>
+            </div>
+        `;
 
         updateNotifBadge();
 
@@ -3683,8 +3695,14 @@ function renderMeetings() {
         meetings.length === 0
     ) {
 
-        container.innerHTML =
-            "<p>No meetings scheduled yet.</p>";
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🗓️</div>
+                <div class="empty-state-title">No meetings yet</div>
+                <div class="empty-state-text">Schedule your first team sync to keep everyone on the same page.</div>
+                ${!isLecturer() ? `<button class="small-add" onclick="openMeetingModal()">+ Add Meeting</button>` : ""}
+            </div>
+        `;
 
         return;
 
@@ -5856,15 +5874,18 @@ function renderTasks() {
 
             <tr>
 
-                <td
-                    colspan="9"
-                    style="
-                        text-align:center;
-                        padding:30px;
-                    "
-                >
+                <td colspan="9" style="padding:0;border:none;">
 
-                    No tasks found.
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-title">${tasks.length === 0 ? "No tasks yet" : "No tasks match your filters"}</div>
+                        <div class="empty-state-text">
+                            ${tasks.length === 0
+                                ? "Add your first task to start tracking progress."
+                                : "Try adjusting your search or filters."}
+                        </div>
+                        ${tasks.length === 0 && !isLecturer() ? `<button class="small-add" onclick="openTaskModal()">+ Add Task</button>` : ""}
+                    </div>
 
                 </td>
 
