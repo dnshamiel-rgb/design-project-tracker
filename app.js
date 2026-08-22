@@ -7369,6 +7369,18 @@ function renderTasks() {
             : "All";
 
 
+    const showApprovedToggle =
+        getElement(
+            "showApprovedToggle"
+        );
+
+
+    const showApproved =
+        showApprovedToggle
+            ? showApprovedToggle.checked
+            : false;
+
+
     const filtered =
         tasks.filter(
             task => {
@@ -7416,12 +7428,22 @@ function renderTasks() {
                     taskMarkingStatus === filterLecturerStatusValue;
 
 
+                // Approved tasks are hidden from the main list by default
+                // (toggle-able), UNLESS the lecturer explicitly clicked the
+                // "Approved" card in Marking Overview to look for them.
+                const approvedMatch =
+                    showApproved ||
+                    filterLecturerStatusValue === "approved" ||
+                    taskMarkingStatus !== "approved";
+
+
                 return (
                     searchMatch &&
                     memberMatch &&
                     statusMatch &&
                     priorityMatch &&
-                    markingMatch
+                    markingMatch &&
+                    approvedMatch
                 );
 
             }
@@ -11782,6 +11804,22 @@ function resetFilters() {
     }
 
 
+    filterLecturerStatusValue = "All";
+
+
+    const showApprovedToggle =
+        getElement(
+            "showApprovedToggle"
+        );
+
+
+    if (showApprovedToggle) {
+
+        showApprovedToggle.checked = false;
+
+    }
+
+
     renderTasks();
 
 }
@@ -12423,6 +12461,8 @@ function enterApp() {
     renderMaintenanceOverlay();
 
     renderAnnouncementBanner();
+
+    resetFilters();
 
     startApp();
 
