@@ -1027,7 +1027,11 @@ let systemSettings = {
 
     announcementActive: false,
 
-    announcementText: ""
+    announcementText: "",
+
+    submissionDeadline: "",
+
+    submissionDeadlineLabel: ""
 
 };
 
@@ -1053,7 +1057,11 @@ function listenToSystemSettings() {
 
                         announcementActive: !!data.announcementActive,
 
-                        announcementText: sanitizeText(data.announcementText || "")
+                        announcementText: sanitizeText(data.announcementText || ""),
+
+                        submissionDeadline: sanitizeText(data.submissionDeadline || ""),
+
+                        submissionDeadlineLabel: sanitizeText(data.submissionDeadlineLabel || "")
 
                     };
 
@@ -1062,6 +1070,8 @@ function listenToSystemSettings() {
                 renderMaintenanceOverlay();
 
                 renderAnnouncementBanner();
+
+                renderSubmissionCountdown();
 
             },
             error => {
@@ -1254,7 +1264,11 @@ function saveAdminSettings(event) {
 
         announcementActive: announcementActiveEl ? announcementActiveEl.checked : false,
 
-        announcementText: announcementTextEl ? sanitizeText(announcementTextEl.value) : ""
+        announcementText: announcementTextEl ? sanitizeText(announcementTextEl.value) : "",
+
+        submissionDeadline: systemSettings.submissionDeadline || "",
+
+        submissionDeadlineLabel: systemSettings.submissionDeadlineLabel || ""
 
     };
 
@@ -1271,6 +1285,340 @@ function saveAdminSettings(event) {
     renderAnnouncementBanner();
 
     showToast("System settings saved.");
+
+}
+
+
+// ============================================================
+// LEADER HUB (leader-only — countdown, nudges, private notes)
+// ============================================================
+//
+// This whole section is only ever rendered for the group leader
+// (see showSection's "leaderhub" guard and applyRoleRestrictions
+// hiding the nav button). Note: this is a front-end restriction
+// only — real privacy for the notes doc would need Firestore
+// security rules keyed to the leader's UID.
+// ============================================================
+
+function saveSubmissionDeadline() {
+
+    if (!isGroupLeader()) {
+
+        showToast(`Only ${LEADER_NAME} can set the submission date.`);
+
+        return;
+
+    }
+
+    const dateInput = getElement("submissionDeadlineInput");
+
+    const labelInput = getElement("submissionDeadlineLabel");
+
+    systemSettings.submissionDeadline = dateInput ? dateInput.value : "";
+
+    systemSettings.submissionDeadlineLabel = labelInput ? sanitizeText(labelInput.value) : "";
+
+    saveSystemSettingsData();
+
+    logActivity(
+        systemSettings.submissionDeadline
+            ? `set the submission countdown to ${systemSettings.submissionDeadline}`
+            : "cleared the submission countdown"
+    );
+
+    renderSubmissionCountdown();
+
+    showToast("Submission date saved.");
+
+}
+
+
+function renderSubmissionCountdown() {
+
+    const display = getElement("countdownDisplay");
+
+    if (!display) return;
+
+    const dateInput = getElement("submissionDeadlineInput");
+
+    const labelInput = getElement("submissionDeadlineLabel");
+
+    if (dateInput) dateInput.value = systemSettings.submissionDeadline || "";
+
+    if (labelInput) labelInput.value = systemSettings.submissionDeadlineLabel || "";
+
+    if (!systemSettings.submissionDeadline) {
+
+        display.innerHTML = `<div class="countdown-empty">No submission date set yet.</div>`;
+
+        return;
+
+    }
+
+    const days = getDaysLeft(systemSettings.submissionDeadline);
+
+    const label = systemSettings.submissionDeadlineLabel || "Submission";
+
+    if (days < 0) {
+
+        display.innerHTML = `
+            <div class="countdown-past">Deadline passed</div>
+            <div class="countdown-label">${label}</div>
+            <div class="countdown-date">${systemSettings.submissionDeadline}</div>
+        `;
+
+        return;
+
+    }
+
+    let numberClass = "";
+
+    if (days <= 3) numberClass = "countdown-urgent";
+
+    else if (days <= 7) numberClass = "countdown-warning";
+
+    display.innerHTML = `
+        <div class="countdown-number ${numberClass}">${days}</div>
+        <div class="countdown-unit">DAY${days === 1 ? "" : "S"} LEFT</div>
+        <div class="countdown-label">${label}</div>
+        <div class="countdown-date">${systemSettings.submissionDeadline}</div>
+    `;
+
+}
+
+
+function renderNeedsNudge() {
+
+    const container = getElement("needsNudgeList");
+
+    if (!container) return;
+
+    const insights = members.map(member => {
+
+        const memberTasks =
+            tasks.filter(
+                task =>
+                    task.mainPIC === member.name ||
+                    (task.assigned && task.assigned.includes(member.name))
+            );
+
+        const overdue =
+            memberTasks.filter(
+                task => task.status !== "Done" && getDaysLeft(task.deadline) < 0
+            ).length;
+
+        const avgProgress =
+            memberTasks.length
+                ? Math.round(
+                    memberTasks.reduce((sum, task) => sum + Number(task.progress || 0), 0) /
+                    memberTasks.length
+                )
+                : null;
+
+        // Score: overdue tasks weigh heaviest, then low average progress.
+        const score =
+            overdue * 100 +
+            (avgProgress === null ? 0 : Math.max(0, 60 - avgProgress));
+
+        return { name: member.name, overdue, avgProgress, taskCount: memberTasks.length, score };
+
+    })
+        .filter(item => item.score > 0 || item.overdue > 0)
+        .sort((a, b) => b.score - a.score);
+
+    if (insights.length === 0) {
+
+        container.innerHTML = `
+            <div class="nudge-all-good">
+                🎉 Everyone's on track — no nudges needed right now.
+            </div>
+        `;
+
+        return;
+
+    }
+
+    container.innerHTML = "";
+
+    insights.forEach(item => {
+
+        const row = document.createElement("div");
+
+        row.className = "nudge-item";
+
+        const statsParts = [];
+
+        if (item.overdue > 0) {
+
+            statsParts.push(`<span class="nudge-overdue">${item.overdue} overdue</span>`);
+
+        }
+
+        if (item.avgProgress !== null) {
+
+            statsParts.push(`${item.avgProgress}% avg progress`);
+
+        }
+
+        statsParts.push(`${item.taskCount} task${item.taskCount === 1 ? "" : "s"}`);
+
+        row.innerHTML = `
+
+            <div class="nudge-info">
+                <div class="nudge-name">👤 ${item.name}</div>
+                <div class="nudge-stats">${statsParts.join(" · ")}</div>
+            </div>
+
+            <button
+                type="button"
+                class="nudge-remind-btn"
+                data-name="${item.name}"
+            >
+                🔔 Remind
+            </button>
+
+        `;
+
+        container.appendChild(row);
+
+    });
+
+    container.querySelectorAll(".nudge-remind-btn").forEach(button => {
+
+        button.addEventListener("click", event => {
+
+            remindMember(event.currentTarget.dataset.name);
+
+            event.currentTarget.disabled = true;
+
+            event.currentTarget.textContent = "✓ Sent";
+
+        });
+
+    });
+
+}
+
+
+function remindMember(memberName) {
+
+    const currentUser = getCurrentUser() || LEADER_NAME;
+
+    addNotification({
+
+        text: `<strong>${currentUser}</strong> sent you a friendly reminder to check your tasks 🔔`,
+
+        forUsers: [memberName],
+
+        relatedType: "",
+
+        relatedId: null
+
+    });
+
+    logActivity(`sent a reminder nudge to ${memberName}`);
+
+    showToast(`Reminder sent to ${memberName}.`);
+
+}
+
+
+let leaderNotesSaveTimer = null;
+
+let leaderNotesLoaded = false;
+
+
+function listenToLeaderNotes() {
+
+    if (!db) return;
+
+    db.collection("trackerData")
+        .doc("leaderNotes")
+        .onSnapshot(
+            doc => {
+
+                const notesField = getElement("leaderPrivateNotes");
+
+                // Don't stomp on text the leader is actively typing —
+                // only populate the field the first time data arrives,
+                // or when the field isn't currently focused.
+                if (notesField && (!leaderNotesLoaded || document.activeElement !== notesField)) {
+
+                    notesField.value = doc.exists ? (doc.data().text || "") : "";
+
+                }
+
+                leaderNotesLoaded = true;
+
+            },
+            error => {
+
+                console.error("Leader notes sync error:", error);
+
+            }
+        );
+
+}
+
+
+function scheduleLeaderNotesSave() {
+
+    const statusEl = getElement("leaderNotesSavedIndicator");
+
+    if (statusEl) statusEl.textContent = "Saving...";
+
+    if (leaderNotesSaveTimer) clearTimeout(leaderNotesSaveTimer);
+
+    leaderNotesSaveTimer = setTimeout(saveLeaderNotesNow, 800);
+
+}
+
+
+function saveLeaderNotesNow() {
+
+    if (!db || !isGroupLeader()) return;
+
+    const notesField = getElement("leaderPrivateNotes");
+
+    const statusEl = getElement("leaderNotesSavedIndicator");
+
+    db.collection("trackerData")
+        .doc("leaderNotes")
+        .set({
+
+            text: notesField ? notesField.value : "",
+
+            updatedBy: getCurrentUser() || LEADER_NAME,
+
+            updatedAt: new Date().toISOString()
+
+        })
+        .then(() => {
+
+            if (statusEl) {
+
+                statusEl.textContent =
+                    "Saved · " + new Date().toLocaleTimeString();
+
+            }
+
+        })
+        .catch(error => {
+
+            console.error("Save leader notes failed:", error);
+
+            if (statusEl) statusEl.textContent = "❌ Failed to save.";
+
+        });
+
+}
+
+
+function renderLeaderHub() {
+
+    renderSubmissionCountdown();
+
+    renderNeedsNudge();
 
 }
 
@@ -5495,6 +5843,12 @@ function startFirebaseDataListeners() {
     listenToDeleteRequests();
     listenToSystemSettings();
 
+    if (isGroupLeader()) {
+
+        listenToLeaderNotes();
+
+    }
+
 }
 
 
@@ -7991,6 +8345,25 @@ function showSection(
     ) {
 
         renderKanban();
+
+    }
+
+
+    if (
+        name === "leaderhub"
+    ) {
+
+        if (!isGroupLeader()) {
+
+            showToast(`Only ${LEADER_NAME} can access the Leader Hub.`);
+
+            showSection("dashboard");
+
+            return;
+
+        }
+
+        renderLeaderHub();
 
     }
 
@@ -11006,9 +11379,19 @@ function applyRoleRestrictions() {
 
     }
 
+    const leaderHubNav = getElement("navLeaderHub");
+
+    if (leaderHubNav) {
+
+        leaderHubNav.style.display = isGroupLeader() ? "" : "none";
+
+    }
+
     renderMaintenanceOverlay();
 
     renderAnnouncementBanner();
+
+    renderSubmissionCountdown();
 
 }
 
