@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Design Project Track</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- EmailJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+
+    <!-- jsPDF (for Contribution Report export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+
+<!-- LOGIN SCREEN -->
+
+<div id="loginScreen" class="login-screen">
+
+    <div class="login-box">
+
+        <div class="login-box-header">
+
+            <div class="logo-icon" style="width:60px;height:60px;font-size:22px;margin:0 auto;">
+                DP
+            </div>
+
+            <h2>Design Project</h2>
+
+            <div class="login-subtitle">TEAM PROJECT TRACKER</div>
+
+        </div>
+
+        <p class="login-prompt">👋 Select your name to continue</p>
+
+        <div id="loginMemberList" class="login-member-list"></div>
+
+        <div class="lecturer-login-row">
+            <button type="button" class="lecturer-login-btn" onclick="loginAsLecturer()">
+                🎓 Login as Lecturer / Supervisor
+            </button>
+        </div>
+
+        <div class="login-footer">
+            🔒 5 team members · Design Project Group
+<div style="margin-top:8px;font-size:11px;color:gray;">
+    © 2026 Shamiel Daniel Norazlisham
+</div>
+            
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- PIN MODAL -->
+
+<div id="pinModal" class="pin-modal hidden">
+
+    <div class="pin-box">
+
+        <button class="pin-close-btn" onclick="closePinModal()">×</button>
+
+        <div id="pinAvatar" class="pin-avatar"></div>
+
+        <h3 id="pinModalName">Enter PIN</h3>
+        <p class="pin-subtitle">Enter your account password to continue</p>
+
+        <form id="pinForm" onsubmit="return submitPin(event)">
+
+            <div class="pin-input-wrap">
+                <input
+                    type="password"
+                    id="pinInput"
+                    class="pin-input"
+                    autocomplete="current-password"
+                    placeholder="Enter your password"
+                >
+                <button
+                    type="button"
+                    id="pinVisibilityBtn"
+                    class="pin-visibility-btn"
+                    onclick="togglePinVisibility()"
+                    aria-label="Show PIN"
+                    aria-pressed="false"
+                >Show</button>
+            </div>
+
+            <div id="pinError" class="pin-error hidden">Unable to sign in. Please try again.</div>
+            <p class="pin-help">Forgot your password? Please contact the group leader.</p>
+
+            <div class="pin-buttons">
+
+                <button type="button" class="cancel-btn" onclick="closePinModal()">Cancel</button>
+                <button type="submit" id="pinSubmitBtn" class="save-btn">Continue →</button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- MAINTENANCE MODE OVERLAY -->
+
+<div id="maintenanceScreen" class="login-screen hidden" style="z-index:1500;">
+
+    <div class="login-box" style="padding-bottom:30px;">
+
+        <div class="login-box-header">
+
+            <div class="logo-icon" style="width:60px;height:60px;font-size:22px;margin:0 auto;">
+                🔧
+            </div>
+
+            <h2>Under Maintenance</h2>
+
+            <div class="login-subtitle">DESIGN PROJECT TRACKER</div>
+
+        </div>
+
+        <p class="login-prompt" id="maintenanceMessageText" style="margin-bottom:20px;">
+            The tracker is temporarily under maintenance. Please check back soon.
+        </p>
+
+        <div class="login-footer" style="padding:0 30px 20px;">
+            🔧 Only the group leader can use the tracker right now.
+        </div>
+
+    </div>
+
+</div>
+
+
+<button
+    type="button"
+    id="mobileMenuBtn"
+    class="mobile-menu-btn"
+    onclick="toggleMobileSidebar()"
+    aria-label="Open navigation menu"
+    aria-controls="sidebar"
+    aria-expanded="false"
+>
+    <span></span><span></span><span></span>
+</button>
+
+<div id="mobileSidebarOverlay" class="mobile-sidebar-overlay hidden" onclick="closeMobileSidebar()"></div>
+
+<aside id="sidebar" class="sidebar">
+
+    <div class="logo">
+        <div class="logo-icon">DP</div>
+
+        <div>
+            <strong>Design Project</strong>
+            <small>Project Tracker</small>
+        </div>
+    </div>
+
+    <nav>
+        <button id="navMyDay" onclick="showSection('myday')">☀️ My Day</button>
+        <button id="navDashboard" onclick="showSection('dashboard')">📊 Dashboard</button>
+        <button id="navTasks" onclick="showSection('tasks')">📋 Tasks</button>
+        <button id="navMeetings" onclick="showSection('meetings')">🗓️ Meetings</button>
+        <button id="navCalendar" onclick="showSection('calendar')">📅 Calendar</button>
+        <button id="navResources" onclick="showSection('resources')">📁 Resources</button>
+        <button id="navTeam" onclick="showSection('team')">👥 Team</button>
+        <button id="navActivity" onclick="showSection('activity')">🕘 Activity Log</button>
+        <button id="navAdmin" onclick="showSection('admin')">⚙️ Admin</button>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <small>GROUP PROJECT</small>
+        <strong>Design Project</strong>
+        <div id="maintenanceLeaderIndicator" class="hidden" style="margin-top:8px;font-size:10px;color:#F59E0B;font-weight:700;">
+            🔧 Maintenance ON (only you can use the app)
+        </div>
+        <div id="syncStatus" class="sync-status">
+            <span class="sync-dot"></span>
+            <span id="syncStatusText">Connecting...</span>
+        </div>
+        <div class="copyright-text">© 2026 Shamiel</div>
+    </div>
+
+</aside>
+
+
+<main class="main">
+
+    <div id="announcementBanner" class="announcement-banner hidden">
+        <span class="announcement-icon">📢</span>
+        <span id="announcementBannerText" class="announcement-text"></span>
+        <button type="button" class="announcement-dismiss" onclick="dismissAnnouncementBanner()" aria-label="Dismiss announcement">×</button>
+    </div>
+
+    <header class="header">
+
+        <div>
+            <span class="eyebrow">DESIGN PROJECT</span>
+
+            <h1>Project Dashboard</h1>
+
+            <p>Track your group's progress and tasks.</p>
+        </div>
+
+        <div class="header-actions">
+
+            <div class="notif-bell-wrap">
+
+                <button
+                    type="button"
+                    id="notifBellBtn"
+                    class="notif-bell-btn"
+                    onclick="toggleNotifDropdown()"
+                    aria-label="Notifications"
+                >
+                    🔔
+                    <span id="notifBadge" class="notif-badge hidden">0</span>
+                </button>
+
+                <div id="notifDropdown" class="notif-dropdown hidden">
+
+                    <div class="notif-dropdown-header">
+                        <strong>Notifications</strong>
+                        <button type="button" class="notif-mark-all" onclick="markAllNotificationsRead()">Mark all read</button>
+                    </div>
+
+                    <div id="notifList" class="notif-list"></div>
+
+                </div>
+
+            </div>
+
+            <div id="currentUserBadge" class="current-user-badge"></div>
+
+            <button class="add-btn" onclick="openTaskModal()">
+                + Add Task
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- MY DAY -->
+
+    <section id="myday" class="section">
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3 id="mydayGreeting">👋 Hello</h3>
+                    <p>Here's what needs your attention today</p>
+                </div>
+            </div>
+
+            <div id="mydayContent"></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- DASHBOARD -->
+
+    <section id="dashboard" class="section hidden">
+
+        <div class="cards">
+
+            <div class="card">
+                <div class="card-top">
+                    <span>Overall Progress</span>
+                    <div class="icon purple">%</div>
+                </div>
+
+                <h2 id="overallProgress">0%</h2>
+
+                <div class="progress">
+                    <div id="overallBar"></div>
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-top">
+                    <span>Total Tasks</span>
+                    <div class="icon blue">#</div>
+                </div>
+
+                <h2 id="totalTasks">0</h2>
+            </div>
+
+
+            <div class="card">
+                <div class="card-top">
+                    <span>In Progress</span>
+                    <div class="icon orange">↻</div>
+                </div>
+
+                <h2 id="inProgress">0</h2>
+            </div>
+
+
+            <div class="card danger-card">
+                <div class="card-top">
+                    <span>Overdue</span>
+                    <div class="icon red">!</div>
+                </div>
+
+                <h2 id="overdue">0</h2>
+            </div>
+
+        </div>
+
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>🚨 Needs Attention</h3>
+
+                    <p>
+                        Tasks due within 3 days or overdue
+                    </p>
+                </div>
+            </div>
+
+            <div id="attentionList"></div>
+
+        </div>
+
+
+        <div class="content-grid">
+
+            <div class="panel">
+
+                <div class="panel-title">
+                    <div>
+                        <h3>Team Progress</h3>
+                        <p>Individual task progress</p>
+                    </div>
+                </div>
+
+                <div id="memberProgress"></div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="panel-title">
+                    <div>
+                        <h3>Task Status</h3>
+                        <p>Current task breakdown</p>
+                    </div>
+                </div>
+
+                <div id="statusBreakdown"></div>
+
+            </div>
+
+        </div>
+
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>📈 Progress Over Time</h3>
+                    <p>Overall project progress, day by day</p>
+                </div>
+            </div>
+
+            <canvas id="progressChartCanvas" height="90"></canvas>
+
+        </div>
+
+    </section>
+
+
+    <!-- TASKS -->
+
+    <section id="tasks" class="section hidden">
+
+        <div class="panel">
+
+            <div class="panel-title">
+
+                <div>
+                    <h3>Project Tasks</h3>
+
+                    <p>
+                        Search and filter your project tasks
+                    </p>
+                </div>
+
+                <div class="task-view-actions">
+
+                    <div class="view-toggle">
+
+                        <button
+                            id="viewToggleTable"
+                            class="view-toggle-btn active"
+                            onclick="setTaskView('table')"
+                        >
+                            📋 Table
+                        </button>
+
+                        <button
+                            id="viewToggleBoard"
+                            class="view-toggle-btn"
+                            onclick="setTaskView('board')"
+                        >
+                            🗂️ Board
+                        </button>
+
+                    </div>
+
+                    <button
+                        class="small-add"
+                        id="addTaskSmallBtn"
+                        onclick="openTaskModal()"
+                    >
+                        + Add Task
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- BOARD VIEW -->
+
+            <div id="taskBoardView" class="hidden">
+
+                <div id="kanbanBoard" class="kanban-board"></div>
+
+            </div>
+
+
+            <!-- TABLE VIEW -->
+
+            <div id="taskTableView">
+
+
+            <!-- SEARCH & ADVANCED FILTER -->
+
+            <div class="filter-box">
+
+                <input
+                    type="text"
+                    id="search"
+                    placeholder="🔎 Search task..."
+                    oninput="renderTasks()"
+                >
+
+
+                <select
+                    id="filterMember"
+                    onchange="renderTasks()"
+                >
+
+                    <option value="All">
+                        All Members
+                    </option>
+
+                </select>
+
+
+                <select
+                    id="filterStatus"
+                    onchange="renderTasks()"
+                >
+
+                    <option value="All">
+                        All Status
+                    </option>
+
+                    <option value="Not Started">
+                        Not Started
+                    </option>
+
+                    <option value="In Progress">
+                        In Progress
+                    </option>
+
+                    <option value="Done">
+                        Done
+                    </option>
+
+                    <option value="Blocked">
+                        Blocked
+                    </option>
+
+                </select>
+
+
+                <select
+                    id="filterPriority"
+                    onchange="renderTasks()"
+                >
+
+                    <option value="All">
+                        All Priority
+                    </option>
+
+                    <option value="High">
+                        High
+                    </option>
+
+                    <option value="Medium">
+                        Medium
+                    </option>
+
+                    <option value="Low">
+                        Low
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div id="filterResultInfo" class="filter-result"></div>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Task</th>
+                            <th>Main PIC</th>
+                            <th>Assigned To</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Deadline</th>
+                            <th>Attachment</th>
+                            <th>Action</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="taskTable"></tbody>
+
+                </table>
+
+            </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- MEETINGS -->
+
+    <section id="meetings" class="section hidden">
+
+        <div class="panel">
+
+            <div class="panel-title">
+
+                <div>
+                    <h3>Team Meetings</h3>
+
+                    <p>
+                        Schedule meetings and track attendance
+                    </p>
+                </div>
+
+                <button
+                    class="small-add"
+                    id="addMeetingBtn"
+                    onclick="openMeetingModal()"
+                >
+                    + Add Meeting
+                </button>
+
+            </div>
+
+            <div
+                id="meetingList"
+                class="meeting-list"
+            ></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CALENDAR -->
+
+    <section id="calendar" class="section hidden">
+
+        <div class="panel">
+
+            <div class="calendar-header">
+
+                <div>
+
+                    <span class="eyebrow">
+                        PROJECT SCHEDULE
+                    </span>
+
+                    <h2 id="calendarMonth">
+                        August 2026
+                    </h2>
+
+                </div>
+
+
+                <div class="calendar-controls">
+
+                    <button
+                        class="calendar-btn"
+                        onclick="previousMonth()"
+                    >
+                        ←
+                    </button>
+
+                    <button
+                        class="today-btn"
+                        onclick="goToday()"
+                    >
+                        Today
+                    </button>
+
+                    <button
+                        class="calendar-btn"
+                        onclick="nextMonth()"
+                    >
+                        →
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="calendar-week">
+
+                <div>MON</div>
+                <div>TUE</div>
+                <div>WED</div>
+                <div>THU</div>
+                <div>FRI</div>
+                <div>SAT</div>
+                <div>SUN</div>
+
+            </div>
+
+
+            <div
+                id="calendarGrid"
+                class="calendar-grid"
+            ></div>
+
+
+            <div class="calendar-legend">
+
+                <span>
+                    <i class="legend-dot done-dot"></i>
+                    Done
+                </span>
+
+                <span>
+                    <i class="legend-dot warning-dot"></i>
+                    Due Soon
+                </span>
+
+                <span>
+                    <i class="legend-dot overdue-dot"></i>
+                    Overdue
+                </span>
+
+                <span>
+                    <i class="legend-dot normal-dot"></i>
+                    Upcoming
+                </span>
+
+                <span>
+                    <i class="legend-dot meeting-dot"></i>
+                    Meeting
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- TEAM -->
+
+    <section id="team" class="section hidden">
+
+        <div class="panel">
+
+            <div class="panel-title">
+
+                <div>
+                    <h3>Team Members</h3>
+
+                    <p>
+                        Design Project group
+                    </p>
+                </div>
+
+            </div>
+
+            <div
+                id="teamList"
+                class="team-list"
+            ></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- RESOURCES -->
+
+    <section id="resources" class="section hidden">
+
+        <div class="panel">
+
+            <div class="panel-title">
+
+                <div>
+                    <h3>📁 Resources</h3>
+
+                    <p>
+                        Files and links organized by chapter
+                    </p>
+                </div>
+
+                <button
+                    class="small-add"
+                    id="addResourceBtn"
+                    onclick="openResourceModal()"
+                >
+                    + Add File / Link
+                </button>
+
+            </div>
+
+            <div
+                id="chapterList"
+                class="chapter-list"
+            ></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ACTIVITY LOG -->
+
+    <section id="activity" class="section hidden">
+
+        <div class="panel">
+
+            <div class="panel-title">
+
+                <div>
+                    <h3>🕘 Activity Log</h3>
+
+                    <p>
+                        Recent changes made by team members
+                    </p>
+                </div>
+
+            </div>
+
+            <div id="activityLogList"></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ADMIN (LEADER ONLY) -->
+
+    <section id="admin" class="section hidden">
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>🔧 Maintenance Mode</h3>
+                    <p>When ON, only the group leader can use the tracker. Everyone else sees a maintenance screen.</p>
+                </div>
+            </div>
+
+            <form onsubmit="saveAdminSettings(event)">
+
+                <label class="settings-toggle-row">
+                    <input type="checkbox" id="maintenanceModeToggle">
+                    <span>Enable Maintenance Mode</span>
+                </label>
+
+                <label style="margin-top:16px;">
+                    Message shown to other members
+                    <textarea id="maintenanceMessageInput" rows="2" placeholder="e.g. Updating the tracker, back in 10 minutes."></textarea>
+                </label>
+
+                <hr style="margin:26px 0;border:none;border-top:1px solid var(--border);">
+
+                <div class="panel-title" style="margin-bottom:16px;">
+                    <div>
+                        <h3>📢 Announcement Banner</h3>
+                        <p>Shown at the top of the tracker for everyone, including you.</p>
+                    </div>
+                </div>
+
+                <label class="settings-toggle-row">
+                    <input type="checkbox" id="announcementActiveToggle">
+                    <span>Show Announcement Banner</span>
+                </label>
+
+                <label style="margin-top:16px;">
+                    Announcement text
+                    <input type="text" id="announcementTextInput" placeholder="e.g. Submission Friday 5pm — no late marking">
+                </label>
+
+                <div class="modal-buttons" style="justify-content:flex-start;margin-top:26px;">
+                    <button type="submit" class="save-btn">💾 Save Settings</button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- TASK MODAL -->
+<div id="taskModal" class="modal hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <div>
+
+                <span class="eyebrow">TASK</span>
+
+                <h2 id="modalTitle">
+                    Add Task
+                </h2>
+
+            </div>
+
+            <button
+                class="close-btn"
+                onclick="closeTaskModal()"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form onsubmit="saveTask(event)">
+
+            <input
+                type="hidden"
+                id="taskId"
+            >
+
+
+            <label>
+                Task Name
+
+                <input
+                    type="text"
+                    id="taskName"
+                    placeholder="Example: Design Research"
+                    required
+                >
+            </label>
+
+
+            <!-- MAIN PIC -->
+
+            <label>
+
+                Main PIC
+
+                <span class="label-help">
+                    Person mainly responsible for this task
+                </span>
+
+                <select id="mainPIC" required>
+
+                    <option value="">
+                        Select Main PIC
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <!-- ASSIGNED MEMBERS -->
+
+            <label>
+
+                Assigned Members
+
+                <span class="label-help">
+                    Select one or more members
+                </span>
+
+                <div
+                    id="memberCheckboxes"
+                    class="member-checkboxes"
+                ></div>
+
+            </label>
+
+
+            <!-- SUBTASKS / CHECKLIST -->
+
+            <label>
+
+                Checklist
+
+                <span class="label-help">
+                    Break the task into smaller steps
+                </span>
+
+                <div id="subtaskProgressLabel" class="subtask-progress-label"></div>
+
+                <div
+                    id="subtaskList"
+                    class="subtask-list"
+                ></div>
+
+                <div class="subtask-add-row">
+
+                    <input
+                        type="text"
+                        id="subtaskInput"
+                        placeholder="Add a new step..."
+                    >
+
+                    <button
+                        type="button"
+                        id="subtaskAddBtn"
+                        class="subtask-add-btn"
+                    >
+                        + Add
+                    </button>
+
+                </div>
+
+            </label>
+
+
+            <!-- MULTIPLE LINK ATTACHMENTS -->
+
+            <label>
+
+                Additional Links
+
+                <span class="label-help">
+                    Add multiple links (drafts, references, etc.)
+                </span>
+
+                <div
+                    id="linksList"
+                    class="subtask-list"
+                ></div>
+
+                <div class="subtask-add-row">
+
+                    <input
+                        type="text"
+                        id="linkLabelInput"
+                        placeholder="Label (optional)"
+                        style="flex: 0 0 40%;"
+                    >
+
+                    <input
+                        type="url"
+                        id="linkUrlInput"
+                        placeholder="https://..."
+                    >
+
+                    <button
+                        type="button"
+                        id="linkAddBtn"
+                        class="subtask-add-btn"
+                    >
+                        + Add
+                    </button>
+
+                </div>
+
+            </label>
+
+
+            <div class="form-row">
+
+                <label>
+
+                    Priority
+
+                    <select id="taskPriority">
+
+                        <option>
+                            High
+                        </option>
+
+                        <option selected>
+                            Medium
+                        </option>
+
+                        <option>
+                            Low
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+
+                    Status
+
+                    <select id="taskStatus">
+
+                        <option>
+                            Not Started
+                        </option>
+
+                        <option>
+                            In Progress
+                        </option>
+
+                        <option>
+                            Done
+                        </option>
+
+                        <option>
+                            Blocked
+                        </option>
+
+                    </select>
+
+                </label>
+
+            </div>
+
+
+            <div class="form-row">
+
+                <label>
+
+                    Progress (%)
+
+                    <input
+                        type="number"
+                        id="taskProgress"
+                        min="0"
+                        max="100"
+                        value="0"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Deadline
+
+                    <input
+                        type="date"
+                        id="taskDeadline"
+                        required
+                    >
+
+                </label>
+
+            </div>
+
+
+            <!-- ATTACHMENT -->
+
+            <label>
+
+                Attachment Link
+
+                <span class="label-help">
+                    Google Drive, Canva, Figma, OneDrive, etc.
+                </span>
+
+                <input
+                    type="url"
+                    id="taskAttachment"
+                    placeholder="https://..."
+                >
+
+            </label>
+
+
+            <label>
+
+                Attachment File
+
+                <input
+                    type="file"
+                    id="taskFile"
+                >
+
+                <span
+                    id="currentFile"
+                    class="current-file"
+                ></span>
+
+            </label>
+
+
+            <!-- COMMENTS / FEEDBACK -->
+
+            <div id="taskCommentsSection" class="comments-section hidden">
+
+                <label>
+
+                    💬 Comments / Feedback
+
+                    <span class="label-help">
+                        Notes and feedback from team members or lecturer
+                    </span>
+
+                </label>
+
+                <div id="taskCommentsList" class="comments-list"></div>
+
+                <div class="comment-add-row">
+
+                    <input
+                        type="text"
+                        id="taskCommentInput"
+                        placeholder="Add a comment..."
+                    >
+
+                    <button
+                        type="button"
+                        id="taskCommentAddBtn"
+                        class="comment-add-btn"
+                    >
+                        + Add
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-buttons">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    onclick="closeTaskModal()"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="save-btn"
+                >
+                    Save Task
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- MEETING MODAL -->
+
+<div id="meetingModal" class="modal hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <div>
+
+                <span class="eyebrow">MEETING</span>
+
+                <h2 id="meetingModalTitle">
+                    Add Meeting
+                </h2>
+
+            </div>
+
+            <button
+                class="close-btn"
+                onclick="closeMeetingModal()"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form onsubmit="saveMeeting(event)">
+
+            <input
+                type="hidden"
+                id="meetingId"
+            >
+
+
+            <label>
+                Meeting Title
+
+                <input
+                    type="text"
+                    id="meetingTitle"
+                    placeholder="Example: Weekly Progress Sync"
+                    required
+                >
+            </label>
+
+
+            <div class="form-row">
+
+                <label>
+
+                    Date
+
+                    <input
+                        type="date"
+                        id="meetingDate"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Time
+
+                    <input
+                        type="time"
+                        id="meetingTime"
+                    >
+
+                </label>
+
+            </div>
+
+
+            <label>
+
+                Location / Link
+
+                <span class="label-help">
+                    Physical location, Google Meet, Zoom, etc.
+                </span>
+
+                <input
+                    type="text"
+                    id="meetingLocation"
+                    placeholder="Example: Bilik Mesyuarat 2 or Google Meet link"
+                >
+
+            </label>
+
+
+            <label>
+
+                Attendees
+
+                <span class="label-help">
+                    Who is expected to attend
+                </span>
+
+                <div
+                    id="meetingAttendeeCheckboxes"
+                    class="member-checkboxes"
+                ></div>
+
+            </label>
+
+
+            <label>
+
+                Notes / Agenda
+
+                <textarea
+                    id="meetingNotes"
+                    rows="3"
+                    placeholder="Optional agenda or notes"
+                ></textarea>
+
+            </label>
+
+
+            <div class="modal-buttons">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    onclick="closeMeetingModal()"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="save-btn"
+                >
+                    Save Meeting
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- RESOURCE MODAL -->
+
+<div id="resourceModal" class="modal hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <div>
+
+                <span class="eyebrow">RESOURCE</span>
+
+                <h2 id="resourceModalTitle">
+                    Add File / Link
+                </h2>
+
+            </div>
+
+            <button
+                class="close-btn"
+                onclick="closeResourceModal()"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form onsubmit="saveResource(event)">
+
+            <input
+                type="hidden"
+                id="resourceId"
+            >
+
+
+            <label>
+
+                Chapter
+
+                <select id="resourceChapter" required></select>
+
+            </label>
+
+
+            <label>
+                Title
+
+                <input
+                    type="text"
+                    id="resourceTitle"
+                    placeholder="Example: Chapter 1 Draft.docx"
+                    required
+                >
+            </label>
+
+
+            <label>
+
+                Upload File
+
+                <span class="label-help">
+                    Upload a file directly (PDF, DOCX, images, etc.) — leave empty if using a link instead
+                </span>
+
+                <input
+                    type="file"
+                    id="resourceFile"
+                >
+
+                <span id="currentResourceFile" class="current-file"></span>
+
+            </label>
+
+
+            <label>
+
+                Link (URL)
+
+                <span class="label-help">
+                    Google Drive, Canva, Figma, OneDrive, etc. Leave blank if uploading a file above.
+                </span>
+
+                <input
+                    type="url"
+                    id="resourceUrl"
+                    placeholder="https://..."
+                >
+
+            </label>
+
+
+            <label>
+
+                Notes
+
+                <textarea
+                    id="resourceNotes"
+                    rows="2"
+                    placeholder="Optional description"
+                ></textarea>
+
+            </label>
+
+
+            <div id="uploadProgressWrap" class="upload-progress-wrap hidden">
+
+                <div class="upload-progress-bar">
+                    <div id="uploadProgressFill"></div>
+                </div>
+
+                <small id="uploadProgressText">Uploading... 0%</small>
+
+            </div>
+
+
+            <!-- COMMENTS / FEEDBACK -->
+
+            <div id="resourceCommentsSection" class="comments-section hidden">
+
+                <label>
+
+                    💬 Comments / Feedback
+
+                    <span class="label-help">
+                        Notes and feedback from team members or lecturer
+                    </span>
+
+                </label>
+
+                <div id="resourceCommentsList" class="comments-list"></div>
+
+                <div class="comment-add-row">
+
+                    <input
+                        type="text"
+                        id="resourceCommentInput"
+                        placeholder="Add a comment..."
+                    >
+
+                    <button
+                        type="button"
+                        id="resourceCommentAddBtn"
+                        class="comment-add-btn"
+                    >
+                        + Add
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-buttons">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    onclick="closeResourceModal()"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="save-btn"
+                >
+                    Save
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- DELETE TASK CONFIRMATION -->
+<div
+    id="deleteTaskModal"
+    class="logout-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="deleteTaskModalTitle"
+    onclick="if (event.target === this) closeDeleteTaskModal()"
+>
+    <div class="logout-card">
+        <button type="button" class="logout-close" onclick="closeDeleteTaskModal()" aria-label="Close delete confirmation">×</button>
+        <div class="logout-icon">🗑️</div>
+        <h2 id="deleteTaskModalTitle">Delete task?</h2>
+        <p>This action cannot be undone. The task will be removed from the project.</p>
+        <div id="deleteTaskName" class="logout-user-name"></div>
+
+        <div class="logout-actions">
+            <button type="button" class="cancel-btn" onclick="closeDeleteTaskModal()">Cancel</button>
+            <button type="button" class="logout-confirm-btn" onclick="confirmDeleteTask()">Delete task</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- DELETE REQUEST APPROVAL (LEADER ONLY) -->
+<div
+    id="deleteRequestModal"
+    class="logout-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="deleteRequestModalTitle"
+    onclick="if (event.target === this) closeDeleteRequestModal()"
+>
+    <div class="logout-card">
+        <button type="button" class="logout-close" onclick="closeDeleteRequestModal()" aria-label="Close">×</button>
+        <div class="logout-icon">🗑️</div>
+        <h2 id="deleteRequestModalTitle">Delete request</h2>
+        <p id="deleteRequestModalText">Someone wants to delete this item:</p>
+        <div id="deleteRequestItemName" class="logout-user-name"></div>
+
+        <div class="logout-actions">
+            <button type="button" class="cancel-btn" onclick="rejectDeleteRequest()">❌ Reject</button>
+            <button type="button" class="logout-confirm-btn" onclick="approveDeleteRequest()">✅ Approve</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- LOGOUT CONFIRMATION -->
+<div
+    id="logoutModal"
+    class="logout-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="logoutModalTitle"
+    onclick="if (event.target === this) closeLogoutModal()"
+>
+    <div class="logout-card">
+        <button
+            type="button"
+            class="logout-close"
+            onclick="closeLogoutModal()"
+            aria-label="Close logout confirmation"
+        >×</button>
+
+        <div class="logout-icon">👋</div>
+        <h2 id="logoutModalTitle">Log out?</h2>
+        <p>You will need to select your profile again to continue.</p>
+        <div id="logoutUserName" class="logout-user-name"></div>
+
+        <div class="logout-actions">
+            <button type="button" class="cancel-btn" onclick="closeLogoutModal()">
+                Stay logged in
+            </button>
+            <button type="button" class="logout-confirm-btn" onclick="confirmLogout()">
+                Log out
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
