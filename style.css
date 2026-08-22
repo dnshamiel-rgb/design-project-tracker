@@ -3631,6 +3631,46 @@ tbody tr:last-child td {
 
 
 /* ============================================================
+   LECTURER MARKING ACTION BUTTON (Tasks table Action column)
+============================================================ */
+
+.lecturer-mark-btn {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.lecturer-mark-btn:hover {
+    transform: translateY(-1px);
+}
+
+.lecturer-mark-btn.marking-none {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.lecturer-mark-btn.marking-approved {
+    background: var(--success-light);
+    color: #16924F;
+}
+
+.lecturer-mark-btn.marking-revision {
+    background: var(--warning-light);
+    color: #C77700;
+}
+
+.lecturer-mark-btn.marking-reject {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+
+/* ============================================================
    RESOURCE REVIEW STATUS (lecturer badge on resources)
 ============================================================ */
 
