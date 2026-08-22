@@ -3955,6 +3955,8 @@ let currentMomMeetingId = null;
 
 let currentMomActionItems = [];
 
+let pendingMomConversion = null;
+
 
 function populateMomOwnerSelect(selected = "") {
 
@@ -4270,62 +4272,110 @@ function convertMomActionToTask(index) {
 
     if (!item || item.taskId) return;
 
-    const meeting = meetings.find(m => m.id === currentMomMeetingId);
+    const meetingId = currentMomMeetingId;
 
-    const owner = item.owner || getCurrentUser() || (members[0] && members[0].name) || "";
+    const meeting = meetings.find(m => m.id === meetingId);
 
-    const newTask = {
+    // Persist the current minutes first so this action item (and its
+    // id) is guaranteed to exist in `meeting.mom`, even if the user
+    // hasn't hit "Save Minutes" yet - otherwise there'd be nothing to
+    // link the new task back to once the Add Task modal closes.
+    if (meeting) {
 
-        id: Date.now(),
+        meeting.mom = {
 
-        name: item.text,
+            summary: sanitizeText(getElement("momSummary").value),
 
-        mainPIC: owner,
+            actionItems: currentMomActionItems,
 
-        assigned: owner ? [owner] : [],
+            updatedBy: getCurrentUser() || "Unknown",
 
-        priority: "Medium",
+            updatedAt: new Date().toISOString()
 
-        status: "Not Started",
+        };
 
-        progress: 0,
+        saveMeetingsData();
 
-        deadline: "",
+    }
 
-        attachment: "",
+    pendingMomConversion = {
 
-        fileName: "",
+        meetingId: meetingId,
 
-        subtasks: [],
+        actionItemId: item.id,
 
-        links: []
+        actionText: item.text
 
     };
 
-    tasks.push(newTask);
+    closeMomModal();
 
-    saveData();
+    // Open the normal Add Task modal, pre-filled but NOT yet saved -
+    // this forces the same required fields (Main PIC, deadline, etc.)
+    // as any other task, instead of silently creating a task with a
+    // blank deadline that then shows a confusing "9999 days" badge.
+    openTaskModal(null, {
+
+        name: item.text,
+
+        mainPIC: item.owner || "",
+
+        assigned: item.owner ? [item.owner] : []
+
+    });
+
+    showToast("Finish filling in the task details (PIC, deadline, etc.) and save.", "warning");
+
+}
+
+
+function linkMomConversionToTask(taskId, taskName) {
+
+    if (!pendingMomConversion) return;
+
+    const meeting = meetings.find(m => m.id === pendingMomConversion.meetingId);
+
+    if (meeting && meeting.mom && Array.isArray(meeting.mom.actionItems)) {
+
+        const item = meeting.mom.actionItems.find(
+
+            entry => entry.id === pendingMomConversion.actionItemId
+
+        );
+
+        if (item) {
+
+            item.taskId = taskId;
+
+            saveMeetingsData();
+
+        }
+
+    }
+
+    // Keep the in-memory copy in sync too, in case the MOM modal for
+    // this meeting gets reopened later in the same session.
+    if (currentMomMeetingId === pendingMomConversion.meetingId) {
+
+        const liveItem = currentMomActionItems.find(
+
+            entry => entry.id === pendingMomConversion.actionItemId
+
+        );
+
+        if (liveItem) {
+
+            liveItem.taskId = taskId;
+
+        }
+
+    }
 
     logActivity(
-        `created task "${item.text}" from meeting minutes` +
-        (meeting ? ` ("${meeting.title}")` : "")
+        `linked task "${taskName}" to meeting minutes action item`
     );
 
-    item.taskId = newTask.id;
-
-    renderMomActionItems();
-
-    updateDashboard();
-
-    renderTasks();
-
-    renderTeam();
-
-    renderCalendar();
-
-    renderKanban();
-
-    showToast(`Task "${item.text}" created from action item.`);
+    pendingMomConversion = null;
 
 }
 
@@ -5645,6 +5695,17 @@ function getDeadlineStatus(task) {
 
     }
 
+    if (
+        !task.deadline
+    ) {
+
+        return {
+            type: "none",
+            text: "NO DEADLINE"
+        };
+
+    }
+
     const days =
         getDaysLeft(
             task.deadline
@@ -6506,6 +6567,16 @@ function renderTasks() {
 
             }
 
+            else if (
+                deadline.type ===
+                "none"
+            ) {
+
+                deadlineClass =
+                    "deadline-none";
+
+            }
+
 
             let attachment =
                 "-";
@@ -7069,7 +7140,8 @@ function renderMemberCheckboxes(
 // ============================================================
 
 function openTaskModal(
-    task = null
+    task = null,
+    prefill = null
 ) {
 
     const modal =
@@ -7247,15 +7319,17 @@ function openTaskModal(
         getElement(
             "taskName"
         ).value =
-            "";
+            (prefill && prefill.name) || "";
 
 
         populateMainPIC(
-            getCurrentUser() || ""
+            (prefill && prefill.mainPIC) || getCurrentUser() || ""
         );
 
 
-        renderMemberCheckboxes();
+        renderMemberCheckboxes(
+            (prefill && prefill.assigned) || []
+        );
 
 
         getElement(
@@ -7367,6 +7441,8 @@ function closeTaskModal() {
         );
 
     }
+
+    pendingMomConversion = null;
 
 }
 
@@ -7632,14 +7708,23 @@ function saveTask(event) {
 
     else {
 
+        const newTaskId = Date.now();
+
         tasks.push({
 
             id:
-                Date.now(),
+                newTaskId,
 
             ...taskData
 
         });
+
+
+        if (pendingMomConversion) {
+
+            linkMomConversionToTask(newTaskId, taskData.name);
+
+        }
 
     }
 
