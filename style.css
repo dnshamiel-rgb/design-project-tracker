@@ -21,6 +21,9 @@
     --warning-light: #FFF7E6;
     --danger: #EF4444;
     --danger-light: #FEECEC;
+    --teal: #0D9488;
+    --teal-dark: #0F766E;
+    --teal-light: #E6FBF8;
     --text: #16192B;
     --muted: #7C8496;
     --border: #E7EBF3;
@@ -3721,7 +3724,7 @@ tbody tr:last-child td {
 .marking-section-redesigned {
     border-radius: 18px;
     padding: 18px 20px 20px;
-    background: linear-gradient(160deg, #F6F3FF 0%, #FAFBFE 60%);
+    background: linear-gradient(160deg, var(--teal-light) 0%, #FAFBFE 60%);
     box-shadow: var(--shadow-sm);
 }
 
@@ -3740,10 +3743,10 @@ tbody tr:last-child td {
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--primary), #7C3AED);
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
     color: white;
     font-size: 17px;
-    box-shadow: 0 8px 16px -6px rgba(37,99,235,.45);
+    box-shadow: 0 8px 16px -6px rgba(13,148,136,.45);
 }
 
 .marking-section-title {
@@ -3807,6 +3810,238 @@ tbody tr:last-child td {
     font-weight: 600;
 }
 
+
+/* ============================================================
+   MARKING SEGMENTED CONTROL (status picker — replaces <select>)
+============================================================ */
+
+.marking-segmented-control {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+@media (min-width: 480px) {
+
+    .marking-segmented-control {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+}
+
+.marking-seg-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border: 1.5px solid var(--border);
+    background: white;
+    border-radius: 12px;
+    padding: 10px 6px;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.marking-seg-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.marking-seg-btn:disabled {
+    cursor: not-allowed;
+    opacity: .6;
+}
+
+.marking-seg-icon {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.marking-seg-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.3;
+}
+
+.marking-seg-btn.active {
+    border-color: transparent;
+    box-shadow: var(--shadow-sm);
+}
+
+.marking-seg-btn.marking-none.active {
+    background: #F1F2F7;
+}
+
+.marking-seg-btn.marking-none.active .marking-seg-label {
+    color: #565D6D;
+}
+
+.marking-seg-btn.marking-approved.active {
+    background: var(--success-light);
+    border-color: var(--success);
+}
+
+.marking-seg-btn.marking-approved.active .marking-seg-label {
+    color: #16924F;
+}
+
+.marking-seg-btn.marking-revision.active {
+    background: var(--warning-light);
+    border-color: var(--warning);
+}
+
+.marking-seg-btn.marking-revision.active .marking-seg-label {
+    color: #C77700;
+}
+
+.marking-seg-btn.marking-reject.active {
+    background: var(--danger-light);
+    border-color: var(--danger);
+}
+
+.marking-seg-btn.marking-reject.active .marking-seg-label {
+    color: var(--danger);
+}
+
+
+/* ============================================================
+   MARKING SAVE BUTTON (full-width, sits below remarks)
+============================================================ */
+
+.marking-save-btn {
+    display: block;
+    width: 100%;
+    border: none;
+    margin-top: 12px;
+    padding: 13px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    color: white;
+    font-weight: 800;
+    font-size: 13.5px;
+    cursor: pointer;
+    box-shadow: 0 10px 22px -10px rgba(13,148,136,.55);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.marking-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 26px -10px rgba(13,148,136,.65);
+}
+
+
+/* ============================================================
+   MARKING HISTORY COLLAPSE TOGGLE
+============================================================ */
+
+.marking-history-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 12px 2px 6px;
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--muted);
+    cursor: pointer;
+    border-top: 1px solid var(--border);
+}
+
+.marking-history-toggle:hover {
+    color: var(--teal-dark);
+}
+
+
+/* ============================================================
+   EVIDENCE CARDS (lecturer task summary card)
+============================================================ */
+
+.evidence-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+
+.evidence-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 12px;
+    padding: 14px 8px;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.evidence-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--teal);
+}
+
+.evidence-card-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.evidence-card-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text);
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.evidence-card-missing {
+    cursor: default;
+    border-style: dashed;
+    background: #FAFBFE;
+}
+
+.evidence-card-missing:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--border);
+}
+
+.evidence-card-warn {
+    font-size: 9px;
+    font-weight: 800;
+    color: #C77700;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+
+.evidence-empty-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    border: 1.5px dashed #E8B84B;
+    background: var(--warning-light);
+    color: #8A5B00;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.evidence-empty-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+
 .marking-overview-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -3865,9 +4100,9 @@ tbody tr:last-child td {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    background: linear-gradient(135deg, #FFF7E6 0%, #FFFDF7 100%);
-    border: 1px solid #F3D9A8;
-    color: #8A5B00;
+    background: linear-gradient(135deg, var(--teal-light) 0%, #FAFFFE 100%);
+    border: 1px solid #A9E6DE;
+    color: #0F5B54;
     border-radius: 14px;
     padding: 14px 16px;
     margin: 0 0 18px;
@@ -3884,13 +4119,13 @@ tbody tr:last-child td {
     justify-content: center;
     border-radius: 10px;
     background: #FFFFFF;
-    box-shadow: 0 4px 10px -4px rgba(199,119,0,.35);
+    box-shadow: 0 4px 10px -4px rgba(13,148,136,.35);
     font-size: 16px;
 }
 
 .lecturer-modal-notice strong {
     display: block;
-    color: #C77700;
+    color: var(--teal-dark);
     font-size: 13.5px;
     font-weight: 800;
     margin-bottom: 3px;
@@ -3898,7 +4133,7 @@ tbody tr:last-child td {
 
 .lecturer-modal-notice p {
     margin: 0;
-    color: #8A5B00;
+    color: #0F5B54;
     font-weight: 500;
 }
 
@@ -3926,7 +4161,7 @@ tbody tr:last-child td {
     border-radius: 18px;
     padding: 20px 22px;
     margin: 0 0 18px;
-    background: linear-gradient(160deg, #F3F0FF 0%, var(--card) 55%);
+    background: linear-gradient(160deg, var(--teal-light) 0%, var(--card) 55%);
     box-shadow: var(--shadow-sm);
 }
 
@@ -4029,26 +4264,7 @@ tbody tr:last-child td {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-}
-
-.lecturer-card-file {
-    display: inline-block;
-    background: #E6F2FF;
-    color: #1D6FBD;
-    padding: 7px 10px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.lecturer-card-no-attachment {
-    display: inline-block;
-    background: var(--warning-light);
-    color: #C77700;
-    padding: 7px 10px;
-    border-radius: 8px;
-    font-size: 11.5px;
-    font-weight: 700;
+    width: 100%;
 }
 
 
