@@ -3286,6 +3286,97 @@ function uploadResourceFile(file) {
 }
 
 
+function uploadTaskFile(file) {
+
+    return new Promise(
+        (resolve, reject) => {
+
+            const progressWrap =
+                getElement("taskUploadProgressWrap");
+
+            const progressFill =
+                getElement("taskUploadProgressFill");
+
+            const progressText =
+                getElement("taskUploadProgressText");
+
+            if (progressWrap) {
+
+                progressWrap.classList.remove("hidden");
+
+            }
+
+            const safeName =
+                Date.now() +
+                "_" +
+                file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+            const storageRef =
+                storage.ref().child("taskFiles/" + safeName);
+
+            const uploadTask =
+                storageRef.put(file);
+
+            uploadTask.on(
+                "state_changed",
+                snapshot => {
+
+                    const percent =
+                        Math.round(
+                            (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+                        );
+
+                    if (progressFill) {
+
+                        progressFill.style.width = percent + "%";
+
+                    }
+
+                    if (progressText) {
+
+                        progressText.textContent =
+                            "Uploading... " + percent + "%";
+
+                    }
+
+                },
+                error => {
+
+                    if (progressWrap) {
+
+                        progressWrap.classList.add("hidden");
+
+                    }
+
+                    reject(error);
+
+                },
+                () => {
+
+                    uploadTask.snapshot.ref
+                        .getDownloadURL()
+                        .then(downloadUrl => {
+
+                            if (progressWrap) {
+
+                                progressWrap.classList.add("hidden");
+
+                            }
+
+                            resolve(downloadUrl);
+
+                        })
+                        .catch(reject);
+
+                }
+            );
+
+        }
+    );
+
+}
+
+
 function editResource(id) {
 
     const resource =
@@ -7449,17 +7540,25 @@ function renderTasks() {
                 task.fileName
             ) {
 
-                attachment += `
-
-                    <br>
-
-                    <small>
-
-                        📄 ${task.fileName}
-
-                    </small>
-
-                `;
+                attachment +=
+                    task.fileUrl
+                        ? `
+                            <br>
+                            <a
+                                class="open-link"
+                                href="${task.fileUrl}"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                📄 ${task.fileName}
+                            </a>
+                        `
+                        : `
+                            <br>
+                            <small>
+                                📄 ${task.fileName} (no file uploaded)
+                            </small>
+                        `;
 
             }
 
@@ -8035,7 +8134,9 @@ function renderLecturerTaskCard(task) {
     if (task.fileName) {
 
         attachmentsHtml +=
-            `<span class="lecturer-card-file">📄 ${task.fileName}</span>`;
+            task.fileUrl
+                ? `<a class="lecturer-card-file" href="${task.fileUrl}" target="_blank" rel="noopener">📄 ${task.fileName}</a>`
+                : `<span class="lecturer-card-file">📄 ${task.fileName} (no file uploaded)</span>`;
 
     }
 
@@ -8294,11 +8395,25 @@ function openTaskModal(
 
         if (currentFile) {
 
-            currentFile.textContent =
-                task.fileName
-                    ? "Current file: " +
-                      task.fileName
-                    : "";
+            if (task.fileName && task.fileUrl) {
+
+                currentFile.innerHTML =
+                    `Current file: <a href="${task.fileUrl}" target="_blank" rel="noopener">${task.fileName}</a>`;
+
+            }
+
+            else if (task.fileName) {
+
+                currentFile.textContent =
+                    "Current file: " + task.fileName + " (no file uploaded — please re-attach)";
+
+            }
+
+            else {
+
+                currentFile.textContent = "";
+
+            }
 
         }
 
@@ -8475,6 +8590,14 @@ function openTaskModal(
 
     }
 
+    const taskProgressWrap = getElement("taskUploadProgressWrap");
+
+    if (taskProgressWrap) {
+
+        taskProgressWrap.classList.add("hidden");
+
+    }
+
     setModalFieldsDisabled("taskModal", isLecturer());
 
     const taskCommentInputField = getElement("taskCommentInput");
@@ -8594,7 +8717,7 @@ function closeTaskModal() {
 // SAVE TASK
 // ============================================================
 
-function saveTask(event) {
+async function saveTask(event) {
 
     event.preventDefault();
 
@@ -8664,20 +8787,6 @@ function saveTask(event) {
         );
 
 
-    let fileName = "";
-
-
-    if (
-        fileInput &&
-        fileInput.files.length > 0
-    ) {
-
-        fileName =
-            fileInput.files[0].name;
-
-    }
-
-
     const oldTask =
         id
             ? tasks.find(
@@ -8687,13 +8796,65 @@ function saveTask(event) {
             : null;
 
 
-    if (
-        !fileName &&
+    let fileName =
         oldTask
+            ? oldTask.fileName || ""
+            : "";
+
+
+    let fileUrl =
+        oldTask
+            ? oldTask.fileUrl || ""
+            : "";
+
+
+    const hasNewTaskFile =
+        fileInput &&
+        fileInput.files.length > 0;
+
+
+    if (
+        hasNewTaskFile
     ) {
 
+        if (!storage) {
+
+            showToast(
+                "File upload isn't set up yet (Firebase Storage not configured). Please use the Attachment Link field instead, or ask the project owner to set up Storage."
+            );
+
+            return;
+
+        }
+
+        const file =
+            fileInput.files[0];
+
         fileName =
-            oldTask.fileName || "";
+            file.name;
+
+        try {
+
+            fileUrl =
+                await uploadTaskFile(file);
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Task file upload failed:",
+                error
+            );
+
+            showToast(
+                "❌ File upload failed: " +
+                error.message
+            );
+
+            return;
+
+        }
 
     }
 
@@ -8756,6 +8917,10 @@ function saveTask(event) {
 
         fileName:
             fileName,
+
+
+        fileUrl:
+            fileUrl,
 
 
         subtasks:
