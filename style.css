@@ -303,11 +303,71 @@ body {
     box-shadow: var(--shadow-md);
     font-size: 13px;
     font-weight: 600;
+    animation: announcementPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes announcementPulse {
+
+    0%, 100% {
+        box-shadow: var(--shadow-md), 0 0 0 0 rgba(37,99,235,.45);
+    }
+
+    50% {
+        box-shadow: var(--shadow-md), 0 0 0 8px rgba(37,99,235,0);
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .announcement-banner {
+        animation: none;
+    }
+
+    .announcement-icon {
+        animation: none;
+    }
+
 }
 
 .announcement-icon {
     flex-shrink: 0;
     font-size: 15px;
+    display: inline-block;
+    animation: announcementRing 2.6s ease-in-out infinite;
+    transform-origin: 50% 0%;
+}
+
+@keyframes announcementRing {
+
+    0%, 76%, 100% {
+        transform: rotate(0deg);
+    }
+
+    78% {
+        transform: rotate(-14deg);
+    }
+
+    80% {
+        transform: rotate(11deg);
+    }
+
+    82% {
+        transform: rotate(-9deg);
+    }
+
+    84% {
+        transform: rotate(6deg);
+    }
+
+    86% {
+        transform: rotate(-3deg);
+    }
+
+    88% {
+        transform: rotate(0deg);
+    }
+
 }
 
 .announcement-text {
