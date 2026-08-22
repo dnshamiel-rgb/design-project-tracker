@@ -3629,6 +3629,41 @@ tbody tr:last-child td {
     color: #8A90A0;
 }
 
+
+/* ============================================================
+   RESOURCE REVIEW STATUS (lecturer badge on resources)
+============================================================ */
+
+.review-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.review-none {
+    background: #F1F2F7;
+    color: #8A90A0;
+}
+
+.review-approved {
+    background: var(--success-light);
+    color: #16924F;
+}
+
+.review-minor {
+    background: var(--warning-light);
+    color: #C77700;
+}
+
+.review-major {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
 .marking-section {
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -3735,4 +3770,25 @@ tbody tr:last-child td {
 .role-lecturer .marking-section textarea:disabled {
     background: #F1F2F7 !important;
     opacity: .85;
+}
+
+
+/* ============================================================
+   LECTURER MODAL NOTICE (task modal, view-only guidance)
+============================================================ */
+
+.lecturer-modal-notice {
+    background: var(--warning-light);
+    border: 1px solid #F3D9A8;
+    color: #8A5B00;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 0 0 18px;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.lecturer-modal-notice strong {
+    color: #C77700;
 }
