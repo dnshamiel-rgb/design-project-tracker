@@ -3383,6 +3383,16 @@ tbody tr:last-child td {
     color: #FBBF24;
 }
 
+.sidebar-nav-divider {
+    margin: 14px 4px 4px;
+    padding-top: 12px;
+    border-top: 1px solid #23283A;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: #6D7488;
+}
+
 .leaderhub-countdown-panel {
     background: linear-gradient(135deg, #10131F 0%, #232849 100%);
     border: none;
