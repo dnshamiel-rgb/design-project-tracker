@@ -2498,6 +2498,7 @@ function renderKanbanCard(task) {
 
             <div class="kanban-card-title">
                 ${task.name}
+                ${getLecturerMarkingBadge(task)}
             </div>
 
             <div class="kanban-card-pic">
@@ -3080,7 +3081,12 @@ async function saveResource(event) {
         notes:
             getElement(
                 "resourceNotes"
-            ).value.trim()
+            ).value.trim(),
+
+        reviewStatus:
+            oldResource
+                ? (oldResource.reviewStatus || "none")
+                : "none"
 
     };
 
@@ -5105,12 +5111,467 @@ function exportMomPdf() {
 
 
 // ============================================================
+// LECTURER REVIEW STATUS (Tasks & Resources)
+// ============================================================
+//
+// Only the lecturer account can set this. Options: none / approved /
+// minor (needs minor revision) / major (needs major revision).
+// Shown as a badge in the Tasks table and Resources chapter list so
+// the team can see at a glance what's been flagged without opening
+// each item.
+// ============================================================
+
+const REVIEW_STATUS_META = {
+
+    none: { label: "Not Reviewed", short: "Not Reviewed", cls: "review-none" },
+
+    approved: { label: "✅ Approved", short: "Approved", cls: "review-approved" },
+
+    minor: { label: "🟡 Needs Minor Revision", short: "Minor Revision", cls: "review-minor" },
+
+    major: { label: "🔴 Needs Major Revision", short: "Major Revision", cls: "review-major" }
+
+};
+
+
+function getReviewStatusMeta(status) {
+
+    return REVIEW_STATUS_META[status] || REVIEW_STATUS_META.none;
+
+}
+
+
+function renderReviewBadge(status) {
+
+    if (!status || status === "none") return "";
+
+    const meta = getReviewStatusMeta(status);
+
+    return `<span class="review-badge ${meta.cls}">${meta.label}</span>`;
+
+}
+
+
+function populateReviewStatusSelect(elementId, currentStatus) {
+
+    const select = getElement(elementId);
+
+    if (!select) return;
+
+    select.value = currentStatus || "none";
+
+    select.disabled = !isLecturer();
+
+}
+
+
+function setTaskReviewStatus() {
+
+    if (!isLecturer()) {
+
+        showToast("Only the lecturer account can set a review status.");
+
+        return;
+
+    }
+
+    const taskId = Number(getElement("taskId").value);
+
+    const task = tasks.find(item => item.id === taskId);
+
+    if (!task) return;
+
+    const select = getElement("taskReviewStatus");
+
+    const newStatus = select ? select.value : "none";
+
+    task.reviewStatus = newStatus;
+
+    saveData();
+
+    logActivity(
+        `marked task "${task.name}" as ${getReviewStatusMeta(newStatus).short}`
+    );
+
+    const recipients = new Set();
+
+    if (task.mainPIC) recipients.add(task.mainPIC);
+
+    (task.assigned || []).forEach(name => recipients.add(name));
+
+    if (recipients.size > 0) {
+
+        addNotification({
+            text: `🎓 <strong>Lecturer</strong> marked task "${task.name}" as ${getReviewStatusMeta(newStatus).short}`,
+            forUsers: Array.from(recipients),
+            relatedType: "task",
+            relatedId: task.id
+        });
+
+    }
+
+    renderTasks();
+
+    renderKanban();
+
+    showToast("Review status saved.");
+
+}
+
+
+function setResourceReviewStatus() {
+
+    if (!isLecturer()) {
+
+        showToast("Only the lecturer account can set a review status.");
+
+        return;
+
+    }
+
+    const resourceId = Number(getElement("resourceId").value);
+
+    const resource = resources.find(item => item.id === resourceId);
+
+    if (!resource) return;
+
+    const select = getElement("resourceReviewStatus");
+
+    const newStatus = select ? select.value : "none";
+
+    resource.reviewStatus = newStatus;
+
+    saveResourcesData();
+
+    logActivity(
+        `marked resource "${resource.title}" as ${getReviewStatusMeta(newStatus).short}`
+    );
+
+    const recipients =
+        members.map(member => member.name);
+
+    if (recipients.length > 0) {
+
+        addNotification({
+            text: `🎓 <strong>Lecturer</strong> marked "${resource.title}" (${resource.chapter}) as ${getReviewStatusMeta(newStatus).short}`,
+            forUsers: recipients,
+            relatedType: "resource",
+            relatedId: resource.id
+        });
+
+    }
+
+    renderChapters();
+
+    showToast("Review status saved.");
+
+}
+
+
+// ============================================================
 // SUBTASK CHECKLIST STATE (modal-scoped, temporary)
 // ============================================================
 
 let currentSubtasks = [];
 
 let currentLinks = [];
+
+
+// ============================================================
+// GET SUBTASK STATS
+// ============================================================
+
+// ============================================================
+// LECTURER MARKING (approve / needs revision / not acceptable)
+// ============================================================
+
+const MARKING_STATUSES = {
+    not_reviewed: { label: "Not Reviewed", icon: "⚪", cls: "marking-none" },
+    approved: { label: "Approved", icon: "✅", cls: "marking-approved" },
+    needs_revision: { label: "Needs Revision", icon: "🟡", cls: "marking-revision" },
+    not_acceptable: { label: "Not Acceptable", icon: "🔴", cls: "marking-reject" }
+};
+
+function getMarkingInfo(status) {
+    return MARKING_STATUSES[status] || MARKING_STATUSES.not_reviewed;
+}
+
+function getLecturerMarkingBadge(task) {
+
+    const marking = task.lecturerMarking;
+
+    if (!marking || !marking.status || marking.status === "not_reviewed") {
+        return "";
+    }
+
+    const info = getMarkingInfo(marking.status);
+
+    return `<span class="marking-badge ${info.cls}">${info.icon} ${info.label}</span>`;
+
+}
+
+function populateMarkingStatusSelect(selected = "not_reviewed") {
+
+    const select = getElement("taskMarkingStatus");
+
+    if (!select) return;
+
+    select.innerHTML = "";
+
+    Object.entries(MARKING_STATUSES).forEach(([value, info]) => {
+
+        const option = document.createElement("option");
+
+        option.value = value;
+
+        option.textContent = `${info.icon} ${info.label}`;
+
+        if (value === selected) option.selected = true;
+
+        select.appendChild(option);
+
+    });
+
+}
+
+function renderMarkingHistory(task) {
+
+    const container = getElement("taskMarkingHistory");
+
+    if (!container) return;
+
+    const marking = task.lecturerMarking;
+
+    const history = (marking && marking.history) || [];
+
+    if (history.length === 0) {
+
+        container.innerHTML = `<div class="chapter-empty">No previous markings.</div>`;
+
+        return;
+
+    }
+
+    container.innerHTML = [...history].reverse().map(entry => {
+
+        const info = getMarkingInfo(entry.status);
+
+        return `
+            <div class="marking-history-item">
+                <span class="marking-badge ${info.cls}">${info.icon} ${info.label}</span>
+                ${entry.remarks ? `<div class="marking-history-remarks">${entry.remarks}</div>` : ""}
+                <div class="marking-history-meta">${formatActivityTime(entry.time)}</div>
+            </div>
+        `;
+
+    }).join("");
+
+}
+
+function renderTaskMarkingSection(task) {
+
+    const statusEl = getElement("taskMarkingStatus");
+
+    const remarksEl = getElement("taskMarkingRemarks");
+
+    const marking = task && task.lecturerMarking;
+
+    populateMarkingStatusSelect(marking ? marking.status : "not_reviewed");
+
+    if (remarksEl) {
+
+        remarksEl.value = marking ? marking.remarks || "" : "";
+
+    }
+
+    renderMarkingHistory(task);
+
+    const saveBtn = getElement("taskMarkingSaveBtn");
+
+    if (saveBtn) {
+
+        saveBtn.style.display = isLecturer() ? "" : "none";
+
+    }
+
+    if (statusEl) statusEl.disabled = !isLecturer();
+
+    if (remarksEl) remarksEl.disabled = !isLecturer();
+
+}
+
+function saveLecturerMarking() {
+
+    if (!isLecturer()) {
+
+        showToast("Only the lecturer can set marking status.");
+
+        return;
+
+    }
+
+    const taskIdField = getElement("taskId");
+
+    const taskId = taskIdField ? Number(taskIdField.value) : NaN;
+
+    const task = tasks.find(item => item.id === taskId);
+
+    if (!task) {
+
+        showToast("Please save the task first before marking it.");
+
+        return;
+
+    }
+
+    const statusEl = getElement("taskMarkingStatus");
+
+    const remarksEl = getElement("taskMarkingRemarks");
+
+    const newStatus = statusEl ? statusEl.value : "not_reviewed";
+
+    const newRemarks = remarksEl ? sanitizeText(remarksEl.value) : "";
+
+    const existingHistory =
+        (task.lecturerMarking && Array.isArray(task.lecturerMarking.history))
+            ? task.lecturerMarking.history
+            : [];
+
+    existingHistory.push({
+        status: newStatus,
+        remarks: newRemarks,
+        markedBy: getCurrentUser() || "Lecturer",
+        time: new Date().toISOString()
+    });
+
+    task.lecturerMarking = {
+        status: newStatus,
+        remarks: newRemarks,
+        markedBy: getCurrentUser() || "Lecturer",
+        markedAt: new Date().toISOString(),
+        history: existingHistory
+    };
+
+    saveData();
+
+    logActivity(`marked task "${task.name}" as ${getMarkingInfo(newStatus).label}`);
+
+    const recipients = new Set();
+
+    if (task.mainPIC) recipients.add(task.mainPIC);
+
+    (task.assigned || []).forEach(name => recipients.add(name));
+
+    if (recipients.size > 0) {
+
+        addNotification({
+            text: `<strong>Lecturer</strong> marked task "${task.name}" as <strong>${getMarkingInfo(newStatus).label}</strong>`,
+            forUsers: Array.from(recipients),
+            relatedType: "task",
+            relatedId: task.id
+        });
+
+    }
+
+    renderTaskMarkingSection(task);
+
+    renderTasks();
+
+    renderKanban();
+
+    updateDashboard();
+
+    showToast("Marking saved.");
+
+}
+
+
+function getMarkingCounts() {
+
+    const counts = { approved: 0, needs_revision: 0, not_acceptable: 0, not_reviewed: 0 };
+
+    tasks.forEach(task => {
+
+        const status = (task.lecturerMarking && task.lecturerMarking.status) || "not_reviewed";
+
+        counts[status] = (counts[status] || 0) + 1;
+
+    });
+
+    return counts;
+
+}
+
+
+let filterLecturerStatusValue = "All";
+
+
+function filterTasksByMarking(status) {
+
+    showSection("tasks");
+
+    const priorityFilter = getElement("filterPriority");
+
+    if (priorityFilter) priorityFilter.value = "All";
+
+    const statusFilter = getElement("filterStatus");
+
+    if (statusFilter) statusFilter.value = "All";
+
+    const memberFilter = getElement("filterMember");
+
+    if (memberFilter) memberFilter.value = "All";
+
+    filterLecturerStatusValue = status;
+
+    renderTasks();
+
+}
+
+
+function renderMarkingOverview() {
+
+    const panel = getElement("lecturerMarkingPanel");
+
+    if (!panel) return;
+
+    if (!isLecturer()) {
+
+        panel.classList.add("hidden");
+
+        return;
+
+    }
+
+    panel.classList.remove("hidden");
+
+    const counts = getMarkingCounts();
+
+    const grid = getElement("markingOverviewGrid");
+
+    if (!grid) return;
+
+    const items = [
+        { key: "approved", label: "Approved", icon: "✅", cls: "marking-approved" },
+        { key: "needs_revision", label: "Needs Revision", icon: "🟡", cls: "marking-revision" },
+        { key: "not_acceptable", label: "Not Acceptable", icon: "🔴", cls: "marking-reject" },
+        { key: "not_reviewed", label: "Not Reviewed", icon: "⚪", cls: "marking-none" }
+    ];
+
+    grid.innerHTML = items.map(item => `
+
+        <button
+            type="button"
+            class="marking-stat-btn ${item.cls}"
+            onclick="filterTasksByMarking('${item.key}')"
+        >
+            <strong>${counts[item.key] || 0}</strong>
+            <span>${item.icon} ${item.label}</span>
+        </button>
+
+    `).join("");
+
+}
 
 
 // ============================================================
@@ -6250,6 +6711,8 @@ function updateDashboard() {
 
     updateAttention();
 
+    renderMarkingOverview();
+
 }
 
 
@@ -6802,11 +7265,20 @@ function renderTasks() {
                     task.priority === priority;
 
 
+                const taskMarkingStatus =
+                    (task.lecturerMarking && task.lecturerMarking.status) || "not_reviewed";
+
+                const markingMatch =
+                    filterLecturerStatusValue === "All" ||
+                    taskMarkingStatus === filterLecturerStatusValue;
+
+
                 return (
                     searchMatch &&
                     memberMatch &&
                     statusMatch &&
-                    priorityMatch
+                    priorityMatch &&
+                    markingMatch
                 );
 
             }
@@ -7021,6 +7493,8 @@ function renderTasks() {
                         <strong>
                             ${task.name}
                         </strong>
+
+                        ${getLecturerMarkingBadge(task)}
 
                         ${
                             subtaskStats.total > 0
@@ -7641,6 +8115,8 @@ function openTaskModal(
 
         renderTaskComments(task);
 
+        renderTaskMarkingSection(task);
+
 
         syncProgressWithStatus();
 
@@ -7974,7 +8450,13 @@ function saveTask(event) {
 
 
         links:
-            currentLinks
+            currentLinks,
+
+
+        reviewStatus:
+            oldTask
+                ? (oldTask.reviewStatus || "none")
+                : "none"
 
     };
 
@@ -11354,9 +11836,7 @@ function applyRoleRestrictions() {
     );
 
     const hiddenNavIds = [
-        "navMyDay",
-        "navTeam",
-        "navActivity"
+        "navMyDay"
     ];
 
     hiddenNavIds.forEach(id => {
