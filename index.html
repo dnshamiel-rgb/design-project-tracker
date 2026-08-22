@@ -182,6 +182,7 @@
         <button id="navResources" onclick="showSection('resources')">📁 Resources</button>
         <button id="navTeam" onclick="showSection('team')">👥 Team</button>
         <button id="navActivity" onclick="showSection('activity')">🕘 Activity Log</button>
+        <button id="navLeaderHub" onclick="showSection('leaderhub')">👑 Leader Hub</button>
         <button id="navAdmin" onclick="showSection('admin')">⚙️ Admin</button>
     </nav>
 
@@ -797,6 +798,82 @@
             </div>
 
             <div id="activityLogList"></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- LEADER HUB (LEADER ONLY) -->
+
+    <section id="leaderhub" class="section hidden">
+
+        <div class="panel leaderhub-countdown-panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>⏳ Submission Countdown</h3>
+                    <p>Set the final submission date to keep everyone's eyes on the clock.</p>
+                </div>
+            </div>
+
+            <div class="leaderhub-countdown-row">
+
+                <div id="countdownDisplay" class="leaderhub-countdown-display">
+                    <div class="countdown-empty">No submission date set yet.</div>
+                </div>
+
+                <div class="leaderhub-countdown-form">
+
+                    <label>
+                        Submission Date
+                        <input type="date" id="submissionDeadlineInput">
+                    </label>
+
+                    <label>
+                        Label
+                        <input type="text" id="submissionDeadlineLabel" placeholder="e.g. Final Submission">
+                    </label>
+
+                    <button type="button" class="small-add" onclick="saveSubmissionDeadline()">💾 Save Date</button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>🔔 Needs a Nudge</h3>
+                    <p>Members who might need a reminder, ranked by overdue tasks & lowest progress.</p>
+                </div>
+            </div>
+
+            <div id="needsNudgeList"></div>
+
+        </div>
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>📝 Private Notes</h3>
+                    <p>Only you can see this — a scratchpad for yourself as group leader.</p>
+                </div>
+            </div>
+
+            <textarea
+                id="leaderPrivateNotes"
+                class="leaderhub-notes"
+                rows="8"
+                placeholder="Jot down anything — reminders to yourself, things to bring up with the team, draft ideas..."
+                oninput="scheduleLeaderNotesSave()"
+            ></textarea>
+
+            <div id="leaderNotesSavedIndicator" class="leaderhub-notes-status"></div>
 
         </div>
 
