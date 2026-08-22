@@ -5475,7 +5475,81 @@ function populateMarkingStatusSelect(selected = "not_reviewed") {
 
     });
 
+    renderMarkingSegmentedControl(selected);
+
 }
+
+
+// ============================================================
+// MARKING SEGMENTED CONTROL (replaces the raw <select> with big
+// clickable status buttons — clicking one updates the hidden
+// <select> so saveLecturerMarking() keeps working unchanged.)
+// ============================================================
+
+function renderMarkingSegmentedControl(selected = "not_reviewed") {
+
+    const container = getElement("markingSegmentedControl");
+
+    if (!container) return;
+
+    container.innerHTML = Object.entries(MARKING_STATUSES).map(([value, info]) => `
+        <button
+            type="button"
+            class="marking-seg-btn ${info.cls} ${value === selected ? "active" : ""}"
+            data-value="${value}"
+        >
+            <span class="marking-seg-icon">${info.icon}</span>
+            <span class="marking-seg-label">${info.label}</span>
+        </button>
+    `).join("");
+
+    const disabled = !isLecturer();
+
+    container.querySelectorAll(".marking-seg-btn").forEach(button => {
+
+        button.disabled = disabled;
+
+        button.addEventListener("click", () => {
+
+            if (disabled) return;
+
+            const select = getElement("taskMarkingStatus");
+
+            if (select) select.value = button.dataset.value;
+
+            container.querySelectorAll(".marking-seg-btn").forEach(item => {
+
+                item.classList.toggle("active", item === button);
+
+            });
+
+        });
+
+    });
+
+}
+
+
+// ============================================================
+// MARKING HISTORY COLLAPSE TOGGLE
+// ============================================================
+
+function toggleMarkingHistory() {
+
+    const list = getElement("taskMarkingHistory");
+
+    const icon = getElement("markingHistoryToggleIcon");
+
+    if (!list) return;
+
+    const isHidden = list.classList.contains("hidden");
+
+    list.classList.toggle("hidden");
+
+    if (icon) icon.textContent = isHidden ? "▾" : "▸";
+
+}
+
 
 function renderMarkingHistory(task) {
 
@@ -5529,6 +5603,14 @@ function renderTaskMarkingSection(task) {
 
     renderMarkingHistory(task);
 
+    const historyList = getElement("taskMarkingHistory");
+
+    const historyIcon = getElement("markingHistoryToggleIcon");
+
+    if (historyList) historyList.classList.add("hidden");
+
+    if (historyIcon) historyIcon.textContent = "▸";
+
     const saveBtn = getElement("taskMarkingSaveBtn");
 
     if (saveBtn) {
@@ -5536,8 +5618,6 @@ function renderTaskMarkingSection(task) {
         saveBtn.style.display = isLecturer() ? "" : "none";
 
     }
-
-    if (statusEl) statusEl.disabled = !isLecturer();
 
     if (remarksEl) remarksEl.disabled = !isLecturer();
 
@@ -8182,41 +8262,64 @@ function renderLecturerTaskCard(task) {
             ? assigned.map(name => `<span class="pic-tag">${name}</span>`).join("")
             : "-";
 
-    let attachmentsHtml = "";
+    const evidenceCards = [];
 
     if (task.attachment) {
 
-        attachmentsHtml +=
-            `<a class="open-link" href="${task.attachment}" target="_blank" rel="noopener">🔗 Open Link</a>`;
+        evidenceCards.push(`
+            <a class="evidence-card" href="${task.attachment}" target="_blank" rel="noopener">
+                <span class="evidence-card-icon">🔗</span>
+                <span class="evidence-card-label">Open Link</span>
+            </a>
+        `);
 
     }
 
     if (task.fileName) {
 
-        attachmentsHtml +=
+        evidenceCards.push(
             task.fileUrl
-                ? `<a class="lecturer-card-file" href="${task.fileUrl}" target="_blank" rel="noopener">📄 ${task.fileName}</a>`
-                : `<span class="lecturer-card-file">📄 ${task.fileName} (no file uploaded)</span>`;
+                ? `
+                    <a class="evidence-card" href="${task.fileUrl}" target="_blank" rel="noopener">
+                        <span class="evidence-card-icon">📄</span>
+                        <span class="evidence-card-label">${task.fileName}</span>
+                    </a>
+                `
+                : `
+                    <div class="evidence-card evidence-card-missing">
+                        <span class="evidence-card-icon">📄</span>
+                        <span class="evidence-card-label">${task.fileName}</span>
+                        <span class="evidence-card-warn">not uploaded</span>
+                    </div>
+                `
+        );
 
     }
 
     if (Array.isArray(task.links) && task.links.length > 0) {
 
-        attachmentsHtml +=
-            task.links
-                .map(link =>
-                    `<a class="open-link" href="${link.url}" target="_blank" rel="noopener">🔗 ${link.label || "Link"}</a>`
-                )
-                .join("");
+        task.links.forEach(link => {
+
+            evidenceCards.push(`
+                <a class="evidence-card" href="${link.url}" target="_blank" rel="noopener">
+                    <span class="evidence-card-icon">🔗</span>
+                    <span class="evidence-card-label">${link.label || "Link"}</span>
+                </a>
+            `);
+
+        });
 
     }
 
-    if (!attachmentsHtml) {
-
-        attachmentsHtml =
-            `<span class="lecturer-card-no-attachment">⚠️ No attachment or link provided</span>`;
-
-    }
+    const attachmentsHtml =
+        evidenceCards.length > 0
+            ? `<div class="evidence-card-grid">${evidenceCards.join("")}</div>`
+            : `
+                <div class="evidence-empty-card">
+                    <span class="evidence-empty-icon">⚠️</span>
+                    <span>No attachment or link provided</span>
+                </div>
+            `;
 
     card.innerHTML = `
 
@@ -8238,11 +8341,11 @@ function renderLecturerTaskCard(task) {
 
         <div class="lecturer-card-progress-wrap">
 
+            <span class="lecturer-card-progress-text">${task.progress || 0}%</span>
+
             <div class="lecturer-card-progress-bar">
                 <div style="width:${task.progress || 0}%"></div>
             </div>
-
-            <span class="lecturer-card-progress-text">${task.progress || 0}%</span>
 
         </div>
 
