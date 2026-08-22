@@ -8220,15 +8220,19 @@ function renderLecturerTaskCard(task) {
 
     card.innerHTML = `
 
-        <div class="lecturer-card-title">${task.name}</div>
+        <div class="lecturer-card-header">
 
-        <div class="lecturer-card-meta">
+            <div class="lecturer-card-title">${task.name}</div>
 
             <span class="lecturer-card-pic">👤 ${task.mainPIC || "-"}</span>
 
+        </div>
+
+        <div class="lecturer-card-meta">
+
             <span class="deadline-badge ${deadlineClass}">${deadline.text}</span>
 
-            ${task.deadline ? `<span class="lecturer-card-date">${task.deadline}</span>` : ""}
+            ${task.deadline ? `<span class="lecturer-card-date">📅 ${task.deadline}</span>` : ""}
 
         </div>
 
@@ -8242,9 +8246,11 @@ function renderLecturerTaskCard(task) {
 
         </div>
 
+        <div class="lecturer-card-divider"></div>
+
         <div class="lecturer-card-row">
 
-            <span class="lecturer-card-label">Assigned:</span>
+            <span class="lecturer-card-label">👥 Assigned to</span>
 
             <div class="pic-list">${assignedHtml}</div>
 
@@ -8252,7 +8258,7 @@ function renderLecturerTaskCard(task) {
 
         <div class="lecturer-card-row">
 
-            <span class="lecturer-card-label">📎 Bukti:</span>
+            <span class="lecturer-card-label">📎 Evidence</span>
 
             <div class="lecturer-card-attachments-list">${attachmentsHtml}</div>
 
