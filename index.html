@@ -1363,6 +1363,130 @@
 </div>
 
 
+<!-- MINUTES OF MEETING (MOM) MODAL -->
+
+<div id="momModal" class="modal hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <div>
+
+                <span class="eyebrow">MINUTES OF MEETING</span>
+
+                <h2 id="momModalTitle">
+                    Minutes of Meeting
+                </h2>
+
+            </div>
+
+            <button
+                class="close-btn"
+                onclick="closeMomModal()"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div id="momMeetingInfo" class="mom-meeting-info"></div>
+
+        <form onsubmit="saveMom(event)">
+
+            <input type="hidden" id="momMeetingId">
+
+            <label>
+
+                Discussion Summary / Notes
+
+                <span class="label-help">
+                    Key points discussed, updates given, and decisions made
+                </span>
+
+                <textarea
+                    id="momSummary"
+                    rows="6"
+                    placeholder="Summarize what was discussed in this meeting..."
+                ></textarea>
+
+            </label>
+
+            <label>
+
+                Action Items
+
+                <span class="label-help">
+                    Tasks or follow-ups arising from this meeting
+                </span>
+
+                <div
+                    id="momActionList"
+                    class="subtask-list"
+                ></div>
+
+                <div class="mom-action-add-row">
+
+                    <input
+                        type="text"
+                        id="momActionInput"
+                        placeholder="Action item..."
+                    >
+
+                    <select id="momActionOwner">
+                        <option value="">No owner</option>
+                    </select>
+
+                    <button
+                        type="button"
+                        id="momActionAddBtn"
+                        class="subtask-add-btn"
+                    >
+                        + Add
+                    </button>
+
+                </div>
+
+            </label>
+
+            <div id="momMeta" class="mom-meta hidden"></div>
+
+            <div class="modal-buttons">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    onclick="closeMomModal()"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    id="momExportBtn"
+                    class="cancel-btn"
+                    onclick="exportMomPdf()"
+                >
+                    📄 Export PDF
+                </button>
+
+                <button
+                    type="submit"
+                    id="momSaveBtn"
+                    class="save-btn"
+                >
+                    💾 Save Minutes
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
 <!-- RESOURCE MODAL -->
 
 <div id="resourceModal" class="modal hidden">
