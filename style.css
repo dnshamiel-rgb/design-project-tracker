@@ -3756,6 +3756,20 @@ tbody tr:last-child td {
     margin-bottom: 3px;
 }
 
+.marking-section-header .label-help {
+    font-size: 10.5px;
+    line-height: 1.4;
+    margin-top: 2px;
+}
+
+@media (max-width: 480px) {
+
+    .marking-section-header .label-help {
+        font-size: 9.5px;
+    }
+
+}
+
 .marking-form-row {
     display: flex;
     gap: 8px;
