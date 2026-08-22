@@ -5416,6 +5416,43 @@ function getLecturerMarkingBadge(task) {
 
 }
 
+
+// ============================================================
+// LECTURER MARKING ACTION BUTTON (Tasks table, Action column)
+// ============================================================
+//
+// Lecturer role has no Edit/Delete access, so the Action column
+// would otherwise render empty for them. Instead show one button
+// that jumps straight into the task modal (which is already
+// reordered to show the Lecturer Marking section first for the
+// lecturer role) so they can mark it immediately.
+// ============================================================
+
+function getLecturerMarkingActionButton(task) {
+
+    const marking = task.lecturerMarking;
+
+    const status = (marking && marking.status) || "not_reviewed";
+
+    const info = getMarkingInfo(status);
+
+    const label =
+        status === "not_reviewed"
+            ? "🎓 Mark Now"
+            : `🎓 ${info.icon} ${info.label}`;
+
+    return `
+        <button
+            class="lecturer-mark-btn ${info.cls}"
+            onclick="editTask(${task.id})"
+        >
+            ${label}
+        </button>
+    `;
+
+}
+
+
 function populateMarkingStatusSelect(selected = "not_reviewed") {
 
     const select = getElement("taskMarkingStatus");
@@ -7720,24 +7757,25 @@ function renderTasks() {
 
                     <td>
 
-                        <button
-                            class="edit-btn"
-                            onclick="editTask(${task.id})"
-                        >
+                        ${
+                            isLecturer()
+                                ? getLecturerMarkingActionButton(task)
+                                : `
+                                    <button
+                                        class="edit-btn"
+                                        onclick="editTask(${task.id})"
+                                    >
+                                        Edit
+                                    </button>
 
-                            Edit
-
-                        </button>
-
-
-                        <button
-                            class="delete-btn"
-                            onclick="deleteTask(${task.id})"
-                        >
-
-                            Delete
-
-                        </button>
+                                    <button
+                                        class="delete-btn"
+                                        onclick="deleteTask(${task.id})"
+                                    >
+                                        Delete
+                                    </button>
+                                `
+                        }
 
                     </td>
 
