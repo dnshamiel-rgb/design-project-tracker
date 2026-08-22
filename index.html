@@ -1291,20 +1291,12 @@
 
                 </div>
 
-                <div class="marking-form-row">
+                <!-- Hidden select kept in sync with the segmented buttons below;
+                     existing JS (populateMarkingStatusSelect / saveLecturerMarking)
+                     reads/writes this element's value. -->
+                <select id="taskMarkingStatus" class="hidden"></select>
 
-                    <select id="taskMarkingStatus"></select>
-
-                    <button
-                        type="button"
-                        id="taskMarkingSaveBtn"
-                        class="small-add"
-                        onclick="saveLecturerMarking()"
-                    >
-                        💾 Save Marking
-                    </button>
-
-                </div>
+                <div id="markingSegmentedControl" class="marking-segmented-control"></div>
 
                 <textarea
                     id="taskMarkingRemarks"
@@ -1312,9 +1304,26 @@
                     placeholder="Write remarks or feedback for the group..."
                 ></textarea>
 
-                <div class="marking-history-label">📜 Marking History</div>
+                <button
+                    type="button"
+                    id="taskMarkingSaveBtn"
+                    class="marking-save-btn"
+                    onclick="saveLecturerMarking()"
+                >
+                    💾 Save Marking
+                </button>
 
-                <div id="taskMarkingHistory" class="marking-history-list"></div>
+                <button
+                    type="button"
+                    id="markingHistoryToggleBtn"
+                    class="marking-history-toggle"
+                    onclick="toggleMarkingHistory()"
+                >
+                    <span>📜 Marking History</span>
+                    <span id="markingHistoryToggleIcon">▸</span>
+                </button>
+
+                <div id="taskMarkingHistory" class="marking-history-list hidden"></div>
 
             </div>
 
