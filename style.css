@@ -3181,3 +3181,130 @@ tbody tr:last-child td {
     }
 
 }
+
+
+/* ============================================================
+   MINUTES OF MEETING (MOM)
+============================================================ */
+
+.mom-meeting-info {
+    background: var(--primary-light);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.mom-meeting-info small {
+    display: block;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 3px;
+}
+
+.mom-action-add-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.mom-action-add-row input {
+    flex: 1.4;
+    margin-top: 0 !important;
+}
+
+.mom-action-add-row select {
+    flex: 1;
+    margin-top: 0 !important;
+    padding: 11px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #FAFBFE;
+    font-size: 12.5px;
+}
+
+.mom-action-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.mom-action-item:last-child {
+    border-bottom: none;
+}
+
+.mom-action-item input[type="checkbox"] {
+    width: auto !important;
+    margin: 0 !important;
+}
+
+.mom-action-item .mom-action-text {
+    flex: 1;
+    font-size: 13px;
+    color: #333;
+}
+
+.mom-action-item .mom-action-text.done-text {
+    text-decoration: line-through;
+    color: #9AA0AC;
+}
+
+.mom-action-owner-tag {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.mom-action-convert-btn {
+    border: none;
+    background: var(--success-light);
+    color: #16924F;
+    width: 23px;
+    height: 23px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: transform .12s ease;
+}
+
+.mom-action-convert-btn:hover {
+    transform: scale(1.08);
+}
+
+.mom-action-convert-btn:disabled {
+    opacity: .4;
+    cursor: default;
+    transform: none;
+}
+
+.mom-meta {
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: -8px;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.mom-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--success-light);
+    color: #16924F;
+    padding: 4px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-top: 8px;
+}
