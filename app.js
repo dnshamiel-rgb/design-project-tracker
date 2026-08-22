@@ -8053,7 +8053,7 @@ function renderLecturerTaskCard(task) {
     if (!attachmentsHtml) {
 
         attachmentsHtml =
-            `<span class="lecturer-card-no-attachment">⚠️ Tiada attachment/link dilampirkan</span>`;
+            `<span class="lecturer-card-no-attachment">⚠️ No attachment or link provided</span>`;
 
     }
 
