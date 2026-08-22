@@ -3718,6 +3718,41 @@ tbody tr:last-child td {
     background: #FAFBFE;
 }
 
+.marking-section-redesigned {
+    border-radius: 18px;
+    padding: 18px 20px 20px;
+    background: linear-gradient(160deg, #F6F3FF 0%, #FAFBFE 60%);
+    box-shadow: var(--shadow-sm);
+}
+
+.marking-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.marking-section-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), #7C3AED);
+    color: white;
+    font-size: 17px;
+    box-shadow: 0 8px 16px -6px rgba(37,99,235,.45);
+}
+
+.marking-section-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.2px;
+    margin-bottom: 3px;
+}
+
 .marking-form-row {
     display: flex;
     gap: 8px;
@@ -3747,12 +3782,15 @@ tbody tr:last-child td {
 }
 
 .marking-history-item {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    margin-bottom: 8px;
 }
 
 .marking-history-item:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .marking-history-remarks {
@@ -3824,19 +3862,44 @@ tbody tr:last-child td {
 ============================================================ */
 
 .lecturer-modal-notice {
-    background: var(--warning-light);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: linear-gradient(135deg, #FFF7E6 0%, #FFFDF7 100%);
     border: 1px solid #F3D9A8;
     color: #8A5B00;
-    border-radius: 12px;
-    padding: 12px 14px;
+    border-radius: 14px;
+    padding: 14px 16px;
     margin: 0 0 18px;
     font-size: 12.5px;
-    font-weight: 600;
-    line-height: 1.5;
+    line-height: 1.55;
+}
+
+.lecturer-modal-notice-icon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #FFFFFF;
+    box-shadow: 0 4px 10px -4px rgba(199,119,0,.35);
+    font-size: 16px;
 }
 
 .lecturer-modal-notice strong {
+    display: block;
     color: #C77700;
+    font-size: 13.5px;
+    font-weight: 800;
+    margin-bottom: 3px;
+}
+
+.lecturer-modal-notice p {
+    margin: 0;
+    color: #8A5B00;
+    font-weight: 500;
 }
 
 
@@ -3860,17 +3923,26 @@ tbody tr:last-child td {
 
 .lecturer-task-card {
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px 20px;
+    border-radius: 18px;
+    padding: 20px 22px;
     margin: 0 0 18px;
-    background: linear-gradient(180deg, #FFFCF2 0%, var(--card) 65%);
+    background: linear-gradient(160deg, #F3F0FF 0%, var(--card) 55%);
+    box-shadow: var(--shadow-sm);
+}
+
+.lecturer-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .lecturer-card-title {
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 800;
-    letter-spacing: -.2px;
-    margin-bottom: 10px;
+    letter-spacing: -.3px;
+    line-height: 1.35;
 }
 
 .lecturer-card-meta {
@@ -3878,13 +3950,18 @@ tbody tr:last-child td {
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .lecturer-card-pic {
-    font-size: 13px;
-    font-weight: 700;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 800;
     color: var(--primary);
+    background: var(--primary-light);
+    padding: 6px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
 }
 
 .lecturer-card-date {
@@ -3897,7 +3974,7 @@ tbody tr:last-child td {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
 }
 
 .lecturer-card-progress-bar {
@@ -3921,19 +3998,31 @@ tbody tr:last-child td {
     flex-shrink: 0;
 }
 
+.lecturer-card-divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+    margin: 14px 0;
+}
+
 .lecturer-card-row {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.lecturer-card-divider + .lecturer-card-row {
+    margin-top: 0;
 }
 
 .lecturer-card-label {
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .3px;
     color: var(--muted);
     flex-shrink: 0;
     padding-top: 4px;
+    min-width: 92px;
 }
 
 .lecturer-card-attachments-list {
