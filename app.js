@@ -7979,6 +7979,219 @@ function renderMemberCheckboxes(
 
 
 // ============================================================
+// LECTURER TASK CARD (read-only summary shown at the top of the
+// Edit Task modal for the lecturer role — task name, PIC,
+// progress, deadline, assigned members and attachments/links,
+// all visible without expanding anything, so the lecturer can
+// see the evidence before marking.)
+// ============================================================
+
+function renderLecturerTaskCard(task) {
+
+    const card = getElement("lecturerTaskCard");
+
+    if (!card) return;
+
+    if (!isLecturer() || !task) {
+
+        card.classList.add("hidden");
+
+        return;
+
+    }
+
+    card.classList.remove("hidden");
+
+    const deadline = getDeadlineStatus(task);
+
+    let deadlineClass = "deadline-normal";
+
+    if (deadline.type === "overdue") deadlineClass = "deadline-overdue";
+
+    else if (deadline.type === "urgent") deadlineClass = "deadline-urgent";
+
+    else if (deadline.type === "warning") deadlineClass = "deadline-warning";
+
+    else if (deadline.type === "upcoming") deadlineClass = "deadline-upcoming";
+
+    else if (deadline.type === "none") deadlineClass = "deadline-none";
+
+    const assigned = task.assigned || [];
+
+    const assignedHtml =
+        assigned.length
+            ? assigned.map(name => `<span class="pic-tag">${name}</span>`).join("")
+            : "-";
+
+    let attachmentsHtml = "";
+
+    if (task.attachment) {
+
+        attachmentsHtml +=
+            `<a class="open-link" href="${task.attachment}" target="_blank" rel="noopener">🔗 Open Link</a>`;
+
+    }
+
+    if (task.fileName) {
+
+        attachmentsHtml +=
+            `<span class="lecturer-card-file">📄 ${task.fileName}</span>`;
+
+    }
+
+    if (Array.isArray(task.links) && task.links.length > 0) {
+
+        attachmentsHtml +=
+            task.links
+                .map(link =>
+                    `<a class="open-link" href="${link.url}" target="_blank" rel="noopener">🔗 ${link.label || "Link"}</a>`
+                )
+                .join("");
+
+    }
+
+    if (!attachmentsHtml) {
+
+        attachmentsHtml =
+            `<span class="lecturer-card-no-attachment">⚠️ Tiada attachment/link dilampirkan</span>`;
+
+    }
+
+    card.innerHTML = `
+
+        <div class="lecturer-card-title">${task.name}</div>
+
+        <div class="lecturer-card-meta">
+
+            <span class="lecturer-card-pic">👤 ${task.mainPIC || "-"}</span>
+
+            <span class="deadline-badge ${deadlineClass}">${deadline.text}</span>
+
+            ${task.deadline ? `<span class="lecturer-card-date">${task.deadline}</span>` : ""}
+
+        </div>
+
+        <div class="lecturer-card-progress-wrap">
+
+            <div class="lecturer-card-progress-bar">
+                <div style="width:${task.progress || 0}%"></div>
+            </div>
+
+            <span class="lecturer-card-progress-text">${task.progress || 0}%</span>
+
+        </div>
+
+        <div class="lecturer-card-row">
+
+            <span class="lecturer-card-label">Assigned:</span>
+
+            <div class="pic-list">${assignedHtml}</div>
+
+        </div>
+
+        <div class="lecturer-card-row">
+
+            <span class="lecturer-card-label">📎 Bukti:</span>
+
+            <div class="lecturer-card-attachments-list">${attachmentsHtml}</div>
+
+        </div>
+
+    `;
+
+}
+
+
+// ============================================================
+// LECTURER CHECKLIST COLLAPSE
+// ============================================================
+//
+// For the lecturer role, the checklist is reference-only and not
+// central to marking a task, so it stays collapsed by default and
+// is hidden entirely when there's nothing to show. Everyone else
+// sees the checklist expanded as usual.
+// ============================================================
+
+function setupLecturerChecklistVisibility() {
+
+    const block = getElement("checklistFieldBlock");
+
+    const toggleBtn = getElement("lecturerChecklistToggleBtn");
+
+    const list = getElement("subtaskList");
+
+    const progressLabel = getElement("subtaskProgressLabel");
+
+    if (!block) return;
+
+    if (!isLecturer()) {
+
+        block.classList.remove("hidden");
+
+        if (toggleBtn) toggleBtn.classList.add("hidden");
+
+        if (list) list.classList.remove("hidden");
+
+        if (progressLabel) progressLabel.classList.remove("hidden");
+
+        return;
+
+    }
+
+    if (currentSubtasks.length === 0) {
+
+        block.classList.add("hidden");
+
+        return;
+
+    }
+
+    block.classList.remove("hidden");
+
+    if (toggleBtn) {
+
+        toggleBtn.classList.remove("hidden");
+
+        toggleBtn.textContent = `▸ Show checklist (${currentSubtasks.length})`;
+
+    }
+
+    if (list) list.classList.add("hidden");
+
+    if (progressLabel) progressLabel.classList.add("hidden");
+
+}
+
+
+function toggleLecturerChecklist() {
+
+    const list = getElement("subtaskList");
+
+    const progressLabel = getElement("subtaskProgressLabel");
+
+    const toggleBtn = getElement("lecturerChecklistToggleBtn");
+
+    if (!list) return;
+
+    const isHidden = list.classList.contains("hidden");
+
+    list.classList.toggle("hidden");
+
+    if (progressLabel) progressLabel.classList.toggle("hidden");
+
+    if (toggleBtn) {
+
+        toggleBtn.textContent =
+            isHidden
+                ? "▾ Hide checklist"
+                : `▸ Show checklist (${currentSubtasks.length})`;
+
+    }
+
+}
+
+
+// ============================================================
 // OPEN TASK MODAL
 // ============================================================
 
@@ -8102,6 +8315,10 @@ function openTaskModal(
             );
 
         renderSubtaskList();
+
+        setupLecturerChecklistVisibility();
+
+        renderLecturerTaskCard(task);
 
 
         currentLinks =
@@ -8243,6 +8460,10 @@ function openTaskModal(
         currentSubtasks = [];
 
         renderSubtaskList();
+
+        setupLecturerChecklistVisibility();
+
+        renderLecturerTaskCard(null);
 
 
         currentLinks = [];
