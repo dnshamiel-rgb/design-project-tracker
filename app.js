@@ -4,6 +4,98 @@
 // ============================================================
 
 
+
+// ============================================================
+// TOAST NOTIFICATIONS (replaces native showToast())
+// ============================================================
+
+function getToastContainer() {
+
+    let container = document.getElementById("toastContainer");
+
+    if (!container) {
+
+        container = document.createElement("div");
+
+        container.id = "toastContainer";
+
+        container.className = "toast-container";
+
+        document.body.appendChild(container);
+
+    }
+
+    return container;
+
+}
+
+
+function showToast(message, type) {
+
+    const text = String(message ?? "");
+
+    let resolvedType = type;
+
+    if (!resolvedType) {
+
+        if (/^\s*❌/.test(text) || /failed|error/i.test(text)) {
+
+            resolvedType = "error";
+
+        }
+
+        else if (/only |cannot |please |not authorized|view-only|not configured|not ready|already been handled/i.test(text)) {
+
+            resolvedType = "warning";
+
+        }
+
+        else {
+
+            resolvedType = "success";
+
+        }
+
+    }
+
+    const icons = {
+        success: "✅",
+        error: "❌",
+        warning: "⚠️"
+    };
+
+    const container = getToastContainer();
+
+    const toast = document.createElement("div");
+
+    toast.className = "toast toast-" + resolvedType;
+
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[resolvedType] || "ℹ️"}</span>
+        <span class="toast-text"></span>
+        <button type="button" class="toast-close" aria-label="Dismiss">×</button>
+    `;
+
+    toast.querySelector(".toast-text").textContent =
+        text.replace(/^\s*❌\s*/, "");
+
+    function remove() {
+
+        toast.classList.add("toast-hide");
+
+        setTimeout(() => toast.remove(), 200);
+
+    }
+
+    toast.querySelector(".toast-close").addEventListener("click", remove);
+
+    container.appendChild(toast);
+
+    setTimeout(remove, resolvedType === "error" ? 6000 : 4000);
+
+}
+
+
 // ============================================================
 // EMAILJS SETTINGS
 // ============================================================
@@ -318,7 +410,7 @@ function saveData() {
 
     if (!db) {
 
-        alert(
+        showToast(
             "Firebase not configured yet — changes won't be saved. Ask the project owner to set up Firebase."
         );
 
@@ -343,7 +435,7 @@ function saveData() {
                     error
                 );
 
-                alert(
+                showToast(
                     "❌ Save failed: " +
                     error.message +
                     "\n\nCheck Firestore Rules — the passcode may not match, or check your internet connection."
@@ -417,7 +509,7 @@ function saveMeetingsData() {
 
     if (!db) {
 
-        alert(
+        showToast(
             "Firebase not configured yet — changes won't be saved. Ask the project owner to set up Firebase."
         );
 
@@ -442,7 +534,7 @@ function saveMeetingsData() {
                     error
                 );
 
-                alert(
+                showToast(
                     "❌ Save failed: " +
                     error.message +
                     "\n\nCheck Firestore Rules — the passcode may not match, or check your internet connection."
@@ -601,7 +693,7 @@ async function changeMyPhoto(event) {
 
     if (!currentUser) {
 
-        alert("Please log in first.");
+        showToast("Please log in first.");
 
         return;
 
@@ -611,7 +703,7 @@ async function changeMyPhoto(event) {
 
     if (!file.type.startsWith("image/")) {
 
-        alert("Please choose an image file.");
+        showToast("Please choose an image file.");
 
         return;
 
@@ -619,7 +711,7 @@ async function changeMyPhoto(event) {
 
     if (file.size > 5 * 1024 * 1024) {
 
-        alert("Please choose an image under 5MB.");
+        showToast("Please choose an image under 5MB.");
 
         return;
 
@@ -642,7 +734,7 @@ async function changeMyPhoto(event) {
 
         console.error("Photo upload failed:", error);
 
-        alert(
+        showToast(
             "❌ Photo upload failed: " +
             error.message
         );
@@ -758,7 +850,7 @@ function requestDelete(type, itemId, itemName) {
 
     });
 
-    alert(`Delete request sent to ${LEADER_NAME} for approval.`);
+    showToast(`Delete request sent to ${LEADER_NAME} for approval.`);
 
 }
 
@@ -772,7 +864,7 @@ function handleDeleteRequestNotification(requestId) {
 
     if (!request) {
 
-        alert("This request has already been handled.");
+        showToast("This request has already been handled.");
 
         return;
 
@@ -780,7 +872,7 @@ function handleDeleteRequestNotification(requestId) {
 
     if (!isGroupLeader()) {
 
-        alert(`Only ${LEADER_NAME} can approve delete requests.`);
+        showToast(`Only ${LEADER_NAME} can approve delete requests.`);
 
         return;
 
@@ -989,7 +1081,7 @@ function saveSystemSettingsData() {
 
     if (!db) {
 
-        alert("Firebase not configured yet — settings won't be saved.");
+        showToast("Firebase not configured yet — settings won't be saved.");
 
         return;
 
@@ -1005,7 +1097,7 @@ function saveSystemSettingsData() {
                 error
             );
 
-            alert("❌ Save failed: " + error.message);
+            showToast("❌ Save failed: " + error.message);
 
         });
 
@@ -1138,7 +1230,7 @@ function saveAdminSettings(event) {
 
     if (!isGroupLeader()) {
 
-        alert(`Only ${LEADER_NAME} can change system settings.`);
+        showToast(`Only ${LEADER_NAME} can change system settings.`);
 
         return;
 
@@ -1178,7 +1270,7 @@ function saveAdminSettings(event) {
 
     renderAnnouncementBanner();
 
-    alert("System settings saved.");
+    showToast("System settings saved.");
 
 }
 
@@ -2227,7 +2319,7 @@ function saveResourcesData() {
 
     if (!db) {
 
-        alert(
+        showToast(
             "Firebase not configured yet — changes won't be saved. Ask the project owner to set up Firebase."
         );
 
@@ -2252,7 +2344,7 @@ function saveResourcesData() {
                     error
                 );
 
-                alert(
+                showToast(
                     "❌ Save failed: " +
                     error.message +
                     "\n\nCheck Firestore Rules — the passcode may not match, or check your internet connection."
@@ -2517,7 +2609,7 @@ async function saveResource(event) {
 
     if (isLecturer()) {
 
-        alert("View-only access — lecturers cannot edit resources.");
+        showToast("View-only access — lecturers cannot edit resources.");
 
         closeResourceModal();
 
@@ -2539,7 +2631,7 @@ async function saveResource(event) {
 
     if (!title) {
 
-        alert(
+        showToast(
             "Please enter a Title."
         );
 
@@ -2580,7 +2672,7 @@ async function saveResource(event) {
 
         if (!storage) {
 
-            alert(
+            showToast(
                 "File upload isn't set up yet (Firebase Storage not configured). Please use a Link instead, or ask the project owner to set up Storage."
             );
 
@@ -2610,7 +2702,7 @@ async function saveResource(event) {
                 error
             );
 
-            alert(
+            showToast(
                 "❌ File upload failed: " +
                 error.message
             );
@@ -2850,7 +2942,7 @@ function deleteResource(id) {
 
     if (isLecturer()) {
 
-        alert("View-only access — lecturers cannot delete resources.");
+        showToast("View-only access — lecturers cannot delete resources.");
 
         return;
 
@@ -3318,7 +3410,7 @@ function saveMeeting(event) {
 
     if (isLecturer() && id) {
 
-        alert("View-only access — lecturers cannot edit existing meetings.");
+        showToast("View-only access — lecturers cannot edit existing meetings.");
 
         closeMeetingModal();
 
@@ -3350,7 +3442,7 @@ function saveMeeting(event) {
 
     if (!title) {
 
-        alert(
+        showToast(
             "Please enter Meeting Title."
         );
 
@@ -3360,7 +3452,7 @@ function saveMeeting(event) {
 
     if (!date) {
 
-        alert(
+        showToast(
             "Please select a Meeting Date."
         );
 
@@ -3492,7 +3584,7 @@ function deleteMeeting(id) {
 
     if (isLecturer()) {
 
-        alert("View-only access — lecturers cannot delete meetings.");
+        showToast("View-only access — lecturers cannot delete meetings.");
 
         return;
 
@@ -4601,7 +4693,7 @@ function handleAuthStateChanged(firebaseUser) {
 
     if (!account) {
 
-        alert("This account is not authorized for the project dashboard.");
+        showToast("This account is not authorized for the project dashboard.");
         auth.signOut();
         return;
 
@@ -6511,7 +6603,7 @@ function saveTask(event) {
 
     if (isLecturer()) {
 
-        alert("View-only access — lecturers cannot edit tasks.");
+        showToast("View-only access — lecturers cannot edit tasks.");
 
         closeTaskModal();
 
@@ -6547,7 +6639,7 @@ function saveTask(event) {
         !mainPIC
     ) {
 
-        alert(
+        showToast(
             "Please select a Main PIC."
         );
 
@@ -6560,7 +6652,7 @@ function saveTask(event) {
         assigned.length === 0
     ) {
 
-        alert(
+        showToast(
             "Please select at least one Assigned Member."
         );
 
@@ -6683,7 +6775,7 @@ function saveTask(event) {
         !taskData.name
     ) {
 
-        alert(
+        showToast(
             "Please enter Task Name."
         );
 
@@ -6796,7 +6888,7 @@ function saveTask(event) {
     closeTaskModal();
 
 
-    alert(
+    showToast(
         "Task saved successfully!"
     );
 
@@ -6841,7 +6933,7 @@ function deleteTask(id) {
 
     if (isLecturer()) {
 
-        alert("View-only access — lecturers cannot delete tasks.");
+        showToast("View-only access — lecturers cannot delete tasks.");
 
         return;
 
@@ -7046,7 +7138,7 @@ function showSection(
 
         if (!isGroupLeader()) {
 
-            alert(`Only ${LEADER_NAME} can access system settings.`);
+            showToast(`Only ${LEADER_NAME} can access system settings.`);
 
             showSection("dashboard");
 
@@ -7908,7 +8000,7 @@ function generateContributionReport(memberName) {
 
     if (!isGroupLeader()) {
 
-        alert(`Only ${LEADER_NAME} can generate contribution reports.`);
+        showToast(`Only ${LEADER_NAME} can generate contribution reports.`);
 
         return;
 
@@ -7916,7 +8008,7 @@ function generateContributionReport(memberName) {
 
     if (typeof window.jspdf === "undefined") {
 
-        alert("PDF library failed to load. Please check your internet connection and try again.");
+        showToast("PDF library failed to load. Please check your internet connection and try again.");
 
         return;
 
@@ -7927,7 +8019,7 @@ function generateContributionReport(memberName) {
 
     if (!member) {
 
-        alert("Member not found.");
+        showToast("Member not found.");
 
         return;
 
@@ -9532,7 +9624,7 @@ let pendingPinUser = null;
 function loginAsLecturer() {
 
     if (LECTURER.email.startsWith("YOUR_")) {
-        alert("Set the lecturer email in app.js before signing in.");
+        showToast("Set the lecturer email in app.js before signing in.");
         return;
     }
 
@@ -9764,7 +9856,7 @@ function submitPin(event) {
     event.preventDefault();
 
     if (!pendingPinUser || !auth) {
-        alert("Authentication is not ready. Please refresh and try again.");
+        showToast("Authentication is not ready. Please refresh and try again.");
         return false;
     }
 
@@ -9859,7 +9951,7 @@ function confirmLogout() {
     if (auth) {
         auth.signOut().catch(error => {
             console.error("Sign-out failed:", error);
-            alert("Unable to sign out. Please try again.");
+            showToast("Unable to sign out. Please try again.");
         });
         return;
     }
@@ -9904,7 +9996,7 @@ function resetInactivityTimer() {
                     getCurrentUser()
                 ) {
 
-                    alert(
+                    showToast(
                         "You've been logged out due to inactivity."
                     );
 
