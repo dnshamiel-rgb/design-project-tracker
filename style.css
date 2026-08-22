@@ -1247,6 +1247,11 @@ tbody tr:last-child td {
     color: #27804E;
 }
 
+.deadline-none {
+    background: #F1F2F7;
+    color: #8A90A0;
+}
+
 .date-text {
     display: block;
     color: #9BA1B0;
