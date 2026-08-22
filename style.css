@@ -3593,3 +3593,146 @@ tbody tr:last-child td {
     }
 
 }
+
+
+/* ============================================================
+   LECTURER MARKING
+============================================================ */
+
+.marking-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-top: 6px;
+    margin-left: 4px;
+}
+
+.marking-approved {
+    background: var(--success-light);
+    color: #16924F;
+}
+
+.marking-revision {
+    background: var(--warning-light);
+    color: #C77700;
+}
+
+.marking-reject {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.marking-none {
+    background: #F1F2F7;
+    color: #8A90A0;
+}
+
+.marking-section {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 16px;
+    margin-bottom: 18px;
+    background: #FAFBFE;
+}
+
+.marking-form-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.marking-form-row select {
+    flex: 1;
+    margin-top: 0 !important;
+}
+
+#taskMarkingRemarks {
+    margin-top: 10px !important;
+}
+
+.marking-history-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-top: 14px;
+    margin-bottom: 6px;
+}
+
+.marking-history-list {
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+.marking-history-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.marking-history-item:last-child {
+    border-bottom: none;
+}
+
+.marking-history-remarks {
+    font-size: 12px;
+    color: var(--text);
+    margin-top: 6px;
+    line-height: 1.45;
+}
+
+.marking-history-meta {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.marking-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.marking-stat-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 10px;
+    background: white;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.marking-stat-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.marking-stat-btn strong {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.marking-stat-btn span {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.marking-stat-btn.marking-approved strong { color: #16924F; }
+.marking-stat-btn.marking-revision strong { color: #C77700; }
+.marking-stat-btn.marking-reject strong { color: var(--danger); }
+.marking-stat-btn.marking-none strong { color: #8A90A0; }
+
+/* Members/leader shouldn't edit marking fields directly via role-lecturer CSS,
+   but the marking select/textarea are explicitly enabled/disabled in JS
+   per isLecturer(), independent of the general modal lock. */
+.role-lecturer .marking-section select:disabled,
+.role-lecturer .marking-section textarea:disabled {
+    background: #F1F2F7 !important;
+    opacity: .85;
+}
