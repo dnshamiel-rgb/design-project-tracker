@@ -3900,7 +3900,20 @@ function renderMeetings() {
 
                     </div>
 
+                    ${
+                        meeting.mom && meeting.mom.summary
+                            ? `<div class="mom-badge">📝 Minutes recorded</div>`
+                            : ""
+                    }
+
                     <div class="meeting-actions">
+
+                        <button
+                            class="edit-btn"
+                            onclick="openMomModal(${meeting.id})"
+                        >
+                            📝 ${meeting.mom && meeting.mom.summary ? "Minutes" : "Add Minutes"}
+                        </button>
 
                         <button
                             class="edit-btn"
@@ -3924,6 +3937,771 @@ function renderMeetings() {
 
         }
     );
+
+}
+
+
+// ============================================================
+// MINUTES OF MEETING (MOM)
+// ============================================================
+//
+// Setiap meeting boleh ada satu set "Minutes" — ringkasan
+// perbincangan + senarai Action Items (dengan owner & status).
+// Action items boleh terus "Convert to Task" supaya masuk
+// terus dalam Tasks page tanpa perlu taip semula.
+// ============================================================
+
+let currentMomMeetingId = null;
+
+let currentMomActionItems = [];
+
+
+function populateMomOwnerSelect(selected = "") {
+
+    const select = getElement("momActionOwner");
+
+    if (!select) return;
+
+    select.innerHTML = `<option value="">No owner</option>`;
+
+    members.forEach(member => {
+
+        const option = document.createElement("option");
+
+        option.value = member.name;
+
+        option.textContent = member.name;
+
+        if (member.name === selected) {
+
+            option.selected = true;
+
+        }
+
+        select.appendChild(option);
+
+    });
+
+}
+
+
+function openMomModal(meetingId) {
+
+    const meeting = meetings.find(item => item.id === meetingId);
+
+    if (!meeting) return;
+
+    currentMomMeetingId = meetingId;
+
+    const modal = getElement("momModal");
+
+    if (!modal) return;
+
+    modal.classList.remove("hidden");
+
+    getElement("momModalTitle").textContent =
+        "Minutes of Meeting";
+
+    const infoEl = getElement("momMeetingInfo");
+
+    if (infoEl) {
+
+        infoEl.innerHTML = `
+            📌 ${meeting.title}
+            <small>
+                📅 ${meeting.date}${meeting.time ? " · " + meeting.time : ""}
+                ${meeting.location ? " · 📍 " + meeting.location : ""}
+            </small>
+        `;
+
+    }
+
+    getElement("momMeetingId").value = meetingId;
+
+    getElement("momSummary").value =
+        (meeting.mom && meeting.mom.summary) || "";
+
+    currentMomActionItems =
+        ((meeting.mom && meeting.mom.actionItems) || []).map(
+            item => ({ ...item })
+        );
+
+    populateMomOwnerSelect();
+
+    renderMomActionItems();
+
+    const metaEl = getElement("momMeta");
+
+    if (metaEl) {
+
+        if (meeting.mom && meeting.mom.updatedBy) {
+
+            metaEl.textContent =
+                `Last updated by ${meeting.mom.updatedBy} on ${formatActivityTime(meeting.mom.updatedAt)}`;
+
+            metaEl.classList.remove("hidden");
+
+        }
+
+        else {
+
+            metaEl.classList.add("hidden");
+
+        }
+
+    }
+
+    setModalFieldsDisabled("momModal", isLecturer());
+
+    const addBtn = getElement("momActionAddBtn");
+
+    if (addBtn) addBtn.style.display = isLecturer() ? "none" : "";
+
+    const saveBtn = getElement("momSaveBtn");
+
+    if (saveBtn) saveBtn.style.display = isLecturer() ? "none" : "";
+
+}
+
+
+function closeMomModal() {
+
+    const modal = getElement("momModal");
+
+    if (modal) {
+
+        modal.classList.add("hidden");
+
+    }
+
+    currentMomMeetingId = null;
+
+    currentMomActionItems = [];
+
+}
+
+
+function renderMomActionItems() {
+
+    const container = getElement("momActionList");
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (currentMomActionItems.length === 0) {
+
+        container.innerHTML =
+            `<div class="chapter-empty">No action items yet.</div>`;
+
+        return;
+
+    }
+
+    currentMomActionItems.forEach((item, index) => {
+
+        const row = document.createElement("div");
+
+        row.className = "mom-action-item";
+
+        row.innerHTML = `
+
+            <input
+                type="checkbox"
+                ${item.done ? "checked" : ""}
+                data-index="${index}"
+                class="mom-action-check"
+            >
+
+            <span class="mom-action-text ${item.done ? "done-text" : ""}">
+                ${item.text}
+            </span>
+
+            ${
+                item.owner
+                    ? `<span class="mom-action-owner-tag">👤 ${item.owner}</span>`
+                    : ""
+            }
+
+            <button
+                type="button"
+                class="mom-action-convert-btn"
+                data-index="${index}"
+                title="${item.taskId ? "Already converted to a task" : "Convert to Task"}"
+                ${item.taskId ? "disabled" : ""}
+            >
+                ${item.taskId ? "✓" : "→T"}
+            </button>
+
+            <button
+                type="button"
+                class="subtask-remove-btn"
+                data-index="${index}"
+            >
+                ✕
+            </button>
+
+        `;
+
+        container.appendChild(row);
+
+    });
+
+    container.querySelectorAll(".mom-action-check").forEach(checkbox => {
+
+        checkbox.addEventListener("change", event => {
+
+            const index = Number(event.target.dataset.index);
+
+            currentMomActionItems[index].done = event.target.checked;
+
+            renderMomActionItems();
+
+        });
+
+    });
+
+    container.querySelectorAll(".mom-action-convert-btn").forEach(button => {
+
+        button.addEventListener("click", event => {
+
+            const index = Number(event.currentTarget.dataset.index);
+
+            convertMomActionToTask(index);
+
+        });
+
+    });
+
+    container.querySelectorAll(".subtask-remove-btn").forEach(button => {
+
+        button.addEventListener("click", event => {
+
+            const index = Number(event.currentTarget.dataset.index);
+
+            currentMomActionItems.splice(index, 1);
+
+            renderMomActionItems();
+
+        });
+
+    });
+
+}
+
+
+function addMomActionFromInput() {
+
+    const input = getElement("momActionInput");
+
+    const ownerSelect = getElement("momActionOwner");
+
+    if (!input) return;
+
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    currentMomActionItems.push({
+
+        id: Date.now() + Math.random(),
+
+        text: text,
+
+        owner: ownerSelect ? ownerSelect.value : "",
+
+        done: false,
+
+        taskId: null
+
+    });
+
+    input.value = "";
+
+    renderMomActionItems();
+
+    input.focus();
+
+}
+
+
+function setupMomEvents() {
+
+    const addButton = getElement("momActionAddBtn");
+
+    if (addButton) {
+
+        addButton.addEventListener("click", addMomActionFromInput);
+
+    }
+
+    const input = getElement("momActionInput");
+
+    if (input) {
+
+        input.addEventListener("keydown", event => {
+
+            if (event.key === "Enter") {
+
+                event.preventDefault();
+
+                addMomActionFromInput();
+
+            }
+
+        });
+
+    }
+
+}
+
+
+function convertMomActionToTask(index) {
+
+    if (isLecturer()) {
+
+        showToast("View-only access — lecturers cannot create tasks.");
+
+        return;
+
+    }
+
+    const item = currentMomActionItems[index];
+
+    if (!item || item.taskId) return;
+
+    const meeting = meetings.find(m => m.id === currentMomMeetingId);
+
+    const owner = item.owner || getCurrentUser() || (members[0] && members[0].name) || "";
+
+    const newTask = {
+
+        id: Date.now(),
+
+        name: item.text,
+
+        mainPIC: owner,
+
+        assigned: owner ? [owner] : [],
+
+        priority: "Medium",
+
+        status: "Not Started",
+
+        progress: 0,
+
+        deadline: "",
+
+        attachment: "",
+
+        fileName: "",
+
+        subtasks: [],
+
+        links: []
+
+    };
+
+    tasks.push(newTask);
+
+    saveData();
+
+    logActivity(
+        `created task "${item.text}" from meeting minutes` +
+        (meeting ? ` ("${meeting.title}")` : "")
+    );
+
+    item.taskId = newTask.id;
+
+    renderMomActionItems();
+
+    updateDashboard();
+
+    renderTasks();
+
+    renderTeam();
+
+    renderCalendar();
+
+    renderKanban();
+
+    showToast(`Task "${item.text}" created from action item.`);
+
+}
+
+
+function saveMom(event) {
+
+    event.preventDefault();
+
+    if (isLecturer()) {
+
+        showToast("View-only access — lecturers cannot edit minutes.");
+
+        closeMomModal();
+
+        return;
+
+    }
+
+    const meetingId = Number(getElement("momMeetingId").value);
+
+    const meeting = meetings.find(item => item.id === meetingId);
+
+    if (!meeting) {
+
+        closeMomModal();
+
+        return;
+
+    }
+
+    meeting.mom = {
+
+        summary: sanitizeText(getElement("momSummary").value),
+
+        actionItems: currentMomActionItems,
+
+        updatedBy: getCurrentUser() || "Unknown",
+
+        updatedAt: new Date().toISOString()
+
+    };
+
+    saveMeetingsData();
+
+    logActivity(`updated minutes of meeting for "${meeting.title}"`);
+
+    renderMeetings();
+
+    closeMomModal();
+
+    showToast("Minutes of meeting saved!");
+
+}
+
+
+function exportMomPdf() {
+
+    if (typeof window.jspdf === "undefined") {
+
+        showToast("PDF library failed to load. Please check your internet connection and try again.");
+
+        return;
+
+    }
+
+    const meetingId = Number(getElement("momMeetingId").value);
+
+    const meeting = meetings.find(item => item.id === meetingId);
+
+    if (!meeting) {
+
+        showToast("Meeting not found.");
+
+        return;
+
+    }
+
+    const summaryText = getElement("momSummary").value.trim();
+
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF();
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const margin = 15;
+
+    const contentWidth = pageWidth - margin * 2;
+
+    const primary = [37, 99, 235];
+
+    const violet = [124, 58, 237];
+
+    const dark = [22, 25, 43];
+
+    const muted = [124, 132, 150];
+
+    const border = [231, 235, 243];
+
+    const grayBg = [241, 242, 247];
+
+
+    function checkPageBreak(neededSpace, y) {
+
+        if (y + neededSpace > pageHeight - 20) {
+
+            doc.addPage();
+
+            return 20;
+
+        }
+
+        return y;
+
+    }
+
+
+    // HEADER
+
+    doc.setFillColor(...primary);
+
+    doc.rect(0, 0, pageWidth, 34, "F");
+
+    doc.setFillColor(...violet);
+
+    doc.circle(pageWidth - 10, -6, 22, "F");
+
+    doc.setTextColor(255, 255, 255);
+
+    doc.setFontSize(17);
+
+    doc.setFont(undefined, "bold");
+
+    doc.text("Minutes of Meeting", margin, 17);
+
+    doc.setFontSize(10);
+
+    doc.setFont(undefined, "normal");
+
+    doc.text(meeting.title, margin, 25);
+
+    doc.setFontSize(8.5);
+
+    doc.text(`Generated ${new Date().toLocaleString()}`, margin, 31);
+
+
+    let y = 46;
+
+
+    // MEETING INFO CARD
+
+    doc.setFillColor(...grayBg);
+
+    doc.roundedRect(margin, y, contentWidth, 24, 3, 3, "F");
+
+    doc.setTextColor(...dark);
+
+    doc.setFontSize(9.5);
+
+    doc.setFont(undefined, "bold");
+
+    doc.text("Date:", margin + 6, y + 9);
+
+    doc.text("Location:", margin + 6, y + 18);
+
+    doc.setFont(undefined, "normal");
+
+    doc.setTextColor(...muted);
+
+    doc.text(`${meeting.date}${meeting.time ? "  " + meeting.time : ""}`, margin + 28, y + 9);
+
+    doc.text(meeting.location || "-", margin + 28, y + 18);
+
+    doc.setFont(undefined, "bold");
+
+    doc.setTextColor(...dark);
+
+    doc.text("Attendees:", margin + 100, y + 9);
+
+    doc.setFont(undefined, "normal");
+
+    doc.setTextColor(...muted);
+
+    const attendedNames = (meeting.attended || []).join(", ") || "None recorded";
+
+    doc.text(
+        doc.splitTextToSize(attendedNames, contentWidth - 130),
+        margin + 130,
+        y + 9
+    );
+
+    y += 32;
+
+
+    // SUMMARY
+
+    doc.setTextColor(...dark);
+
+    doc.setFontSize(12.5);
+
+    doc.setFont(undefined, "bold");
+
+    doc.text("Discussion Summary", margin, y);
+
+    y += 3;
+
+    doc.setDrawColor(...primary);
+
+    doc.setLineWidth(0.8);
+
+    doc.line(margin, y, margin + 24, y);
+
+    doc.setLineWidth(0.2);
+
+    y += 8;
+
+    doc.setFontSize(9.5);
+
+    doc.setFont(undefined, "normal");
+
+    doc.setTextColor(...dark);
+
+    const summaryLines = doc.splitTextToSize(
+        summaryText || "No summary recorded.",
+        contentWidth
+    );
+
+    summaryLines.forEach(line => {
+
+        y = checkPageBreak(6, y);
+
+        doc.text(line, margin, y);
+
+        y += 5.5;
+
+    });
+
+    y += 8;
+
+
+    // ACTION ITEMS
+
+    y = checkPageBreak(30, y);
+
+    doc.setTextColor(...dark);
+
+    doc.setFontSize(12.5);
+
+    doc.setFont(undefined, "bold");
+
+    doc.text("Action Items", margin, y);
+
+    y += 3;
+
+    doc.setDrawColor(...violet);
+
+    doc.setLineWidth(0.8);
+
+    doc.line(margin, y, margin + 24, y);
+
+    doc.setLineWidth(0.2);
+
+    y += 9;
+
+    if (currentMomActionItems.length === 0) {
+
+        doc.setFontSize(9.5);
+
+        doc.setFont(undefined, "italic");
+
+        doc.setTextColor(...muted);
+
+        doc.text("No action items recorded.", margin, y);
+
+        y += 8;
+
+    }
+
+    else {
+
+        doc.setFillColor(...dark);
+
+        doc.rect(margin, y, contentWidth, 8, "F");
+
+        doc.setTextColor(255, 255, 255);
+
+        doc.setFontSize(8);
+
+        doc.setFont(undefined, "bold");
+
+        doc.text("ACTION ITEM", margin + 3, y + 5.5);
+
+        doc.text("OWNER", margin + 130, y + 5.5);
+
+        doc.text("STATUS", margin + contentWidth - 3, y + 5.5, { align: "right" });
+
+        y += 8;
+
+        currentMomActionItems.forEach((item, index) => {
+
+            y = checkPageBreak(11, y);
+
+            const rowH = 11;
+
+            if (index % 2 === 0) {
+
+                doc.setFillColor(249, 250, 252);
+
+                doc.rect(margin, y, contentWidth, rowH, "F");
+
+            }
+
+            doc.setTextColor(...dark);
+
+            doc.setFontSize(8.5);
+
+            doc.setFont(undefined, "normal");
+
+            const shortText =
+                item.text.length > 58 ? item.text.slice(0, 56) + "…" : item.text;
+
+            doc.text(shortText, margin + 3, y + 7);
+
+            doc.setTextColor(...muted);
+
+            doc.text(item.owner || "-", margin + 130, y + 7);
+
+            doc.setTextColor(item.done ? 34 : 217, item.done ? 197 : 119, item.done ? 94 : 6);
+
+            doc.setFont(undefined, "bold");
+
+            doc.text(item.done ? "DONE" : "PENDING", margin + contentWidth - 3, y + 7, { align: "right" });
+
+            y += rowH;
+
+        });
+
+        doc.setDrawColor(...border);
+
+        doc.line(margin, y, margin + contentWidth, y);
+
+        y += 10;
+
+    }
+
+
+    // FOOTER
+
+    const pageCount = doc.internal.getNumberOfPages();
+
+    for (let i = 1; i <= pageCount; i++) {
+
+        doc.setPage(i);
+
+        doc.setDrawColor(...border);
+
+        doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+
+        doc.setFontSize(7.5);
+
+        doc.setFont(undefined, "normal");
+
+        doc.setTextColor(...muted);
+
+        doc.text("Design Project Group Tracker — Confidential", margin, pageHeight - 9);
+
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 9, { align: "right" });
+
+    }
+
+
+    doc.save(`${meeting.title.replace(/[^a-zA-Z0-9]/g, "_")}_Minutes.pdf`);
+
+    logActivity(`exported minutes of meeting PDF for "${meeting.title}"`);
 
 }
 
@@ -10199,6 +10977,8 @@ function startApp() {
     setupTaskCommentEvents();
 
     setupResourceCommentEvents();
+
+    setupMomEvents();
 
     updateDashboard();
 
