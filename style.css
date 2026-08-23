@@ -4232,6 +4232,9 @@ tbody tr:last-child td {
 .role-lecturer .field-progress-deadline-block,
 .role-lecturer .field-attachment-link-block,
 .role-lecturer .field-attachment-file-block,
+.role-lecturer #taskInfoSection,
+.role-lecturer #taskStatusSection,
+.role-lecturer #taskAttachmentSection,
 .role-lecturer #taskCommentsSection {
     display: none !important;
 }
