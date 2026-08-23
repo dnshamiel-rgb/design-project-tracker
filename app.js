@@ -2285,10 +2285,173 @@ function renderProgressChart() {
 
 
 // ============================================================
+// DAILY QUOTE (rotates by date, same quote for everyone each day)
+// ============================================================
+
+const DAILY_QUOTES = [
+
+    { text: "Progress, not perfection — every task you finish today is one step closer to submission." },
+    { text: "You don't have to see the whole staircase, just take the first step." },
+    { text: "Small daily progress leads to big results." },
+    { text: "Done is better than perfect. Ship it, then polish it." },
+    { text: "The secret of getting ahead is getting started." },
+    { text: "Discipline beats motivation when motivation runs out." },
+    { text: "A little progress each day adds up to big results." },
+    { text: "Your future self will thank you for the work you put in today." },
+    { text: "Consistency is what transforms average into excellence." },
+    { text: "It always seems impossible until it's done." },
+
+    { text: "Alone we can do so little; together we can do so much." },
+    { text: "A team that communicates well, finishes well." },
+    { text: "Great things in this project won't be done by one person — they'll be done by all five of you." },
+    { text: "Check in with your teammates today — a quick update saves a big headache later." },
+    { text: "Teamwork makes the deadline work." },
+    { text: "If you're stuck, ask your team. That's what they're here for." },
+    { text: "Support each other today — someone might be having a harder day than you." },
+    { text: "Good teams don't avoid conflict, they communicate through it." },
+
+    { text: "The deadline is closer than it looks. But so is finishing this task. 👀" },
+    { text: "Future you is currently begging present you to start early." },
+    { text: "Submission day will come whether you're ready or not — so let's get ready. 🚀" },
+    { text: "One chapter at a time. You've got this." },
+    { text: "Overdue tasks don't disappear — they just get louder. Handle them today." },
+    { text: "Coffee first, then conquer that checklist. ☕" },
+    { text: "Every checklist item you tick off is a mini victory. Celebrate it." },
+    { text: "The Gantt chart doesn't lie, but it also doesn't judge — get back on track today." },
+
+    { text: "Every draft is progress, even the messy ones." },
+    { text: "Good design takes iteration — don't fear the first ugly version." },
+    { text: "Feedback isn't criticism, it's a shortcut to a better project." },
+    { text: "The best designers weren't born great — they revised a lot." },
+    { text: "Mistakes today are lessons for tomorrow's presentation." },
+
+    { text: "You've made it this far — don't stop now." },
+    { text: "This project is temporary, but what you learn from it isn't." },
+    { text: "Tired is normal. Quitting isn't an option. Keep going." },
+    { text: "One day, you'll look back at this project and be proud you didn't give up." },
+
+    { text: "Satu je target — buat project ni sampai menang award. Jom push sama-sama! 🏆" },
+    { text: "This could be the project that gets your name on stage. Make it count." },
+    { text: "Last big project before you graduate — why not make it your best one?" },
+    { text: "Awards don't go to the team that did okay. They go to the team that cared enough to go the extra mile." },
+    { text: "One more push. One more late night. One more award-worthy project." },
+    { text: "Degree almost done — legacy project loading. Let's make it unforgettable." },
+    { text: "You've survived every semester so far. This is just the final boss level." },
+    { text: "Kalau nak menang, kena buat lebih daripada 'cukup makan'. Let's aim higher." },
+    { text: "This is your shot to end your degree with something you're proud to show off." },
+    { text: "Best Project Award tak jatuh dari langit — ia dibina dari setiap task yang korang siapkan hari ni." },
+    { text: "Imagine walking on that award stage because of THIS project. Worth the grind." },
+    { text: "Last group project of your degree. Last chance to leave a mark. Make it legendary." },
+    { text: "Champions aren't made in the final week — they're made in weeks like this one." },
+
+    { text: "Kita bukan buat project ni sekadar nak lepas — kita target nak menang. Let's go! 🏆" },
+    { text: "Bayangkan nama korang disebut time prize giving. That feeling? Worth every late night." },
+    { text: "Last project sebelum grad — jangan main-main, buat sampai jadi 'Best Project' punya level." },
+    { text: "Orang lain buat cukup pass. Kita buat sampai boleh menang. That's the difference." },
+    { text: "Degree dah nak habis, tapi legacy kita baru nak mula. Let's make this project count." },
+    { text: "Kalau nak trophy tu naik atas meja korang, kena mula dari hari ni — bukan last minute." },
+    { text: "This is THE project. Yang orang ingat lama-lama. Let's build something award-winning." },
+    { text: "Semangat sikit lagi — bayangkan stage, bayangkan trophy, then balik buat kerja. 😄" },
+    { text: "Bukan sekadar submit untuk dapat marks — submit untuk buktikan korang punya kelas punya standard." },
+    { text: "One shot. One team. One award. Let's earn it together." },
+    { text: "Final year project ni bukan just assignment — ni statement korang sebelum grad. Make it loud." },
+    { text: "Kalau nak menang award, effort kena beza dari orang lain. Let's be that team." },
+    { text: "Every small task hari ni is one step closer to holding that trophy later. Keep pushing!" },
+    { text: "This project could be the highlight of your whole degree. So why not aim for the top?" }
+
+];
+
+
+function getDayNumber(date) {
+
+    const start = new Date(date.getFullYear(), 0, 0);
+
+    const diff = date - start;
+
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+
+}
+
+
+function getDailyQuote() {
+
+    const dayNumber = getDayNumber(new Date());
+
+    const index = dayNumber % DAILY_QUOTES.length;
+
+    return DAILY_QUOTES[index];
+
+}
+
+
+function renderMydayQuote() {
+
+    const container = getElement("mydayQuoteCard");
+
+    if (!container) return;
+
+    const quote = getDailyQuote();
+
+    container.innerHTML = `
+        <div class="myday-quote-icon">💬</div>
+        <div>
+            <div class="myday-quote-text">${quote.text}</div>
+            <div class="myday-quote-author">Quote of the Day</div>
+        </div>
+    `;
+
+}
+
+
+function maybeShowDailyQuotePopup() {
+
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) return;
+
+    const today = formatDate(new Date());
+
+    const storageKey = "designProjectQuoteSeen_" + currentUser;
+
+    const lastSeen = localStorage.getItem(storageKey);
+
+    if (lastSeen === today) return;
+
+    const quote = getDailyQuote();
+
+    const textEl = getElement("dailyQuoteModalText");
+
+    const authorEl = getElement("dailyQuoteModalAuthor");
+
+    if (textEl) textEl.textContent = quote.text;
+
+    if (authorEl) authorEl.textContent = "— Quote of the Day";
+
+    const modal = getElement("dailyQuoteModal");
+
+    if (modal) modal.classList.remove("hidden");
+
+    localStorage.setItem(storageKey, today);
+
+}
+
+
+function closeDailyQuoteModal() {
+
+    const modal = getElement("dailyQuoteModal");
+
+    if (modal) modal.classList.add("hidden");
+
+}
+
+
+// ============================================================
 // MY DAY (landing page after login)
 // ============================================================
 
 function renderMyDay() {
+
+    renderMydayQuote();
 
     const greeting =
         getElement("mydayGreeting");
@@ -12734,6 +12897,8 @@ function startApp() {
     renderMyDay();
 
     setupAutoLogout();
+
+    maybeShowDailyQuotePopup();
 
     if (isLecturer()) {
 
