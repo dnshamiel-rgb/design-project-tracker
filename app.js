@@ -271,6 +271,8 @@ let storage = null;
 
 let auth = null;
 
+let functionsInstance = null;
+
 let firebaseReady = false;
 
 let dataListenersStarted = false;
@@ -321,6 +323,11 @@ function initFirebase() {
 
         auth =
             firebase.auth();
+
+        functionsInstance =
+            (typeof firebase.functions === "function")
+                ? firebase.functions()
+                : null;
 
         firebaseReady = true;
 
@@ -1253,6 +1260,8 @@ function populateAdminForm() {
 
     if (!isGroupLeader()) return;
 
+    renderAdminAiInsightPanel();
+
     const maintenanceToggle = getElement("maintenanceModeToggle");
 
     if (maintenanceToggle) {
@@ -1673,6 +1682,279 @@ function renderLeaderHub() {
     renderSubmissionCountdown();
 
     renderNeedsNudge();
+
+}
+
+
+// ============================================================
+// AI INSIGHT (leader-only generate, everyone can view)
+// ============================================================
+//
+// Cloud Function `generateAiInsight` does the actual work (calls
+// Claude, enforces leader-only + once-a-week rate limit
+// server-side). This client code just gathers a compact snapshot,
+// calls the function, and renders whatever is in Firestore.
+// ============================================================
+
+let aiInsight = null;
+
+
+function listenToAiInsight() {
+
+    if (!db) return;
+
+    db.collection("trackerData")
+        .doc("aiInsight")
+        .onSnapshot(
+            doc => {
+
+                aiInsight = doc.exists ? doc.data() : null;
+
+                renderAiInsightCard();
+
+                renderAdminAiInsightPanel();
+
+            },
+            error => {
+
+                console.error("AI Insight sync error:", error);
+
+            }
+        );
+
+}
+
+
+function buildAiInsightSnapshot() {
+
+    const activeTasks = tasks.filter(task => task.status !== "Done");
+
+    const overdueCount = tasks.filter(
+        task => task.status !== "Done" && getDaysLeft(task.deadline) < 0
+    ).length;
+
+    const taskSummaries = activeTasks
+        .slice(0, 40) // keep the payload compact
+        .map(task => ({
+            name: task.name,
+            mainPIC: task.mainPIC || "",
+            status: task.status,
+            progress: Number(task.progress || 0),
+            deadline: task.deadline || ""
+        }));
+
+    const memberWorkload = members.map(member => {
+
+        const memberTasks = tasks.filter(
+            task =>
+                task.mainPIC === member.name ||
+                (task.assigned && task.assigned.includes(member.name))
+        );
+
+        const avgProgress =
+            memberTasks.length
+                ? Math.round(
+                    memberTasks.reduce((sum, task) => sum + Number(task.progress || 0), 0) /
+                    memberTasks.length
+                )
+                : 0;
+
+        return {
+            name: member.name,
+            taskCount: memberTasks.length,
+            avgProgress: avgProgress
+        };
+
+    });
+
+    const currentOverall =
+        tasks.length === 0
+            ? 0
+            : Math.round(
+                tasks.reduce((sum, task) => sum + Number(task.progress || 0), 0) / tasks.length
+            );
+
+    const sortedHistory =
+        [...progressHistory].sort((a, b) => a.date.localeCompare(b.date));
+
+    const previousOverall =
+        sortedHistory.length >= 2
+            ? sortedHistory[sortedHistory.length - 2].overall
+            : null;
+
+    return {
+        tasks: taskSummaries,
+        memberWorkload: memberWorkload,
+        currentOverall: currentOverall,
+        previousOverall: previousOverall,
+        overdueCount: overdueCount
+    };
+
+}
+
+
+let aiInsightLoading = false;
+
+
+async function generateAiInsight() {
+
+    if (!isGroupLeader()) {
+
+        showToast(`Only ${LEADER_NAME} can generate the AI Insight.`);
+
+        return;
+
+    }
+
+    if (!functionsInstance) {
+
+        showToast("AI Insight isn't set up yet (Firebase Functions not configured).");
+
+        return;
+
+    }
+
+    if (aiInsightLoading) return;
+
+    aiInsightLoading = true;
+
+    renderAdminAiInsightPanel();
+
+    try {
+
+        const callable = functionsInstance.httpsCallable("generateAiInsight");
+
+        const snapshot = buildAiInsightSnapshot();
+
+        await callable({
+            snapshot: snapshot,
+            generatedByName: getCurrentUser() || LEADER_NAME
+        });
+
+        logActivity("generated a new AI Insight report");
+
+        showToast("AI Insight generated!");
+
+    }
+
+    catch (error) {
+
+        console.error("AI Insight generation failed:", error);
+
+        const message =
+            (error && error.message) ? error.message : "Failed to generate AI Insight.";
+
+        showToast("❌ " + message);
+
+    }
+
+    aiInsightLoading = false;
+
+    renderAdminAiInsightPanel();
+
+}
+
+
+function formatAiInsightTimestamp(value) {
+
+    if (!value) return "";
+
+    const date = value.toDate ? value.toDate() : new Date(value);
+
+    return date.toLocaleString();
+
+}
+
+
+function renderAiInsightCard() {
+
+    const container = getElement("aiInsightCard");
+
+    if (!container) return;
+
+    if (!aiInsight || !aiInsight.summary) {
+
+        container.classList.add("hidden");
+
+        container.innerHTML = "";
+
+        return;
+
+    }
+
+    container.classList.remove("hidden");
+
+    container.innerHTML = `
+
+        <div class="ai-insight-header">
+            <span class="ai-insight-icon">🪄</span>
+            <div>
+                <div class="ai-insight-title">${aiInsight.title || "AI Insight"}</div>
+                <div class="ai-insight-meta">
+                    Generated by ${aiInsight.generatedBy || "Group Leader"} · ${formatAiInsightTimestamp(aiInsight.generatedAt)}
+                </div>
+            </div>
+        </div>
+
+        ${aiInsight.summary ? `<p class="ai-insight-summary">${aiInsight.summary}</p>` : ""}
+
+        <div class="ai-insight-rows">
+
+            ${aiInsight.risk ? `<div class="ai-insight-row ai-insight-risk">${aiInsight.risk}</div>` : ""}
+
+            ${aiInsight.workload ? `<div class="ai-insight-row">${aiInsight.workload}</div>` : ""}
+
+            ${aiInsight.praise ? `<div class="ai-insight-row ai-insight-praise">${aiInsight.praise}</div>` : ""}
+
+        </div>
+
+        ${aiInsight.action ? `<div class="ai-insight-action"><strong>👉 Cadangan:</strong> ${aiInsight.action}</div>` : ""}
+
+    `;
+
+}
+
+
+function renderAdminAiInsightPanel() {
+
+    const container = getElement("aiInsightAdminPanel");
+
+    if (!container || !isGroupLeader()) return;
+
+    const generateBtn = getElement("aiInsightGenerateBtn");
+
+    const statusEl = getElement("aiInsightAdminStatus");
+
+    if (generateBtn) {
+
+        generateBtn.disabled = aiInsightLoading;
+
+        generateBtn.textContent = aiInsightLoading ? "🪄 Analyzing..." : "🪄 Generate AI Insight";
+
+    }
+
+    if (statusEl) {
+
+        if (aiInsightLoading) {
+
+            statusEl.textContent = "Analyzing tasks, comparing trends, detecting risks...";
+
+        }
+
+        else if (aiInsight && aiInsight.generatedAt) {
+
+            statusEl.textContent =
+                `Last generated by ${aiInsight.generatedBy || "Group Leader"} on ${formatAiInsightTimestamp(aiInsight.generatedAt)}. Can be regenerated once a week.`;
+
+        }
+
+        else {
+
+            statusEl.textContent = "No AI Insight generated yet. Click the button above to generate the first one.";
+
+        }
+
+    }
 
 }
 
@@ -6767,6 +7049,7 @@ function startFirebaseDataListeners() {
     listenToDeleteRequests();
     listenToSystemSettings();
     listenToReminderLog();
+    listenToAiInsight();
 
     if (isGroupLeader()) {
 
