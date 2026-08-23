@@ -4177,6 +4177,16 @@ function toggleAttendance(
     memberName
 ) {
 
+    if (isLecturer()) {
+
+        showToast("View-only access — lecturers cannot mark attendance.");
+
+        renderMeetings();
+
+        return;
+
+    }
+
     const meeting =
         meetings.find(
             item =>
@@ -4399,6 +4409,7 @@ function renderMeetings() {
                                                     <input
                                                         type="checkbox"
                                                         ${attended.includes(name) ? "checked" : ""}
+                                                        ${isLecturer() ? "disabled" : ""}
                                                         onchange="toggleAttendance(${meeting.id}, '${name}')"
                                                     >
 
@@ -6582,6 +6593,7 @@ function startFirebaseDataListeners() {
     listenToNotifications();
     listenToDeleteRequests();
     listenToSystemSettings();
+    listenToReminderLog();
 
     if (isGroupLeader()) {
 
@@ -11626,27 +11638,78 @@ async function sendEmailReminder(
 // setiap kali refresh.
 // ============================================================
 
-function getReminderLog() {
 
-    return JSON.parse(
-        localStorage.getItem(
-            "designProjectEmailReminderLog"
-        )
-    ) || {};
+// ============================================================
+// SHARED (FIRESTORE) EMAIL REMINDER LOG
+// ============================================================
+//
+// The old localStorage-only log was per-browser, so every device
+// that had the tracker open would independently decide "I haven't
+// sent this reminder yet" and send its own copy — meaning a
+// member with the app open on 2 devices, or simply several
+// teammates having the app open in the background, could all
+// fire the same reminder email, spamming the recipient with
+// duplicates. This shared Firestore log lets every client check
+// (and claim) a reminder before sending, so it only goes out once
+// across the whole team regardless of how many devices are open.
+// ============================================================
+
+let sharedReminderLog = {};
+
+let sharedReminderLogLoaded = false;
+
+
+function listenToReminderLog() {
+
+    if (!db) return;
+
+    db.collection("trackerData")
+        .doc("emailReminderLog")
+        .onSnapshot(
+            doc => {
+
+                sharedReminderLog = doc.exists ? (doc.data() || {}) : {};
+
+                sharedReminderLogLoaded = true;
+
+                checkEmailReminders();
+
+            },
+            error => {
+
+                console.error("Reminder log sync error:", error);
+
+            }
+        );
 
 }
 
 
-function saveReminderLog(
-    log
-) {
+function claimReminderKey(key) {
 
-    localStorage.setItem(
-        "designProjectEmailReminderLog",
-        JSON.stringify(
-            log
-        )
-    );
+    if (!db) return false;
+
+    // Optimistic local claim first so a rapid loop within the same
+    // client (e.g. several tasks/recipients in one pass) doesn't
+    // also double-send before Firestore confirms the write.
+    if (sharedReminderLog[key]) {
+
+        return false;
+
+    }
+
+    sharedReminderLog[key] = true;
+
+    db.collection("trackerData")
+        .doc("emailReminderLog")
+        .set({ [key]: true }, { merge: true })
+        .catch(error => {
+
+            console.error("Failed to claim reminder key:", error);
+
+        });
+
+    return true;
 
 }
 
@@ -11666,9 +11729,14 @@ function checkEmailReminders() {
 
     }
 
+    // Wait until the shared log has loaded at least once, so we don't
+    // send reminders based on an empty/incomplete local view of what
+    // has already gone out today.
+    if (!sharedReminderLogLoaded) {
 
-    const log =
-        getReminderLog();
+        return;
+
+    }
 
 
     const today =
@@ -11722,21 +11790,12 @@ function checkEmailReminders() {
 
 
                     if (
-                        log[key]
+                        !claimReminderKey(key)
                     ) {
 
                         return;
 
                     }
-
-
-                    log[key] =
-                        true;
-
-
-                    saveReminderLog(
-                        log
-                    );
 
 
                     sendEmailReminder(
