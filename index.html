@@ -16,6 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -331,6 +332,9 @@
             </div>
 
         </div>
+
+
+        <div id="aiInsightCard" class="ai-insight-card hidden"></div>
 
 
         <div id="lecturerMarkingPanel" class="panel hidden">
@@ -904,6 +908,28 @@
     <!-- ADMIN (LEADER ONLY) -->
 
     <section id="admin" class="section hidden">
+
+        <div class="panel" id="aiInsightAdminPanel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>🪄 AI Insight</h3>
+                    <p>Generate a team health report — visible to everyone, but only you can generate it. Once a week.</p>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                id="aiInsightGenerateBtn"
+                class="add-btn"
+                onclick="generateAiInsight()"
+            >
+                🪄 Generate AI Insight
+            </button>
+
+            <div id="aiInsightAdminStatus" class="ai-insight-admin-status"></div>
+
+        </div>
 
         <div class="panel">
 
