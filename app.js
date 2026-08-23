@@ -2390,6 +2390,14 @@ function renderMydayQuote() {
 
     if (!container) return;
 
+    if (isLecturer()) {
+
+        container.innerHTML = "";
+
+        return;
+
+    }
+
     const quote = getDailyQuote();
 
     container.innerHTML = `
@@ -2404,6 +2412,8 @@ function renderMydayQuote() {
 
 
 function maybeShowDailyQuotePopup() {
+
+    if (isLecturer()) return;
 
     const currentUser = getCurrentUser();
 
