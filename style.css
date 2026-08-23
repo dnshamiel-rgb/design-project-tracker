@@ -4483,3 +4483,112 @@ tbody tr:last-child td {
     }
 
 }
+
+
+/* ============================================================
+   AI INSIGHT — Dashboard card + Admin panel
+============================================================ */
+
+.ai-insight-card {
+    background: linear-gradient(160deg, #10131F 0%, #232849 100%);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-md);
+    color: white;
+}
+
+.ai-insight-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.ai-insight-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), #7C3AED);
+    font-size: 19px;
+    box-shadow: 0 8px 18px -6px rgba(37,99,235,.55);
+}
+
+.ai-insight-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -.2px;
+}
+
+.ai-insight-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,.55);
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.ai-insight-summary {
+    font-size: 13.5px;
+    color: rgba(255,255,255,.9);
+    line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.ai-insight-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.ai-insight-row {
+    background: rgba(255,255,255,.06);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: rgba(255,255,255,.9);
+}
+
+.ai-insight-row.ai-insight-risk {
+    background: rgba(239,68,68,.15);
+    border-left: 3px solid var(--danger);
+}
+
+.ai-insight-row.ai-insight-praise {
+    background: rgba(34,197,94,.15);
+    border-left: 3px solid var(--success);
+}
+
+.ai-insight-action {
+    background: rgba(124,58,237,.18);
+    border-radius: 10px;
+    padding: 12px 13px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: white;
+}
+
+.ai-insight-action strong {
+    color: #C4B5FD;
+}
+
+.ai-insight-admin-status {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+
+    .ai-insight-card {
+        padding: 18px;
+    }
+
+}
