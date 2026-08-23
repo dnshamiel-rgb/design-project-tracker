@@ -213,6 +213,58 @@ const firebaseConfig = {
 };
 
 
+// ============================================================
+// GOOGLE SHEET BACKUP (safety-net mirror — Tasks & Resources)
+// ============================================================
+//
+// Every time tasks/resources are saved to Firestore, a snapshot
+// is also fire-and-forget POSTed to a Google Apps Script Web App,
+// which mirrors the current list into a Google Sheet. This is a
+// backup only — Firestore remains the source of truth the app
+// reads from. If this fails (offline, script down), the app
+// keeps working normally; only the backup mirror is skipped.
+// ============================================================
+
+const GOOGLE_SHEET_BACKUP_URL =
+    "https://script.google.com/macros/s/AKfycby0d6e3KBplHy6tgSyXulyBfWVH8s5O1C1KZ7dKTRumvVQ67Pnt02yKJx2KwiYK5K3_/exec";
+
+
+function syncBackupToSheet(type, data) {
+
+    if (
+        !GOOGLE_SHEET_BACKUP_URL ||
+        GOOGLE_SHEET_BACKUP_URL.startsWith("YOUR_")
+    ) {
+
+        return;
+
+    }
+
+    // "no-cors" is required because Apps Script Web Apps don't return
+    // CORS headers the browser can read. The request still goes
+    // through and the script still runs — we just can't read the
+    // response, which is fine since this is a fire-and-forget backup.
+    fetch(GOOGLE_SHEET_BACKUP_URL, {
+
+        method: "POST",
+
+        mode: "no-cors",
+
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+        },
+
+        body: JSON.stringify({ type: type, data: data })
+
+    }).catch(error => {
+
+        console.error("Sheet backup sync failed (safe to ignore):", error);
+
+    });
+
+}
+
+
 let db = null;
 
 let storage = null;
@@ -382,6 +434,8 @@ function listenToTasks() {
                 renderMyDay();
 
                 checkEmailReminders();
+
+                syncBackupToSheet("tasks", tasks);
 
             },
             error => {
@@ -2649,6 +2703,8 @@ function listenToResources() {
                 }
 
                 renderChapters();
+
+                syncBackupToSheet("resources", resources);
 
             },
             error => {
