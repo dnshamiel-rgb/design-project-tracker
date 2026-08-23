@@ -272,6 +272,8 @@
                 </div>
             </div>
 
+            <div id="mydayQuoteCard" class="myday-quote-card"></div>
+
             <div id="mydayContent"></div>
 
         </div>
@@ -2051,6 +2053,29 @@
             <button type="button" class="logout-confirm-btn" onclick="confirmLogout()">
                 Log out
             </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- DAILY QUOTE POPUP -->
+<div
+    id="dailyQuoteModal"
+    class="logout-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dailyQuoteModalTitle"
+    onclick="if (event.target === this) closeDailyQuoteModal()"
+>
+    <div class="logout-card quote-card">
+        <button type="button" class="logout-close" onclick="closeDailyQuoteModal()" aria-label="Close">×</button>
+        <div class="logout-icon quote-icon">💬</div>
+        <h2 id="dailyQuoteModalTitle">Quote of the Day</h2>
+        <p id="dailyQuoteModalText"></p>
+        <div id="dailyQuoteModalAuthor" class="quote-author"></div>
+
+        <div class="logout-actions">
+            <button type="button" class="logout-confirm-btn quote-confirm-btn" onclick="closeDailyQuoteModal()">Got it! 💪</button>
         </div>
     </div>
 </div>
