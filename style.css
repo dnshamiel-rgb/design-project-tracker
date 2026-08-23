@@ -1664,6 +1664,7 @@ tbody tr:last-child td {
     justify-content: flex-end;
     gap: 10px;
     margin-top: 22px;
+    flex-wrap: wrap;
 }
 
 .cancel-btn,
@@ -3246,6 +3247,42 @@ tbody tr:last-child td {
         right: 12px;
         top: 12px;
         max-width: none;
+    }
+
+    .modal-box,
+    .modal-content {
+        padding: 18px;
+        border-radius: 16px;
+    }
+
+    .modal-section {
+        padding: 13px 14px 15px;
+        border-radius: 13px;
+    }
+
+    .modal-section-icon,
+    .marking-section-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
+    .modal-section-title {
+        font-size: 13px;
+    }
+
+    .evidence-card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    }
+
+    .modal-buttons {
+        flex-direction: column-reverse;
+    }
+
+    .modal-buttons .cancel-btn,
+    .modal-buttons .save-btn {
+        width: 100%;
+        text-align: center;
     }
 
 }
