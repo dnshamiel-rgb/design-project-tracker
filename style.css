@@ -3256,20 +3256,22 @@ tbody tr:last-child td {
 ============================================================ */
 
 .mom-meeting-info {
-    background: var(--primary-light);
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 18px;
-    font-size: 12.5px;
-    color: var(--primary);
-    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), #7C3AED);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: white;
+    font-weight: 800;
+    box-shadow: 0 10px 22px -12px rgba(37,99,235,.5);
 }
 
 .mom-meeting-info small {
     display: block;
-    color: var(--muted);
+    color: rgba(255,255,255,.85);
     font-weight: 600;
-    margin-top: 3px;
+    margin-top: 5px;
+    font-size: 11.5px;
 }
 
 .mom-action-add-row {
@@ -3712,6 +3714,70 @@ tbody tr:last-child td {
     background: var(--danger-light);
     color: var(--danger);
 }
+
+
+/* ============================================================
+   GENERIC MODAL SECTION (icon-headed card blocks — used in
+   Meeting modal, MOM modal, and similar multi-section forms)
+============================================================ */
+
+.modal-section {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 18px 18px;
+    margin-bottom: 16px;
+    background: #FAFBFE;
+}
+
+.modal-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.modal-section-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--primary), #7C3AED);
+    color: white;
+    font-size: 16px;
+    box-shadow: 0 8px 16px -6px rgba(37,99,235,.45);
+}
+
+.modal-section-title {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -.2px;
+    margin-bottom: 2px;
+}
+
+.modal-section-header .label-help {
+    font-size: 10.5px;
+    line-height: 1.4;
+    margin-top: 2px;
+}
+
+.modal-section label {
+    margin-bottom: 14px;
+}
+
+.modal-section label:last-child {
+    margin-bottom: 0;
+}
+
+.modal-section > .member-checkboxes,
+.modal-section > textarea,
+.modal-section > #momActionList,
+.modal-section > .subtask-list {
+    margin-top: 0;
+}
+
 
 .marking-section {
     border: 1px solid var(--border);
