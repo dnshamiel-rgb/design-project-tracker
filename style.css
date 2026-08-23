@@ -4522,6 +4522,7 @@ tbody tr:last-child td {
     font-size: 17px;
     font-weight: 800;
     letter-spacing: -.2px;
+    overflow-wrap: break-word;
 }
 
 .ai-insight-meta {
@@ -4602,6 +4603,22 @@ tbody tr:last-child td {
 
     .ai-insight-card {
         padding: 18px;
+    }
+
+    .ai-insight-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .ai-insight-title {
+        font-size: 15px;
+    }
+
+    .ai-insight-row,
+    .ai-insight-action,
+    .ai-insight-summary {
+        font-size: 12px;
     }
 
 }
