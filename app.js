@@ -2571,6 +2571,11 @@ function renderProgressChart() {
 // DAILY QUOTE (rotates by date, same quote for everyone each day)
 // ============================================================
 
+// Rotation restarts at quote #1 from this date onward. Set to
+// "tomorrow" relative to when this was last configured — update
+// this date any time you want the rotation to restart from #1.
+const QUOTE_START_DATE = "2026-08-24";
+
 const DAILY_QUOTES = [
 
     { text: "Progress, not perfection — every task you finish today is one step closer to submission." },
@@ -2647,7 +2652,11 @@ const DAILY_QUOTES = [
 
 function getDayNumber(date) {
 
-    const start = new Date(date.getFullYear(), 0, 0);
+    // Counts days since a fixed reference date, so the rotation
+    // always starts at quote #1 from QUOTE_START_DATE onward,
+    // instead of being tied to day-of-year (which would land on a
+    // random index depending on when the app was deployed).
+    const start = new Date(QUOTE_START_DATE + "T00:00:00");
 
     const diff = date - start;
 
@@ -2660,7 +2669,11 @@ function getDailyQuote() {
 
     const dayNumber = getDayNumber(new Date());
 
-    const index = dayNumber % DAILY_QUOTES.length;
+    // Before the reference start date, just show quote #1 (safety
+    // fallback — shouldn't normally happen once deployed).
+    const safeDayNumber = dayNumber < 0 ? 0 : dayNumber;
+
+    const index = safeDayNumber % DAILY_QUOTES.length;
 
     return DAILY_QUOTES[index];
 
