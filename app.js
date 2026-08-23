@@ -2073,9 +2073,11 @@ function renderActivityLog() {
 
     }
 
+    let activityHtml = "";
+
     activityLog.forEach(entry => {
 
-        container.innerHTML += `
+        activityHtml += `
 
             <div class="activity-item">
 
@@ -2092,6 +2094,8 @@ function renderActivityLog() {
         `;
 
     });
+
+    container.innerHTML = activityHtml;
 
 }
 
@@ -8068,7 +8072,7 @@ function renderTasks() {
         );
 
 
-    table.innerHTML = "";
+    let tasksTableHtml = "";
 
 
     const resultInfo =
@@ -8275,7 +8279,7 @@ function renderTasks() {
                 );
 
 
-            table.innerHTML += `
+            tasksTableHtml += `
 
                 <tr>
 
@@ -8431,7 +8435,7 @@ function renderTasks() {
         filtered.length === 0
     ) {
 
-        table.innerHTML = `
+        tasksTableHtml = `
 
             <tr>
 
@@ -8456,6 +8460,8 @@ function renderTasks() {
 
     }
 
+    table.innerHTML = tasksTableHtml;
+
 }
 
 
@@ -8476,7 +8482,7 @@ function renderTeam() {
     }
 
 
-    container.innerHTML = "";
+    let teamHtml = "";
 
 
     members.forEach(
@@ -8523,7 +8529,7 @@ function renderTeam() {
             }
 
 
-            container.innerHTML += `
+            teamHtml += `
 
                 <div
                     class="team-card"
@@ -8625,6 +8631,8 @@ function renderTeam() {
 
         }
     );
+
+    container.innerHTML = teamHtml;
 
 }
 
