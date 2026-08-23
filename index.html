@@ -1427,41 +1427,70 @@
                 id="meetingId"
             >
 
+            <div class="modal-section">
 
-            <label>
-                Meeting Title
+                <div class="modal-section-header">
 
-                <input
-                    type="text"
-                    id="meetingTitle"
-                    placeholder="Example: Weekly Progress Sync"
-                    required
-                >
-            </label>
+                    <span class="modal-section-icon">🗓️</span>
 
+                    <div>
+                        <div class="modal-section-title">Meeting Details</div>
+                        <span class="label-help">When and where the team is meeting</span>
+                    </div>
 
-            <div class="form-row">
+                </div>
 
                 <label>
-
-                    Date
+                    Meeting Title
 
                     <input
-                        type="date"
-                        id="meetingDate"
+                        type="text"
+                        id="meetingTitle"
+                        placeholder="Example: Weekly Progress Sync"
                         required
                     >
-
                 </label>
 
+                <div class="form-row">
+
+                    <label>
+
+                        Date
+
+                        <input
+                            type="date"
+                            id="meetingDate"
+                            required
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        Time
+
+                        <input
+                            type="time"
+                            id="meetingTime"
+                        >
+
+                    </label>
+
+                </div>
 
                 <label>
 
-                    Time
+                    Location / Link
+
+                    <span class="label-help">
+                        Physical location, Google Meet, Zoom, etc.
+                    </span>
 
                     <input
-                        type="time"
-                        id="meetingTime"
+                        type="text"
+                        id="meetingLocation"
+                        placeholder="Example: Bilik Mesyuarat 2 or Google Meet link"
                     >
 
                 </label>
@@ -1469,42 +1498,39 @@
             </div>
 
 
-            <label>
+            <div class="modal-section">
 
-                Location / Link
+                <div class="modal-section-header">
 
-                <span class="label-help">
-                    Physical location, Google Meet, Zoom, etc.
-                </span>
+                    <span class="modal-section-icon">👥</span>
 
-                <input
-                    type="text"
-                    id="meetingLocation"
-                    placeholder="Example: Bilik Mesyuarat 2 or Google Meet link"
-                >
+                    <div>
+                        <div class="modal-section-title">Attendees</div>
+                        <span class="label-help">Who is expected to attend</span>
+                    </div>
 
-            </label>
-
-
-            <label>
-
-                Attendees
-
-                <span class="label-help">
-                    Who is expected to attend
-                </span>
+                </div>
 
                 <div
                     id="meetingAttendeeCheckboxes"
                     class="member-checkboxes"
                 ></div>
 
-            </label>
+            </div>
 
 
-            <label>
+            <div class="modal-section">
 
-                Notes / Agenda
+                <div class="modal-section-header">
+
+                    <span class="modal-section-icon">📝</span>
+
+                    <div>
+                        <div class="modal-section-title">Notes / Agenda</div>
+                        <span class="label-help">Optional talking points for this meeting</span>
+                    </div>
+
+                </div>
 
                 <textarea
                     id="meetingNotes"
@@ -1512,7 +1538,7 @@
                     placeholder="Optional agenda or notes"
                 ></textarea>
 
-            </label>
+            </div>
 
 
             <div class="modal-buttons">
@@ -1575,13 +1601,18 @@
 
             <input type="hidden" id="momMeetingId">
 
-            <label>
+            <div class="modal-section">
 
-                Discussion Summary / Notes
+                <div class="modal-section-header">
 
-                <span class="label-help">
-                    Key points discussed, updates given, and decisions made
-                </span>
+                    <span class="modal-section-icon">💬</span>
+
+                    <div>
+                        <div class="modal-section-title">Discussion Summary</div>
+                        <span class="label-help">Key points discussed, updates given, and decisions made</span>
+                    </div>
+
+                </div>
 
                 <textarea
                     id="momSummary"
@@ -1589,15 +1620,20 @@
                     placeholder="Summarize what was discussed in this meeting..."
                 ></textarea>
 
-            </label>
+            </div>
 
-            <label>
+            <div class="modal-section">
 
-                Action Items
+                <div class="modal-section-header">
 
-                <span class="label-help">
-                    Tasks or follow-ups arising from this meeting
-                </span>
+                    <span class="modal-section-icon">✅</span>
+
+                    <div>
+                        <div class="modal-section-title">Action Items</div>
+                        <span class="label-help">Tasks or follow-ups arising from this meeting</span>
+                    </div>
+
+                </div>
 
                 <div
                     id="momActionList"
@@ -1626,7 +1662,7 @@
 
                 </div>
 
-            </label>
+            </div>
 
             <div id="momMeta" class="mom-meta hidden"></div>
 
