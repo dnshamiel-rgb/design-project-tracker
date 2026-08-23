@@ -1003,277 +1003,333 @@
             >
 
 
-            <label class="field-name-block">
-                Task Name
+            <div class="modal-section" id="taskInfoSection">
 
-                <input
-                    type="text"
-                    id="taskName"
-                    placeholder="Example: Design Research"
-                    required
-                >
-            </label>
+                <div class="modal-section-header">
 
+                    <span class="modal-section-icon">📝</span>
 
-            <!-- MAIN PIC -->
-
-            <label class="field-pic-block">
-
-                Main PIC
-
-                <span class="label-help">
-                    Person mainly responsible for this task
-                </span>
-
-                <select id="mainPIC" required>
-
-                    <option value="">
-                        Select Main PIC
-                    </option>
-
-                </select>
-
-            </label>
-
-
-            <!-- ASSIGNED MEMBERS -->
-
-            <label class="field-assigned-block">
-
-                Assigned Members
-
-                <span class="label-help">
-                    Select one or more members
-                </span>
-
-                <div
-                    id="memberCheckboxes"
-                    class="member-checkboxes"
-                ></div>
-
-            </label>
-
-
-            <!-- SUBTASKS / CHECKLIST -->
-
-            <label id="checklistFieldBlock">
-
-                Checklist
-
-                <span class="label-help">
-                    Break the task into smaller steps
-                </span>
-
-                <button
-                    type="button"
-                    id="lecturerChecklistToggleBtn"
-                    class="lecturer-checklist-toggle hidden"
-                    onclick="toggleLecturerChecklist()"
-                >
-                    ▸ Show checklist
-                </button>
-
-                <div id="subtaskProgressLabel" class="subtask-progress-label"></div>
-
-                <div
-                    id="subtaskList"
-                    class="subtask-list"
-                ></div>
-
-                <div class="subtask-add-row">
-
-                    <input
-                        type="text"
-                        id="subtaskInput"
-                        placeholder="Add a new step..."
-                    >
-
-                    <button
-                        type="button"
-                        id="subtaskAddBtn"
-                        class="subtask-add-btn"
-                    >
-                        + Add
-                    </button>
+                    <div>
+                        <div class="modal-section-title">Task Info</div>
+                        <span class="label-help">What the task is and who's responsible</span>
+                    </div>
 
                 </div>
 
-            </label>
-
-
-            <!-- MULTIPLE LINK ATTACHMENTS -->
-
-            <label class="field-links-block">
-
-                Additional Links
-
-                <span class="label-help">
-                    Add multiple links (drafts, references, etc.)
-                </span>
-
-                <div
-                    id="linksList"
-                    class="subtask-list"
-                ></div>
-
-                <div class="subtask-add-row">
+                <label class="field-name-block">
+                    Task Name
 
                     <input
                         type="text"
-                        id="linkLabelInput"
-                        placeholder="Label (optional)"
-                        style="flex: 0 0 40%;"
+                        id="taskName"
+                        placeholder="Example: Design Research"
+                        required
                     >
+                </label>
+
+
+                <!-- MAIN PIC -->
+
+                <label class="field-pic-block">
+
+                    Main PIC
+
+                    <span class="label-help">
+                        Person mainly responsible for this task
+                    </span>
+
+                    <select id="mainPIC" required>
+
+                        <option value="">
+                            Select Main PIC
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <!-- ASSIGNED MEMBERS -->
+
+                <label class="field-assigned-block">
+
+                    Assigned Members
+
+                    <span class="label-help">
+                        Select one or more members
+                    </span>
+
+                    <div
+                        id="memberCheckboxes"
+                        class="member-checkboxes"
+                    ></div>
+
+                </label>
+
+            </div>
+
+
+            <div class="modal-section" id="checklistFieldBlock">
+
+                <div class="modal-section-header">
+
+                    <span class="modal-section-icon">☑️</span>
+
+                    <div>
+                        <div class="modal-section-title">Checklist &amp; Links</div>
+                        <span class="label-help">Break the task down and attach references</span>
+                    </div>
+
+                </div>
+
+                <!-- SUBTASKS / CHECKLIST -->
+
+                <label>
+
+                    Checklist
+
+                    <button
+                        type="button"
+                        id="lecturerChecklistToggleBtn"
+                        class="lecturer-checklist-toggle hidden"
+                        onclick="toggleLecturerChecklist()"
+                    >
+                        ▸ Show checklist
+                    </button>
+
+                    <div id="subtaskProgressLabel" class="subtask-progress-label"></div>
+
+                    <div
+                        id="subtaskList"
+                        class="subtask-list"
+                    ></div>
+
+                    <div class="subtask-add-row">
+
+                        <input
+                            type="text"
+                            id="subtaskInput"
+                            placeholder="Add a new step..."
+                        >
+
+                        <button
+                            type="button"
+                            id="subtaskAddBtn"
+                            class="subtask-add-btn"
+                        >
+                            + Add
+                        </button>
+
+                    </div>
+
+                </label>
+
+
+                <!-- MULTIPLE LINK ATTACHMENTS -->
+
+                <label class="field-links-block">
+
+                    Additional Links
+
+                    <span class="label-help">
+                        Add multiple links (drafts, references, etc.)
+                    </span>
+
+                    <div
+                        id="linksList"
+                        class="subtask-list"
+                    ></div>
+
+                    <div class="subtask-add-row">
+
+                        <input
+                            type="text"
+                            id="linkLabelInput"
+                            placeholder="Label (optional)"
+                            style="flex: 0 0 40%;"
+                        >
+
+                        <input
+                            type="url"
+                            id="linkUrlInput"
+                            placeholder="https://..."
+                        >
+
+                        <button
+                            type="button"
+                            id="linkAddBtn"
+                            class="subtask-add-btn"
+                        >
+                            + Add
+                        </button>
+
+                    </div>
+
+                </label>
+
+            </div>
+
+
+            <div class="modal-section" id="taskStatusSection">
+
+                <div class="modal-section-header">
+
+                    <span class="modal-section-icon">📊</span>
+
+                    <div>
+                        <div class="modal-section-title">Status &amp; Timeline</div>
+                        <span class="label-help">Priority, current status, progress and deadline</span>
+                    </div>
+
+                </div>
+
+                <div class="form-row field-priority-status-block">
+
+                    <label>
+
+                        Priority
+
+                        <select id="taskPriority">
+
+                            <option>
+                                High
+                            </option>
+
+                            <option selected>
+                                Medium
+                            </option>
+
+                            <option>
+                                Low
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <label>
+
+                        Status
+
+                        <select id="taskStatus">
+
+                            <option>
+                                Not Started
+                            </option>
+
+                            <option>
+                                In Progress
+                            </option>
+
+                            <option>
+                                Done
+                            </option>
+
+                            <option>
+                                Blocked
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                </div>
+
+
+                <div class="form-row field-progress-deadline-block">
+
+                    <label>
+
+                        Progress (%)
+
+                        <input
+                            type="number"
+                            id="taskProgress"
+                            min="0"
+                            max="100"
+                            value="0"
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        Deadline
+
+                        <input
+                            type="date"
+                            id="taskDeadline"
+                            required
+                        >
+
+                    </label>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-section" id="taskAttachmentSection">
+
+                <div class="modal-section-header">
+
+                    <span class="modal-section-icon">📎</span>
+
+                    <div>
+                        <div class="modal-section-title">Attachments</div>
+                        <span class="label-help">Optional link or file as evidence</span>
+                    </div>
+
+                </div>
+
+                <!-- ATTACHMENT -->
+
+                <label class="field-attachment-link-block">
+
+                    Attachment Link
+
+                    <span class="label-help">
+                        Google Drive, Canva, Figma, OneDrive, etc.
+                    </span>
 
                     <input
                         type="url"
-                        id="linkUrlInput"
+                        id="taskAttachment"
                         placeholder="https://..."
                     >
 
-                    <button
-                        type="button"
-                        id="linkAddBtn"
-                        class="subtask-add-btn"
-                    >
-                        + Add
-                    </button>
-
-                </div>
-
-            </label>
-
-
-            <div class="form-row field-priority-status-block">
-
-                <label>
-
-                    Priority
-
-                    <select id="taskPriority">
-
-                        <option>
-                            High
-                        </option>
-
-                        <option selected>
-                            Medium
-                        </option>
-
-                        <option>
-                            Low
-                        </option>
-
-                    </select>
-
                 </label>
 
 
-                <label>
+                <label class="field-attachment-file-block">
 
-                    Status
-
-                    <select id="taskStatus">
-
-                        <option>
-                            Not Started
-                        </option>
-
-                        <option>
-                            In Progress
-                        </option>
-
-                        <option>
-                            Done
-                        </option>
-
-                        <option>
-                            Blocked
-                        </option>
-
-                    </select>
-
-                </label>
-
-            </div>
-
-
-            <div class="form-row field-progress-deadline-block">
-
-                <label>
-
-                    Progress (%)
+                    Attachment File
 
                     <input
-                        type="number"
-                        id="taskProgress"
-                        min="0"
-                        max="100"
-                        value="0"
+                        type="file"
+                        id="taskFile"
                     >
 
-                </label>
+                    <span
+                        id="currentFile"
+                        class="current-file"
+                    ></span>
 
+                    <div id="taskUploadProgressWrap" class="upload-progress-wrap hidden">
 
-                <label>
+                        <div class="upload-progress-bar">
+                            <div id="taskUploadProgressFill"></div>
+                        </div>
 
-                    Deadline
+                        <small id="taskUploadProgressText">Uploading... 0%</small>
 
-                    <input
-                        type="date"
-                        id="taskDeadline"
-                        required
-                    >
-
-                </label>
-
-            </div>
-
-
-            <!-- ATTACHMENT -->
-
-            <label class="field-attachment-link-block">
-
-                Attachment Link
-
-                <span class="label-help">
-                    Google Drive, Canva, Figma, OneDrive, etc.
-                </span>
-
-                <input
-                    type="url"
-                    id="taskAttachment"
-                    placeholder="https://..."
-                >
-
-            </label>
-
-
-            <label class="field-attachment-file-block">
-
-                Attachment File
-
-                <input
-                    type="file"
-                    id="taskFile"
-                >
-
-                <span
-                    id="currentFile"
-                    class="current-file"
-                ></span>
-
-                <div id="taskUploadProgressWrap" class="upload-progress-wrap hidden">
-
-                    <div class="upload-progress-bar">
-                        <div id="taskUploadProgressFill"></div>
                     </div>
 
-                    <small id="taskUploadProgressText">Uploading... 0%</small>
+                </label>
 
-                </div>
-
-            </label>
+            </div>
 
 
             <!-- LECTURER MARKING -->
