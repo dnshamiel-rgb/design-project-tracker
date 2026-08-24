@@ -8279,7 +8279,7 @@ function renderTasks() {
 
                 <tr>
 
-                    <td>
+                    <td data-label="Task">
 
                         <strong>
                             ${task.name}
@@ -8300,7 +8300,7 @@ function renderTasks() {
                     </td>
 
 
-                    <td>
+                    <td data-label="Main PIC">
 
                         <span class="pic-tag">
 
@@ -8311,7 +8311,7 @@ function renderTasks() {
                     </td>
 
 
-                    <td>
+                    <td data-label="Assigned To">
 
                         <div class="pic-list">
 
@@ -8335,12 +8335,12 @@ function renderTasks() {
                     </td>
 
 
-                    <td>
+                    <td data-label="Priority">
                         ${task.priority || "-"}
                     </td>
 
 
-                    <td>
+                    <td data-label="Status">
 
                         <span
                             class="
@@ -8356,7 +8356,7 @@ function renderTasks() {
                     </td>
 
 
-                    <td>
+                    <td data-label="Progress">
 
                         ${Number(
                             task.progress || 0
@@ -8365,7 +8365,7 @@ function renderTasks() {
                     </td>
 
 
-                    <td>
+                    <td data-label="Deadline">
 
                         <span
                             class="
@@ -8388,14 +8388,14 @@ function renderTasks() {
                     </td>
 
 
-                    <td>
+                    <td data-label="Attachment">
 
                         ${attachment}
 
                     </td>
 
 
-                    <td>
+                    <td data-label="Action">
 
                         ${
                             isLecturer()
