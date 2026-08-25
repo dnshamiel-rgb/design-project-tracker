@@ -181,6 +181,7 @@
         <button id="navMeetings" onclick="showSection('meetings')">🗓️ Meetings</button>
         <button id="navCalendar" onclick="showSection('calendar')">📅 Calendar</button>
         <button id="navResources" onclick="showSection('resources')">📁 Resources</button>
+        <button id="navEngineering" onclick="showSection('engineering')">⚙️ Engineering</button>
         <button id="navTeam" onclick="showSection('team')">👥 Team</button>
         <button id="navActivity" onclick="showSection('activity')">🕘 Activity Log</button>
         <button id="navLeaderHub" onclick="showSection('leaderhub')">👑 Leader Hub</button>
@@ -794,8 +795,32 @@
 
             </div>
 
-            <!-- ENGINEERING WORKSPACE — visible to everyone, leader can open -->
-            <div id="engineeringToolsBlock" class="engineering-tools-block">
+            <div
+                id="chapterList"
+                class="chapter-list"
+            ></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ENGINEERING WORKSPACE -->
+
+    <section id="engineering" class="section hidden">
+
+        <div class="panel engineering-page-panel">
+
+            <div class="panel-title">
+
+                <div>
+                    <h3>⚙️ Engineering</h3>
+                    <p>Process and equipment design workspaces</p>
+                </div>
+
+            </div>
+
+            <div class="engineering-tools-block engineering-page-tools">
 
                 <div class="engineering-tools-label">ENGINEERING WORKSPACE</div>
 
@@ -807,8 +832,8 @@
 
                         <div class="engineering-tool-title-row">
                             <div>
-                                <h4>Heat Exchanger Design</h4>
-                                <p>Shell &amp; Tube Engineering Workspace</p>
+                                <h4>ChemDesign</h4>
+                                <p>Shell &amp; Tube Heat Exchanger Design</p>
                             </div>
 
                             <span id="heatExchangerAccessBadge" class="engineering-tool-access-badge">
@@ -842,16 +867,11 @@
 
                 </div>
 
-                <div class="resources-divider">
-                    <span>PROJECT RESOURCES</span>
+                <div class="engineering-page-note">
+                    Additional engineering tools can be added here later without mixing them with project resources.
                 </div>
 
             </div>
-
-            <div
-                id="chapterList"
-                class="chapter-list"
-            ></div>
 
         </div>
 
