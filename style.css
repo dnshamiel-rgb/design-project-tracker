@@ -5311,4 +5311,13 @@ tbody tr:last-child td {
         min-width: 128px;
     }
 }
+/* Hide Edit Task modal scrollbar but keep scrolling */
+.modal-box{
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+
+.modal-box::-webkit-scrollbar{
+  display:none;
+}
 
