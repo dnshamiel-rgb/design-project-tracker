@@ -4880,3 +4880,63 @@ tbody tr:last-child td {
 
 }
 
+/* ============================================================
+   ENGINEERING TAB + SCROLLABLE SIDEBAR NAV
+   Logo/footer stay fixed; only the menu area scrolls.
+============================================================ */
+
+.sidebar {
+    overflow: hidden;
+}
+
+.sidebar .logo {
+    flex: 0 0 auto;
+}
+
+.sidebar nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overscroll-behavior: contain;
+}
+
+.sidebar nav::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar-bottom {
+    flex: 0 0 auto;
+}
+
+.engineering-page-panel {
+    overflow: hidden;
+}
+
+.engineering-page-tools {
+    margin: 0;
+}
+
+.engineering-page-note {
+    margin-top: 14px;
+    padding: 11px 13px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: #FAFBFD;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+@media (max-width: 650px) {
+    .sidebar nav {
+        flex-direction: column;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+}
+
