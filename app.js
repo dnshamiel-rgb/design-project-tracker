@@ -1721,7 +1721,13 @@ let systemSettings = {
 
     submissionDeadline: "",
 
-    submissionDeadlineLabel: ""
+    submissionDeadlineLabel: "",
+
+    currentFocusChapter: "",
+
+    currentFocusText: "",
+
+    currentFocusDate: ""
 
 };
 
@@ -1751,7 +1757,13 @@ function listenToSystemSettings() {
 
                         submissionDeadline: sanitizeText(data.submissionDeadline || ""),
 
-                        submissionDeadlineLabel: sanitizeText(data.submissionDeadlineLabel || "")
+                        submissionDeadlineLabel: sanitizeText(data.submissionDeadlineLabel || ""),
+
+                        currentFocusChapter: sanitizeText(data.currentFocusChapter || ""),
+
+                        currentFocusText: sanitizeText(data.currentFocusText || ""),
+
+                        currentFocusDate: sanitizeText(data.currentFocusDate || "")
 
                     };
 
@@ -1762,6 +1774,10 @@ function listenToSystemSettings() {
                 renderAnnouncementBanner();
 
                 renderSubmissionCountdown();
+
+                renderCurrentFocus();
+
+                renderCurrentFocusEditor();
 
             },
             error => {
@@ -1960,7 +1976,13 @@ function saveAdminSettings(event) {
 
         submissionDeadline: systemSettings.submissionDeadline || "",
 
-        submissionDeadlineLabel: systemSettings.submissionDeadlineLabel || ""
+        submissionDeadlineLabel: systemSettings.submissionDeadlineLabel || "",
+
+        currentFocusChapter: systemSettings.currentFocusChapter || "",
+
+        currentFocusText: systemSettings.currentFocusText || "",
+
+        currentFocusDate: systemSettings.currentFocusDate || ""
 
     };
 
@@ -1977,6 +1999,211 @@ function saveAdminSettings(event) {
     renderAnnouncementBanner();
 
     showToast("System settings saved.");
+
+}
+
+
+// ============================================================
+// THIS WEEK'S FOCUS
+// ============================================================
+//
+// Leader configures one compact weekly focus in Leader Hub.
+// Everyone sees it in My Day. It deliberately does not appear
+// on the main Dashboard to keep the overview uncluttered.
+// ============================================================
+
+function populateCurrentFocusChapterSelect() {
+
+    const select = getElement("currentFocusChapter");
+
+    if (!select) return;
+
+    const previous = systemSettings.currentFocusChapter || "";
+
+    select.innerHTML = `<option value="">No active chapter focus</option>`;
+
+    CHAPTERS.forEach(chapter => {
+
+        const option = document.createElement("option");
+
+        option.value = chapter;
+        option.textContent = chapter;
+
+        select.appendChild(option);
+
+    });
+
+    select.value = CHAPTERS.includes(previous) ? previous : "";
+
+}
+
+
+function renderCurrentFocusEditor() {
+
+    if (!isGroupLeader()) return;
+
+    populateCurrentFocusChapterSelect();
+
+    const textInput = getElement("currentFocusText");
+    const dateInput = getElement("currentFocusDate");
+
+    if (textInput && document.activeElement !== textInput) {
+        textInput.value = systemSettings.currentFocusText || "";
+    }
+
+    if (dateInput && document.activeElement !== dateInput) {
+        dateInput.value = systemSettings.currentFocusDate || "";
+    }
+
+}
+
+
+function saveCurrentFocus() {
+
+    if (!isGroupLeader()) {
+
+        showToast(`Only ${LEADER_NAME} can set the weekly focus.`);
+
+        return;
+
+    }
+
+    const chapterInput = getElement("currentFocusChapter");
+    const textInput = getElement("currentFocusText");
+    const dateInput = getElement("currentFocusDate");
+
+    const chapter = chapterInput ? sanitizeText(chapterInput.value) : "";
+    const text = textInput ? sanitizeText(textInput.value) : "";
+    const date = dateInput ? sanitizeText(dateInput.value) : "";
+
+    if (!chapter && !text) {
+
+        systemSettings.currentFocusChapter = "";
+        systemSettings.currentFocusText = "";
+        systemSettings.currentFocusDate = "";
+
+        saveSystemSettingsData();
+
+        renderCurrentFocus();
+
+        showToast("This week's focus cleared.");
+
+        logActivity("cleared the weekly project focus");
+
+        return;
+
+    }
+
+    systemSettings.currentFocusChapter = chapter;
+    systemSettings.currentFocusText = text;
+    systemSettings.currentFocusDate = date;
+
+    saveSystemSettingsData();
+
+    renderCurrentFocus();
+
+    logActivity(
+        `updated the weekly focus${chapter ? ` to ${chapter}` : ""}`
+    );
+
+    showToast("This week's focus saved.");
+
+}
+
+
+function formatFocusDate(dateString) {
+
+    if (!dateString) return "";
+
+    const date = new Date(dateString + "T00:00:00");
+
+    return date.toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+    });
+
+}
+
+
+function renderCurrentFocus() {
+
+    const card = getElement("mydayFocusCard");
+
+    if (!card) return;
+
+    if (isLecturer()) {
+
+        card.classList.add("hidden");
+        card.innerHTML = "";
+
+        return;
+
+    }
+
+    const chapter = systemSettings.currentFocusChapter || "";
+    const text = systemSettings.currentFocusText || "";
+    const date = systemSettings.currentFocusDate || "";
+
+    if (!chapter && !text) {
+
+        card.classList.add("hidden");
+        card.innerHTML = "";
+
+        return;
+
+    }
+
+    const title = chapter || "Team Focus";
+
+    let dateChip = "";
+
+    if (date) {
+
+        const days = getDaysLeft(date);
+
+        let timing = "";
+
+        if (days < 0) timing = "Past target";
+        else if (days === 0) timing = "Due today";
+        else if (days === 1) timing = "1 day left";
+        else timing = `${days} days left`;
+
+        dateChip = `
+            <span class="myday-focus-chip">
+                📅 ${formatFocusDate(date)} · ${timing}
+            </span>
+        `;
+
+    }
+
+    const chapterButton = chapter
+        ? `
+            <button
+                type="button"
+                class="myday-focus-action"
+                onclick="openChapterTasks('${chapter.replace(/'/g, "\\'")}')"
+            >
+                View Chapter Tasks →
+            </button>
+        `
+        : "";
+
+    card.innerHTML = `
+        <div>
+            <div class="myday-focus-kicker">🎯 This Week's Focus</div>
+            <h4 class="myday-focus-title">${title}</h4>
+            ${text ? `<div class="myday-focus-target">${text}</div>` : ""}
+            <div class="myday-focus-meta">
+                ${chapter ? `<span class="myday-focus-chip">📚 ${chapter}</span>` : ""}
+                ${dateChip}
+            </div>
+        </div>
+
+        ${chapterButton}
+    `;
+
+    card.classList.remove("hidden");
 
 }
 
@@ -2307,6 +2534,8 @@ function saveLeaderNotesNow() {
 
 
 function renderLeaderHub() {
+
+    renderCurrentFocusEditor();
 
     renderSubmissionCountdown();
 
@@ -3206,6 +3435,8 @@ function closeDailyQuoteModal() {
 function renderMyDay() {
 
     renderMydayQuote();
+
+    renderCurrentFocus();
 
     const greeting =
         getElement("mydayGreeting");
