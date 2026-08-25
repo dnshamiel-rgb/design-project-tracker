@@ -186,7 +186,7 @@ const LECTURER = {
 // ============================================================
 
 const LEADER_NAME = "Shamiel";
-// Separate ChemDesign engineering application launched from Resources.
+// Separate ChemDesign engineering application launched from the Engineering tab.
 const HEAT_EXCHANGER_TOOL_URL =
     "https://chemdesign-heat-exchanger.onrender.com";
 
@@ -2392,7 +2392,6 @@ function openNotification(id) {
             openChapters.push(resource.chapter);
 
             renderChapters();
-            renderEngineeringToolAccess();
 
         }
 
@@ -10044,6 +10043,15 @@ function showSection(
 
 
     if (
+        name === "engineering"
+    ) {
+
+        renderEngineeringToolAccess();
+
+    }
+
+
+    if (
         name === "activity"
     ) {
 
@@ -13148,6 +13156,7 @@ function applyRoleRestrictions() {
     const hiddenNavIds = [
         "navMyDay",
         "navMeetings",
+        "navEngineering",
         "navTeam",
         "navActivity"
     ];
