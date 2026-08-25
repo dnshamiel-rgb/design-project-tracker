@@ -2090,13 +2090,9 @@ function buildAiInsightSnapshot() {
                 tasks.reduce((sum, task) => sum + Number(task.progress || 0), 0) / tasks.length
             );
 
-    const sortedHistory =
-        [...progressHistory].sort((a, b) => a.date.localeCompare(b.date));
-
-    const previousOverall =
-        sortedHistory.length >= 2
-            ? sortedHistory[sortedHistory.length - 2].overall
-            : null;
+    // Historical progress chart tracking was removed from the dashboard.
+    // Keep this field for Cloud Function payload compatibility.
+    const previousOverall = null;
 
     return {
         tasks: taskSummaries,
@@ -2702,185 +2698,6 @@ document.addEventListener("click", event => {
     }
 
 });
-
-
-// ============================================================
-// PROGRESS HISTORY (for Progress Over Time chart)
-// ============================================================
-//
-// One snapshot per day: { date: "YYYY-MM-DD", overall: number }
-// Recorded automatically whenever the dashboard updates, but
-// only once per day (today's entry gets overwritten, not
-// duplicated, so refreshing many times a day is fine).
-// ============================================================
-
-let progressHistory = [];
-
-
-function listenToProgressHistory() {
-
-    if (!db) return;
-
-    db.collection("trackerData")
-        .doc("progressHistory")
-        .onSnapshot(
-            doc => {
-
-                progressHistory = doc.exists
-                    ? (sanitizeStoredData(doc.data().list) || [])
-                    : [];
-
-                renderProgressChart();
-
-            },
-            error => {
-
-                console.error(
-                    "Progress history sync error:",
-                    error
-                );
-
-            }
-        );
-
-}
-
-
-function saveProgressHistoryData() {
-
-    if (!db) return;
-
-    db.collection("trackerData")
-        .doc("progressHistory")
-        .set({
-            list: progressHistory
-        })
-        .catch(error => {
-
-            console.error(
-                "Save progress history failed:",
-                error
-            );
-
-        });
-
-}
-
-
-function recordProgressSnapshot(overall) {
-
-    if (!db) return;
-
-    const today = formatDate(new Date());
-
-    const existingIndex =
-        progressHistory.findIndex(
-            entry => entry.date === today
-        );
-
-    if (existingIndex !== -1) {
-
-        if (progressHistory[existingIndex].overall === overall) {
-            return;
-        }
-
-        progressHistory[existingIndex].overall = overall;
-
-    }
-
-    else {
-
-        progressHistory.push({
-            date: today,
-            overall: overall
-        });
-
-    }
-
-    progressHistory.sort(
-        (a, b) => a.date.localeCompare(b.date)
-    );
-
-    saveProgressHistoryData();
-
-}
-
-
-let progressChartInstance = null;
-
-
-function renderProgressChart() {
-
-    const canvas = getElement("progressChartCanvas");
-
-    if (!canvas || typeof Chart === "undefined") return;
-
-    const sorted =
-        [...progressHistory].sort(
-            (a, b) => a.date.localeCompare(b.date)
-        );
-
-    const labels = sorted.map(entry => entry.date);
-
-    const data = sorted.map(entry => entry.overall);
-
-    if (progressChartInstance) {
-
-        progressChartInstance.data.labels = labels;
-
-        progressChartInstance.data.datasets[0].data = data;
-
-        progressChartInstance.update();
-
-        return;
-
-    }
-
-    progressChartInstance = new Chart(canvas, {
-
-        type: "line",
-
-        data: {
-
-            labels: labels,
-
-            datasets: [{
-                label: "Overall Progress (%)",
-                data: data,
-                borderColor: "#6875ed",
-                backgroundColor: "rgba(104,117,237,0.1)",
-                fill: true,
-                tension: 0.3,
-                pointBackgroundColor: "#6875ed"
-            }]
-
-        },
-
-        options: {
-
-            responsive: true,
-
-            scales: {
-                y: {
-                    min: 0,
-                    max: 100,
-                    ticks: {
-                        callback: value => value + "%"
-                    }
-                }
-            },
-
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-
-        }
-
-    });
-
-}
 
 
 // ============================================================
@@ -7375,7 +7192,6 @@ function startFirebaseDataListeners() {
     listenToMeetings();
     listenToResources();
     listenToActivityLog();
-    listenToProgressHistory();
     listenToMemberPhotos();
     listenToNotifications();
     listenToDeleteRequests();
@@ -7712,8 +7528,6 @@ function updateDashboard() {
 
     }
 
-
-    recordProgressSnapshot(overall);
 
 
     const overallBar =
