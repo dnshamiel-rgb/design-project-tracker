@@ -335,6 +335,22 @@
         </div>
 
 
+        <div class="panel chapter-progress-panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>📚 Chapter Progress</h3>
+                    <p>Task progress grouped by chapter and equipment work package</p>
+                </div>
+            </div>
+
+            <div id="chapterProgressList" class="chapter-progress-list">
+                <div class="chapter-progress-empty">Assign a chapter in Add/Edit Task to start tracking chapter progress.</div>
+            </div>
+
+        </div>
+
+
         <div id="lecturerMarkingPanel" class="panel hidden">
 
             <div class="panel-title">
@@ -492,6 +508,34 @@
                     placeholder="🔎 Search task..."
                     oninput="renderTasks()"
                 >
+
+
+                <select
+                    id="filterChapter"
+                >
+
+                    <option value="All">All Chapters</option>
+                    <option value="Unassigned">Unassigned</option>
+                    <option value="General / Not Chapter Specific">General / Not Chapter Specific</option>
+                    <option value="Chapter 1">Chapter 1</option>
+                    <option value="Chapter 2">Chapter 2</option>
+                    <option value="Chapter 3">Chapter 3</option>
+                    <option value="Chapter 4">Chapter 4</option>
+                    <option value="Chapter 5">Chapter 5</option>
+                    <option value="Chapter 6">Chapter 6</option>
+                    <option value="Chapter 7">Chapter 7</option>
+                    <option value="Chapter 8">Chapter 8</option>
+                    <option value="Chapter 9">Chapter 9</option>
+                    <option value="Chapter 10">Chapter 10</option>
+
+                </select>
+
+
+                <select
+                    id="filterEquipment"
+                >
+                    <option value="All">All Equipment / Work Packages</option>
+                </select>
 
 
                 <select
@@ -1128,6 +1172,41 @@
                         required
                     >
                 </label>
+
+
+                <div class="form-row task-classification-row">
+
+                    <label>
+                        Chapter
+                        <span class="label-help">Group this task under the correct report chapter</span>
+                        <select id="taskChapter">
+                            <option value="Unassigned">Unassigned</option>
+                            <option value="General / Not Chapter Specific">General / Not Chapter Specific</option>
+                            <option value="Chapter 1">Chapter 1</option>
+                            <option value="Chapter 2">Chapter 2</option>
+                            <option value="Chapter 3">Chapter 3</option>
+                            <option value="Chapter 4">Chapter 4</option>
+                            <option value="Chapter 5">Chapter 5</option>
+                            <option value="Chapter 6">Chapter 6</option>
+                            <option value="Chapter 7">Chapter 7</option>
+                            <option value="Chapter 8">Chapter 8</option>
+                            <option value="Chapter 9">Chapter 9</option>
+                            <option value="Chapter 10">Chapter 10</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Equipment / Work Package
+                        <span class="label-help">Optional — e.g. Heat Exchanger, Pump, Distillation Column</span>
+                        <input
+                            type="text"
+                            id="taskWorkPackage"
+                            placeholder="Example: Heat Exchanger"
+                            maxlength="80"
+                        >
+                    </label>
+
+                </div>
 
 
                 <!-- MAIN PIC -->
