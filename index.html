@@ -368,21 +368,21 @@
         <div id="aiInsightCard" class="ai-insight-card hidden"></div>
 
 
-        <div class="panel">
-
-            <div class="panel-title">
-                <div>
-                    <h3>🚨 Needs Attention</h3>
-
-                    <p>
-                        Tasks due within 3 days or overdue
-                    </p>
-                </div>
-            </div>
-
-            <div id="attentionList"></div>
-
-        </div>
+        <button
+            type="button"
+            id="attentionAlert"
+            class="attention-alert hidden"
+            onclick="openAttentionModal()"
+            aria-haspopup="dialog"
+            aria-controls="attentionModal"
+        >
+            <span class="attention-alert-icon">⚠️</span>
+            <span class="attention-alert-copy">
+                <strong id="attentionAlertTitle">Items need attention</strong>
+                <small id="attentionAlertMeta"></small>
+            </span>
+            <span class="attention-alert-action">View</span>
+        </button>
 
 
         <div class="content-grid">
@@ -2230,6 +2230,37 @@
             <button type="button" class="logout-confirm-btn" onclick="confirmLogout()">
                 Log out
             </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- NEEDS ATTENTION POPUP -->
+<div
+    id="attentionModal"
+    class="logout-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="attentionModalTitle"
+    onclick="if (event.target === this) closeAttentionModal()"
+>
+    <div class="attention-modal-card">
+        <button type="button" class="logout-close" onclick="closeAttentionModal()" aria-label="Close">×</button>
+
+        <div class="attention-modal-heading">
+            <div class="attention-modal-icon">⚠️</div>
+            <div>
+                <div class="panel-kicker">DEADLINE WATCH</div>
+                <h2 id="attentionModalTitle">Needs Attention</h2>
+                <p id="attentionModalSummary">Urgent project tasks</p>
+            </div>
+        </div>
+
+        <div id="attentionModalList" class="attention-modal-list"></div>
+
+        <div class="attention-modal-footer">
+            <button type="button" class="cancel-btn" onclick="closeAttentionModal()">Close</button>
+            <button type="button" class="attention-view-all-btn" onclick="openAttentionTasks()">View urgent tasks</button>
         </div>
     </div>
 </div>
