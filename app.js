@@ -186,6 +186,59 @@ const LECTURER = {
 // ============================================================
 
 const LEADER_NAME = "Shamiel";
+// Separate ChemDesign engineering application launched from Resources.
+const HEAT_EXCHANGER_TOOL_URL =
+    "https://chemdesign-heat-exchanger.onrender.com";
+
+
+function renderEngineeringToolAccess() {
+
+    const button = getElement("heatExchangerToolBtn");
+    const badge = getElement("heatExchangerAccessBadge");
+    const note = getElement("heatExchangerAccessNote");
+
+    if (!button) return;
+
+    const allowed = isGroupLeader();
+
+    button.disabled = !allowed;
+    button.classList.toggle("locked", !allowed);
+    button.textContent = allowed
+        ? "Open Workspace ↗"
+        : "🔒 Leader Access";
+
+    if (badge) {
+        badge.textContent = allowed ? "LEADER ACCESS" : "LOCKED";
+        badge.classList.toggle("locked", !allowed);
+    }
+
+    if (note) {
+        note.textContent = allowed
+            ? "Opens ChemDesign in a new tab"
+            : `Only ${LEADER_NAME} can open this workspace`;
+    }
+}
+
+
+function openHeatExchangerTool() {
+
+    if (!isGroupLeader()) {
+
+        showToast(
+            `Only ${LEADER_NAME} can open the Heat Exchanger workspace.`,
+            "warning"
+        );
+
+        renderEngineeringToolAccess();
+        return;
+    }
+
+    window.open(
+        HEAT_EXCHANGER_TOOL_URL,
+        "_blank",
+        "noopener,noreferrer"
+    );
+}
 
 
 function isGroupLeader() {
@@ -2339,6 +2392,7 @@ function openNotification(id) {
             openChapters.push(resource.chapter);
 
             renderChapters();
+            renderEngineeringToolAccess();
 
         }
 
@@ -13131,6 +13185,7 @@ function applyRoleRestrictions() {
     renderAnnouncementBanner();
 
     renderSubmissionCountdown();
+    renderEngineeringToolAccess();
 
 }
 
