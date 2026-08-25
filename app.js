@@ -607,6 +607,8 @@ function listenToMeetings() {
 
                 renderMyDay();
 
+                renderChapterProgress();
+
             },
             error => {
 
@@ -703,6 +705,186 @@ function getTaskChapter(task) {
 function getTaskWorkPackage(task) {
 
     return sanitizeText(task && task.workPackage ? task.workPackage : "");
+
+}
+
+
+// ============================================================
+// PHASE 2 — SV REVIEW CYCLE (per chapter)
+// ============================================================
+
+const SV_REVIEW_FLOW = [
+    { key: "working", label: "Working" },
+    { key: "ready_for_sv", label: "Ready for SV" },
+    { key: "submitted", label: "Submitted" },
+    { key: "f2f_reviewed", label: "F2F Reviewed" },
+    { key: "revision", label: "Revision" },
+    { key: "approved", label: "Approved" }
+];
+
+let chapterReviews = {};
+
+
+function getSvReviewMeta(status) {
+
+    return SV_REVIEW_FLOW.find(item => item.key === status) || SV_REVIEW_FLOW[0];
+
+}
+
+
+function getChapterSvStatus(chapter) {
+
+    const record = chapterReviews[chapter] || {};
+    const status = sanitizeText(record.status || "working");
+
+    return SV_REVIEW_FLOW.some(item => item.key === status)
+        ? status
+        : "working";
+
+}
+
+
+function listenToChapterReviews() {
+
+    if (!db) return;
+
+    db.collection("trackerData")
+        .doc("chapterReviews")
+        .onSnapshot(
+            doc => {
+
+                chapterReviews = doc.exists
+                    ? (sanitizeStoredData(doc.data().map) || {})
+                    : {};
+
+                renderChapterProgress();
+
+            },
+            error => {
+                console.error("Chapter SV review sync error:", error);
+            }
+        );
+
+}
+
+
+function saveChapterReviewsData() {
+
+    if (!db) return;
+
+    db.collection("trackerData")
+        .doc("chapterReviews")
+        .set({ map: chapterReviews })
+        .catch(error => {
+            console.error("Save chapter SV review failed:", error);
+            showToast("❌ SV review status failed to save: " + error.message);
+        });
+
+}
+
+
+function setChapterSvStatus(chapter, status) {
+
+    if (isLecturer()) {
+        showToast("View-only access — lecturer cannot change the group SV review status.");
+        renderChapterProgress();
+        return;
+    }
+
+    if (!CHAPTERS.includes(chapter)) return;
+
+    const validStatus = SV_REVIEW_FLOW.some(item => item.key === status)
+        ? status
+        : "working";
+
+    chapterReviews[chapter] = {
+        ...(chapterReviews[chapter] || {}),
+        status: validStatus,
+        updatedBy: getCurrentUser() || "Unknown",
+        updatedAt: new Date().toISOString()
+    };
+
+    saveChapterReviewsData();
+    renderChapterProgress();
+
+    const meta = getSvReviewMeta(validStatus);
+    logActivity(`updated ${chapter} SV review status to ${meta.label}`);
+    showToast(`${chapter} SV status: ${meta.label}`);
+
+}
+
+
+function renderSvReviewSteps(status) {
+
+    const currentIndex = Math.max(
+        0,
+        SV_REVIEW_FLOW.findIndex(item => item.key === status)
+    );
+
+    return SV_REVIEW_FLOW.map((item, index) => {
+
+        const cls = index < currentIndex
+            ? "complete"
+            : index === currentIndex
+                ? "current"
+                : "";
+
+        return `
+            <div class="sv-review-step ${cls}">
+                <span>${index < currentIndex ? "✓" : index + 1}</span>
+                <small>${item.label}</small>
+            </div>
+        `;
+
+    }).join("");
+
+}
+
+
+function getLinkedChapterMeeting(chapter) {
+
+    const linked = meetings
+        .filter(meeting => sanitizeText(meeting.relatedChapter || "") === chapter)
+        .sort((a, b) =>
+            `${a.date || ""}T${a.time || "00:00"}`.localeCompare(
+                `${b.date || ""}T${b.time || "00:00"}`
+            )
+        );
+
+    if (!linked.length) return null;
+
+    const today = formatDate(new Date());
+    const upcoming = linked.find(meeting => (meeting.date || "") >= today);
+
+    return upcoming || linked[linked.length - 1];
+
+}
+
+
+function renderLinkedMeetingSummary(chapter) {
+
+    const meeting = getLinkedChapterMeeting(chapter);
+
+    if (!meeting) {
+        return `
+            <div class="sv-linked-meeting empty">
+                <span>🗓️ No linked SV/F2F meeting yet</span>
+            </div>
+        `;
+    }
+
+    const equipment = sanitizeText(meeting.relatedWorkPackage || "");
+
+    return `
+        <button
+            type="button"
+            class="sv-linked-meeting"
+            onclick="editMeeting(${meeting.id})"
+        >
+            <span>🗓️ ${meeting.title}</span>
+            <small>${meeting.date || "No date"}${meeting.time ? " · " + meeting.time : ""}${equipment ? " · " + equipment : ""}</small>
+        </button>
+    `;
 
 }
 
@@ -931,6 +1113,33 @@ function renderChapterProgress() {
                     >
                         View Chapter Tasks
                     </button>
+                </div>
+
+                <div class="sv-review-block">
+                    <div class="sv-review-head">
+                        <div>
+                            <span>SV REVIEW CYCLE</span>
+                            <strong>${getSvReviewMeta(getChapterSvStatus(group.chapter)).label}</strong>
+                        </div>
+
+                        <select
+                            class="sv-status-select"
+                            onchange="setChapterSvStatus('${group.chapter}', this.value)"
+                            ${isLecturer() ? "disabled" : ""}
+                        >
+                            ${SV_REVIEW_FLOW.map(item => `
+                                <option value="${item.key}" ${getChapterSvStatus(group.chapter) === item.key ? "selected" : ""}>
+                                    ${item.label}
+                                </option>
+                            `).join("")}
+                        </select>
+                    </div>
+
+                    <div class="sv-review-steps">
+                        ${renderSvReviewSteps(getChapterSvStatus(group.chapter))}
+                    </div>
+
+                    ${renderLinkedMeetingSummary(group.chapter)}
                 </div>
 
                 ${packageRows ? `<div class="chapter-equipment-list">${packageRows}</div>` : ""}
@@ -4369,6 +4578,90 @@ function renderMeetingAttendeeCheckboxes(
 
 
 // ============================================================
+// MEETING → CHAPTER / EQUIPMENT LINK
+// ============================================================
+
+function populateMeetingChapterSelect(selected = "Unassigned") {
+
+    const select = getElement("meetingChapter");
+
+    if (!select) return;
+
+    const options = ["Unassigned", ...CHAPTERS];
+
+    select.innerHTML = "";
+
+    options.forEach(chapter => {
+
+        const option = document.createElement("option");
+        option.value = chapter;
+        option.textContent = chapter === "Unassigned"
+            ? "Unassigned / General Meeting"
+            : chapter;
+        option.selected = chapter === selected;
+        select.appendChild(option);
+
+    });
+
+    if (!options.includes(selected)) select.value = "Unassigned";
+
+}
+
+
+function populateMeetingWorkPackageSelect(chapter, selected = "") {
+
+    const select = getElement("meetingWorkPackage");
+
+    if (!select) return;
+
+    const names = [...new Set(
+        tasks
+            .filter(task => chapter !== "Unassigned" && getTaskChapter(task) === chapter)
+            .map(getTaskWorkPackage)
+            .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+
+    select.innerHTML = `<option value="">Whole Chapter / General</option>`;
+
+    names.forEach(name => {
+
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+
+    });
+
+    if (selected && !names.includes(selected)) {
+
+        const option = document.createElement("option");
+        option.value = selected;
+        option.textContent = selected;
+        select.appendChild(option);
+
+    }
+
+    select.value = selected || "";
+
+}
+
+
+function setupMeetingProjectLinkEvents() {
+
+    const chapterSelect = getElement("meetingChapter");
+
+    if (!chapterSelect || chapterSelect.dataset.phase2Bound === "1") return;
+
+    chapterSelect.dataset.phase2Bound = "1";
+
+    chapterSelect.addEventListener("change", () => {
+        populateMeetingWorkPackageSelect(chapterSelect.value, "");
+    });
+
+}
+
+
+// ============================================================
 // OPEN / CLOSE MEETING MODAL
 // ============================================================
 
@@ -4447,6 +4740,18 @@ function openMeetingModal(
         ).value =
             meeting.notes || "";
 
+        const relatedChapter = sanitizeText(meeting.relatedChapter || "Unassigned");
+        const relatedWorkPackage = sanitizeText(meeting.relatedWorkPackage || "");
+
+        populateMeetingChapterSelect(
+            CHAPTERS.includes(relatedChapter) ? relatedChapter : "Unassigned"
+        );
+
+        populateMeetingWorkPackageSelect(
+            CHAPTERS.includes(relatedChapter) ? relatedChapter : "Unassigned",
+            relatedWorkPackage
+        );
+
         renderMeetingAttendeeCheckboxes(
             meeting.attendees || []
         );
@@ -4489,6 +4794,9 @@ function openMeetingModal(
             "meetingNotes"
         ).value =
             "";
+
+        populateMeetingChapterSelect("Unassigned");
+        populateMeetingWorkPackageSelect("Unassigned", "");
 
         renderMeetingAttendeeCheckboxes();
 
@@ -4611,13 +4919,28 @@ function saveMeeting(event) {
                 "meetingNotes"
             ).value.trim(),
 
+        relatedChapter:
+            getElement("meetingChapter") && CHAPTERS.includes(getElement("meetingChapter").value)
+                ? getElement("meetingChapter").value
+                : "Unassigned",
+
+        relatedWorkPackage:
+            getElement("meetingWorkPackage")
+                ? sanitizeText(getElement("meetingWorkPackage").value)
+                : "",
+
         attendees:
             attendees,
 
         attended:
             oldMeeting
                 ? oldMeeting.attended || []
-                : []
+                : [],
+
+        mom:
+            oldMeeting
+                ? oldMeeting.mom || null
+                : null
 
     };
 
@@ -4979,6 +5302,17 @@ function renderMeetings() {
                                     : ""
                             }
 
+                            ${
+                                CHAPTERS.includes(meeting.relatedChapter)
+                                    ? `
+                                        <div class="meeting-project-tags">
+                                            <span>📚 ${meeting.relatedChapter}</span>
+                                            ${meeting.relatedWorkPackage ? `<span>⚙️ ${meeting.relatedWorkPackage}</span>` : ""}
+                                        </div>
+                                    `
+                                    : ""
+                            }
+
                         </div>
 
                         <span class="meeting-badge ${status.type}">
@@ -5144,6 +5478,8 @@ function openMomModal(meetingId) {
             <small>
                 📅 ${meeting.date}${meeting.time ? " · " + meeting.time : ""}
                 ${meeting.location ? " · 📍 " + meeting.location : ""}
+                ${CHAPTERS.includes(meeting.relatedChapter) ? " · 📚 " + meeting.relatedChapter : ""}
+                ${meeting.relatedWorkPackage ? " · ⚙️ " + meeting.relatedWorkPackage : ""}
             </small>
         `;
 
@@ -5448,6 +5784,14 @@ function convertMomActionToTask(index) {
     openTaskModal(null, {
 
         name: item.text,
+
+        chapter:
+            meeting && CHAPTERS.includes(meeting.relatedChapter)
+                ? meeting.relatedChapter
+                : "Unassigned",
+
+        workPackage:
+            meeting ? sanitizeText(meeting.relatedWorkPackage || "") : "",
 
         mainPIC: item.owner || "",
 
@@ -7196,6 +7540,7 @@ function startFirebaseDataListeners() {
     listenToNotifications();
     listenToDeleteRequests();
     listenToSystemSettings();
+    listenToChapterReviews();
     listenToReminderLog();
     listenToAiInsight();
 
@@ -13582,6 +13927,8 @@ function startApp() {
     setupTaskCommentEvents();
 
     setupResourceCommentEvents();
+
+    setupMeetingProjectLinkEvents();
 
     setupMomEvents();
 
