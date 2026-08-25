@@ -481,6 +481,8 @@ function listenToTasks() {
 
                 }
 
+                updateEquipmentFilterOptions();
+
                 updateDashboard();
 
                 renderTasks();
@@ -678,6 +680,267 @@ const CHAPTERS = [
     "Chapter 10"
 
 ];
+
+
+const TASK_CHAPTER_OPTIONS = [
+    "Unassigned",
+    "General / Not Chapter Specific",
+    ...CHAPTERS
+];
+
+
+function getTaskChapter(task) {
+
+    const chapter = sanitizeText(task && task.chapter ? task.chapter : "");
+
+    return TASK_CHAPTER_OPTIONS.includes(chapter)
+        ? chapter
+        : "Unassigned";
+
+}
+
+
+function getTaskWorkPackage(task) {
+
+    return sanitizeText(task && task.workPackage ? task.workPackage : "");
+
+}
+
+
+function getEquipmentOwner(packageTasks) {
+
+    const counts = {};
+
+    packageTasks.forEach(task => {
+
+        const name = task.mainPIC || "";
+
+        if (!name) return;
+
+        counts[name] = (counts[name] || 0) + 1;
+
+    });
+
+    const sorted = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1]);
+
+    return sorted.length ? sorted[0][0] : "-";
+
+}
+
+
+function getEquipmentStatus(packageTasks) {
+
+    if (!packageTasks.length) {
+        return { label: "Not Started", cls: "not-started" };
+    }
+
+    const allDone = packageTasks.every(task => task.status === "Done");
+
+    if (allDone) {
+        return { label: "Ready", cls: "ready" };
+    }
+
+    const hasStarted = packageTasks.some(task =>
+        Number(task.progress || 0) > 0 ||
+        task.status === "In Progress" ||
+        task.status === "Blocked"
+    );
+
+    return hasStarted
+        ? { label: "In Progress", cls: "progress" }
+        : { label: "Not Started", cls: "not-started" };
+
+}
+
+
+function getAverageTaskProgress(taskList) {
+
+    if (!taskList.length) return 0;
+
+    return Math.round(
+        taskList.reduce(
+            (sum, task) => sum + Number(task.progress || 0),
+            0
+        ) / taskList.length
+    );
+
+}
+
+
+function updateEquipmentFilterOptions() {
+
+    const select = getElement("filterEquipment");
+
+    if (!select) return;
+
+    const chapterSelect = getElement("filterChapter");
+    const chapter = chapterSelect ? chapterSelect.value : "All";
+    const previous = select.value || "All";
+
+    const names = [...new Set(
+        tasks
+            .filter(task => chapter === "All" || getTaskChapter(task) === chapter)
+            .map(getTaskWorkPackage)
+            .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+
+    select.innerHTML = `<option value="All">All Equipment / Work Packages</option>`;
+
+    names.forEach(name => {
+
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+
+    });
+
+    select.value = names.includes(previous) ? previous : "All";
+
+}
+
+
+function handleChapterFilterChange() {
+
+    updateEquipmentFilterOptions();
+    renderTasks();
+
+}
+
+
+function openChapterTasks(chapter, workPackage = "") {
+
+    showSection("tasks");
+
+    const chapterFilter = getElement("filterChapter");
+
+    if (chapterFilter) chapterFilter.value = chapter;
+
+    updateEquipmentFilterOptions();
+
+    const equipmentFilter = getElement("filterEquipment");
+
+    if (equipmentFilter && workPackage) {
+        equipmentFilter.value = workPackage;
+    }
+
+    renderTasks();
+
+}
+
+
+function renderChapterProgress() {
+
+    const container = getElement("chapterProgressList");
+
+    if (!container) return;
+
+    const chapterGroups = CHAPTERS
+        .map(chapter => ({
+            chapter,
+            tasks: tasks.filter(task => getTaskChapter(task) === chapter)
+        }))
+        .filter(group => group.tasks.length > 0);
+
+    if (!chapterGroups.length) {
+
+        container.innerHTML = `
+            <div class="chapter-progress-empty">
+                No chapter-linked tasks yet. Open any task and assign Chapter 1–10 to start this view.
+            </div>
+        `;
+
+        return;
+
+    }
+
+    container.innerHTML = chapterGroups.map(group => {
+
+        const avg = getAverageTaskProgress(group.tasks);
+        const done = group.tasks.filter(task => task.status === "Done").length;
+
+        const packageNames = [...new Set(
+            group.tasks
+                .map(getTaskWorkPackage)
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b));
+
+        const packageRows = packageNames.map(packageName => {
+
+            const packageTasks = group.tasks.filter(
+                task => getTaskWorkPackage(task) === packageName
+            );
+
+            const packageAvg = getAverageTaskProgress(packageTasks);
+            const packageDone = packageTasks.filter(task => task.status === "Done").length;
+            const owner = getEquipmentOwner(packageTasks);
+            const status = getEquipmentStatus(packageTasks);
+
+            return `
+                <div class="chapter-equipment-row">
+                    <div class="chapter-equipment-name">
+                        <strong>⚙️ ${packageName}</strong>
+                        <small>${packageDone}/${packageTasks.length} task${packageTasks.length === 1 ? "" : "s"} completed</small>
+                    </div>
+                    <div class="chapter-equipment-pic">👤 PIC: <strong>${owner}</strong></div>
+                    <span class="equipment-status-pill ${status.cls}">${status.label}</span>
+                    <div class="equipment-progress-mini">
+                        <strong>${packageAvg}%</strong>
+                        <div><span style="width:${packageAvg}%"></span></div>
+                    </div>
+                    <button
+                        type="button"
+                        class="chapter-view-btn"
+                        onclick="openChapterTasks('${group.chapter}', '${packageName.replace(/'/g, "\\'")}')"
+                    >
+                        View Tasks
+                    </button>
+                </div>
+            `;
+
+        }).join("");
+
+        return `
+            <div class="chapter-progress-card">
+                <div class="chapter-progress-card-head">
+                    <div>
+                        <div class="chapter-progress-title">
+                            <strong>${group.chapter}</strong>
+                            <span class="task-classification-tag">${done}/${group.tasks.length} tasks done</span>
+                        </div>
+                        <div class="chapter-progress-meta">
+                            ${packageNames.length
+                                ? `${packageNames.length} equipment / work package${packageNames.length === 1 ? "" : "s"}`
+                                : "No equipment work packages assigned"}
+                        </div>
+                    </div>
+                    <div class="chapter-progress-percent">${avg}%</div>
+                </div>
+
+                <div class="chapter-progress-bar">
+                    <span style="width:${avg}%"></span>
+                </div>
+
+                <div class="chapter-progress-actions">
+                    <small>Chapter progress is the average progress of its linked tasks.</small>
+                    <button
+                        type="button"
+                        class="chapter-view-btn"
+                        onclick="openChapterTasks('${group.chapter}')"
+                    >
+                        View Chapter Tasks
+                    </button>
+                </div>
+
+                ${packageRows ? `<div class="chapter-equipment-list">${packageRows}</div>` : ""}
+            </div>
+        `;
+
+    }).join("");
+
+}
+
 
 
 let resources = [];
@@ -7527,6 +7790,8 @@ function updateDashboard() {
 
     renderMarkingOverview();
 
+    renderChapterProgress();
+
 }
 
 
@@ -8040,6 +8305,30 @@ function renderTasks() {
             : "All";
 
 
+    const chapterElement =
+        getElement(
+            "filterChapter"
+        );
+
+
+    const chapter =
+        chapterElement
+            ? chapterElement.value
+            : "All";
+
+
+    const equipmentElement =
+        getElement(
+            "filterEquipment"
+        );
+
+
+    const equipment =
+        equipmentElement
+            ? equipmentElement.value
+            : "All";
+
+
     const showApprovedToggle =
         getElement(
             "showApprovedToggle"
@@ -8091,6 +8380,18 @@ function renderTasks() {
                     task.priority === priority;
 
 
+                const taskChapter = getTaskChapter(task);
+                const taskEquipment = getTaskWorkPackage(task);
+
+                const chapterMatch =
+                    chapter === "All" ||
+                    taskChapter === chapter;
+
+                const equipmentMatch =
+                    equipment === "All" ||
+                    taskEquipment === equipment;
+
+
                 const taskMarkingStatus =
                     (task.lecturerMarking && task.lecturerMarking.status) || "not_reviewed";
 
@@ -8113,6 +8414,8 @@ function renderTasks() {
                     memberMatch &&
                     statusMatch &&
                     priorityMatch &&
+                    chapterMatch &&
+                    equipmentMatch &&
                     markingMatch &&
                     approvedMatch
                 );
@@ -8339,6 +8642,13 @@ function renderTasks() {
                         </strong>
 
                         ${getLecturerMarkingBadge(task)}
+
+                        <div class="task-classification-tags">
+                            <span class="task-classification-tag">📚 ${getTaskChapter(task)}</span>
+                            ${getTaskWorkPackage(task)
+                                ? `<span class="task-classification-tag equipment">⚙️ ${getTaskWorkPackage(task)}</span>`
+                                : ""}
+                        </div>
 
                         ${
                             subtaskStats.total > 0
@@ -9099,6 +9409,13 @@ function openTaskModal(
             task.name || "";
 
 
+        const taskChapterField = getElement("taskChapter");
+        const taskWorkPackageField = getElement("taskWorkPackage");
+
+        if (taskChapterField) taskChapterField.value = getTaskChapter(task);
+        if (taskWorkPackageField) taskWorkPackageField.value = getTaskWorkPackage(task);
+
+
         populateMainPIC(
             task.mainPIC || ""
         );
@@ -9257,6 +9574,23 @@ function openTaskModal(
             "taskName"
         ).value =
             (prefill && prefill.name) || "";
+
+
+        const taskChapterField = getElement("taskChapter");
+        const taskWorkPackageField = getElement("taskWorkPackage");
+
+        if (taskChapterField) {
+            const prefillChapter = prefill && prefill.chapter ? prefill.chapter : "Unassigned";
+            taskChapterField.value = TASK_CHAPTER_OPTIONS.includes(prefillChapter)
+                ? prefillChapter
+                : "Unassigned";
+        }
+
+        if (taskWorkPackageField) {
+            taskWorkPackageField.value = prefill && prefill.workPackage
+                ? sanitizeText(prefill.workPackage)
+                : "";
+        }
 
 
         populateMainPIC(
@@ -9637,6 +9971,18 @@ async function saveTask(event) {
             assigned,
 
 
+        chapter:
+            getElement("taskChapter")
+                ? getElement("taskChapter").value
+                : "Unassigned",
+
+
+        workPackage:
+            getElement("taskWorkPackage")
+                ? sanitizeText(getElement("taskWorkPackage").value)
+                : "",
+
+
         priority:
             getElement(
                 "taskPriority"
@@ -9769,6 +10115,8 @@ async function saveTask(event) {
 
             tasks[index] = {
 
+                ...oldTask,
+
                 id:
                     Number(id),
 
@@ -9804,6 +10152,8 @@ async function saveTask(event) {
 
 
     saveData();
+
+    updateEquipmentFilterOptions();
 
     logActivity(
         (id ? "updated task " : "created task ") +
@@ -12496,6 +12846,20 @@ function setupSearchEvents() {
 
     }
 
+
+    const filterChapter = getElement("filterChapter");
+
+    if (filterChapter) {
+        filterChapter.addEventListener("change", handleChapterFilterChange);
+    }
+
+
+    const filterEquipment = getElement("filterEquipment");
+
+    if (filterEquipment) {
+        filterEquipment.addEventListener("change", renderTasks);
+    }
+
 }
 
 
@@ -12558,6 +12922,16 @@ function resetFilters() {
             "All";
 
     }
+
+
+    const filterChapter = getElement("filterChapter");
+    const filterEquipment = getElement("filterEquipment");
+
+    if (filterChapter) filterChapter.value = "All";
+
+    updateEquipmentFilterOptions();
+
+    if (filterEquipment) filterEquipment.value = "All";
 
 
     filterLecturerStatusValue = "All";
@@ -13238,6 +13612,8 @@ function startApp() {
     setupMobileSidebar();
 
     renderFilterMembers();
+
+    updateEquipmentFilterOptions();
 
     setupSearchEvents();
 
