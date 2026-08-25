@@ -274,6 +274,8 @@
 
             <div id="mydayQuoteCard" class="myday-quote-card"></div>
 
+            <div id="mydayFocusCard" class="myday-focus-card hidden"></div>
+
             <div id="mydayContent"></div>
 
         </div>
@@ -933,6 +935,53 @@
     <!-- LEADER HUB (LEADER ONLY) -->
 
     <section id="leaderhub" class="section hidden">
+
+        <div class="panel leaderhub-focus-panel">
+
+            <div class="panel-title">
+                <div>
+                    <h3>🎯 This Week's Focus</h3>
+                    <p>Set one clear chapter focus for the team. It appears in My Day, not on the main Dashboard.</p>
+                </div>
+            </div>
+
+            <div class="leaderhub-focus-form">
+
+                <label>
+                    Focus Chapter
+                    <select id="currentFocusChapter"></select>
+                </label>
+
+                <label class="leaderhub-focus-target">
+                    Weekly Target
+                    <input
+                        type="text"
+                        id="currentFocusText"
+                        maxlength="160"
+                        placeholder="e.g. Complete equipment calculations before SV review"
+                    >
+                </label>
+
+                <label>
+                    Target Date
+                    <input type="date" id="currentFocusDate">
+                </label>
+
+                <button
+                    type="button"
+                    class="small-add"
+                    onclick="saveCurrentFocus()"
+                >
+                    💾 Save Focus
+                </button>
+
+            </div>
+
+            <div class="leaderhub-focus-note">
+                Leave the chapter and target blank, then save, to hide the focus card from My Day.
+            </div>
+
+        </div>
 
         <div class="panel leaderhub-countdown-panel">
 
