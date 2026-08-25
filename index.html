@@ -794,6 +794,60 @@
 
             </div>
 
+            <!-- ENGINEERING WORKSPACE — visible to everyone, leader can open -->
+            <div id="engineeringToolsBlock" class="engineering-tools-block">
+
+                <div class="engineering-tools-label">ENGINEERING WORKSPACE</div>
+
+                <div class="engineering-tool-card">
+
+                    <div class="engineering-tool-icon" aria-hidden="true">HX</div>
+
+                    <div class="engineering-tool-content">
+
+                        <div class="engineering-tool-title-row">
+                            <div>
+                                <h4>Heat Exchanger Design</h4>
+                                <p>Shell &amp; Tube Engineering Workspace</p>
+                            </div>
+
+                            <span id="heatExchangerAccessBadge" class="engineering-tool-access-badge">
+                                CHECKING ACCESS
+                            </span>
+                        </div>
+
+                        <div class="engineering-tool-tags" aria-label="Heat exchanger workspace capabilities">
+                            <span>Thermal</span>
+                            <span>Sizing</span>
+                            <span>Optimization</span>
+                            <span>Rating</span>
+                            <span>Advanced Checks</span>
+                        </div>
+
+                    </div>
+
+                    <div class="engineering-tool-action">
+                        <button
+                            type="button"
+                            id="heatExchangerToolBtn"
+                            class="engineering-tool-open-btn"
+                            onclick="openHeatExchangerTool()"
+                            disabled
+                        >
+                            Checking Access…
+                        </button>
+
+                        <small id="heatExchangerAccessNote">Leader access only</small>
+                    </div>
+
+                </div>
+
+                <div class="resources-divider">
+                    <span>PROJECT RESOURCES</span>
+                </div>
+
+            </div>
+
             <div
                 id="chapterList"
                 class="chapter-list"
