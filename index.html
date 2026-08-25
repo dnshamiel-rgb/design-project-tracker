@@ -1174,11 +1174,12 @@
                 </label>
 
 
+                <div class="task-field-group-label">PROJECT CLASSIFICATION</div>
+
                 <div class="form-row task-classification-row">
 
                     <label>
                         Chapter
-                        <span class="label-help">Group this task under the correct report chapter</span>
                         <select id="taskChapter">
                             <option value="Unassigned">Unassigned</option>
                             <option value="General / Not Chapter Specific">General / Not Chapter Specific</option>
@@ -1197,11 +1198,10 @@
 
                     <label>
                         Equipment / Work Package
-                        <span class="label-help">Optional — e.g. Heat Exchanger, Pump, Distillation Column</span>
                         <input
                             type="text"
                             id="taskWorkPackage"
-                            placeholder="Example: Heat Exchanger"
+                            placeholder="e.g. Heat Exchanger"
                             maxlength="80"
                         >
                     </label>
@@ -1210,6 +1210,8 @@
 
 
                 <!-- MAIN PIC -->
+
+                <div class="task-field-group-label task-responsibility-label">RESPONSIBILITY</div>
 
                 <label class="field-pic-block">
 
@@ -1236,13 +1238,9 @@
 
                     Assigned Members
 
-                    <span class="label-help">
-                        Select one or more members
-                    </span>
-
                     <div
                         id="memberCheckboxes"
-                        class="member-checkboxes"
+                        class="member-checkboxes member-chip-grid"
                     ></div>
 
                 </label>
