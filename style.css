@@ -5311,13 +5311,285 @@ tbody tr:last-child td {
         min-width: 128px;
     }
 }
-/* Hide Edit Task modal scrollbar but keep scrolling */
-.modal-box{
-  scrollbar-width:none;
-  -ms-overflow-style:none;
+
+/* ============================================================
+   COMPACT NEEDS ATTENTION + POPUP
+============================================================ */
+
+.attention-alert {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 18px;
+    padding: 13px 15px;
+    border: 1px solid #F2D29A;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #FFF9ED, #FFFDF8);
+    color: #273043;
+    text-align: left;
+    box-shadow: 0 5px 16px rgba(164, 105, 10, .07);
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
-.modal-box::-webkit-scrollbar{
-  display:none;
+.attention-alert:hover {
+    transform: translateY(-1px);
+    border-color: #E9BD6C;
+    box-shadow: 0 8px 20px rgba(164, 105, 10, .11);
+}
+
+.attention-alert-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 10px;
+    background: #FFF0CF;
+    font-size: 17px;
+}
+
+.attention-alert-copy {
+    min-width: 0;
+}
+
+.attention-alert-copy strong,
+.attention-alert-copy small {
+    display: block;
+}
+
+.attention-alert-copy strong {
+    color: #2A3144;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.attention-alert-copy small {
+    margin-top: 2px;
+    color: #8B6A2E;
+    font-size: 10.5px;
+    font-weight: 650;
+}
+
+.attention-alert-action {
+    padding: 7px 11px;
+    border: 1px solid #E7C27E;
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: #A5660B;
+    font-size: 10.5px;
+    font-weight: 850;
+}
+
+.attention-modal-card {
+    position: relative;
+    width: min(680px, 100%);
+    max-height: min(720px, calc(100vh - 40px));
+    overflow-y: auto;
+    padding: 26px;
+    border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: 22px;
+    background: #FFFFFF;
+    box-shadow: 0 24px 60px rgba(12, 20, 45, .28);
+    animation: modalIn .22s ease;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.attention-modal-card::-webkit-scrollbar {
+    display: none;
+}
+
+.attention-modal-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding-right: 38px;
+    margin-bottom: 18px;
+}
+
+.attention-modal-icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    place-items: center;
+    border-radius: 14px;
+    background: #FFF4DE;
+    font-size: 22px;
+}
+
+.attention-modal-heading h2 {
+    margin: 3px 0 2px;
+    color: #20263A;
+    font-size: 22px;
+}
+
+.attention-modal-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.attention-modal-list {
+    display: grid;
+    gap: 8px;
+}
+
+.attention-modal-item {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 11px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: 11px;
+    background: #FFFFFF;
+    color: #2B3245;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.attention-modal-item:hover {
+    background: #FAFBFE;
+}
+
+.attention-modal-item.overdue {
+    border-left-color: #E5484D;
+}
+
+.attention-modal-item.today {
+    border-left-color: #F07A24;
+}
+
+.attention-modal-item.soon {
+    border-left-color: #E6A11A;
+}
+
+.attention-modal-status {
+    font-size: 15px;
+}
+
+.attention-modal-task-copy,
+.attention-modal-deadline {
+    min-width: 0;
+}
+
+.attention-modal-task-copy strong,
+.attention-modal-task-copy small,
+.attention-modal-deadline strong,
+.attention-modal-deadline small {
+    display: block;
+}
+
+.attention-modal-task-copy strong {
+    overflow: hidden;
+    color: #252C3F;
+    font-size: 12px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attention-modal-task-copy small {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 9.5px;
+}
+
+.attention-modal-deadline {
+    text-align: right;
+}
+
+.attention-modal-deadline strong {
+    color: #A95522;
+    font-size: 9.5px;
+    font-weight: 900;
+}
+
+.attention-modal-deadline small {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 8.5px;
+}
+
+.attention-modal-arrow {
+    color: #9AA3B7;
+    font-size: 21px;
+    line-height: 1;
+}
+
+.attention-modal-empty {
+    padding: 30px 12px;
+    color: var(--muted);
+    text-align: center;
+    font-size: 12px;
+}
+
+.attention-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.attention-view-all-btn {
+    min-height: 40px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--primary);
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* Keep modal scrolling but hide its scrollbar */
+.modal-box {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.modal-box::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 620px) {
+    .attention-alert {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .attention-alert-action {
+        display: none;
+    }
+
+    .attention-modal-card {
+        padding: 22px 16px 16px;
+    }
+
+    .attention-modal-item {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .attention-modal-deadline {
+        grid-column: 2;
+        text-align: left;
+    }
+
+    .attention-modal-arrow {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+
+    .attention-modal-footer {
+        flex-direction: column-reverse;
+    }
 }
 
