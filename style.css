@@ -5093,7 +5093,7 @@ tbody tr:last-child td {
     color: #15803D;
 }
 
-.equipment-status-pill.progress {
+.equipment-status-pill.in-progress {
     background: #FFF5E5;
     color: #B45309;
 }
