@@ -5760,3 +5760,371 @@ tbody tr:last-child td {
         row-gap: 10px;
     }
 }
+
+
+/* ============================================================
+   PHASE 2 VISUAL POLISH — Chapter Progress / SV Review
+   Keeps the existing navy + blue/violet dashboard theme.
+============================================================ */
+
+.chapter-progress-card {
+    border-color: #DDE3ED;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(31, 42, 68, .055);
+}
+
+.chapter-progress-card-head {
+    padding: 18px 20px 12px;
+    background: linear-gradient(180deg, #FCFDFF 0%, #F8FAFE 100%);
+}
+
+.chapter-progress-kicker {
+    margin-bottom: 5px;
+    color: #7E879A;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: .12em;
+}
+
+.chapter-progress-title strong {
+    font-size: 16px;
+    letter-spacing: -.02em;
+}
+
+.chapter-progress-meta {
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 650;
+}
+
+.chapter-progress-score {
+    min-width: 78px;
+    padding: 9px 11px;
+    border: 1px solid #DDE5F5;
+    border-radius: 12px;
+    background: #FFFFFF;
+    text-align: right;
+}
+
+.chapter-progress-score strong,
+.chapter-progress-score span {
+    display: block;
+}
+
+.chapter-progress-score strong {
+    color: var(--primary);
+    font-size: 23px;
+    line-height: 1;
+    letter-spacing: -.04em;
+}
+
+.chapter-progress-score span {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.chapter-progress-bar {
+    height: 8px;
+    margin: 0 20px 10px;
+}
+
+.chapter-progress-actions {
+    justify-content: flex-end;
+    padding: 0 20px 15px;
+}
+
+.chapter-view-btn {
+    transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.chapter-view-btn:hover {
+    border-color: #B9C8E7;
+    background: #F7F9FF;
+    transform: translateY(-1px);
+}
+
+.sv-review-block {
+    margin: 0 20px 16px;
+    padding: 14px 15px;
+    border-color: #DDE4EF;
+    border-radius: 13px;
+    background: #F8FAFD;
+}
+
+.sv-review-head > div > span {
+    color: #59647A;
+    font-size: 8px;
+    font-weight: 900;
+}
+
+.sv-review-head > div > small {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 9px;
+}
+
+.sv-status-select {
+    min-width: 152px;
+    border-color: #D7DEEA;
+    border-radius: 9px;
+    padding: 8px 10px;
+    box-shadow: 0 1px 2px rgba(31, 42, 68, .03);
+}
+
+.sv-review-steps {
+    position: relative;
+    gap: 0;
+    margin: 16px 8px 4px;
+}
+
+.sv-review-steps::before {
+    content: "";
+    position: absolute;
+    left: calc(100% / 12);
+    right: calc(100% / 12);
+    top: 11px;
+    height: 2px;
+    border-radius: 999px;
+    background: #E2E6EE;
+}
+
+.sv-review-step {
+    position: relative;
+    z-index: 1;
+}
+
+.sv-review-step span {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 6px;
+    border: 3px solid #F8FAFD;
+    box-shadow: 0 0 0 1px #E1E6EF;
+}
+
+.sv-review-step.complete span {
+    background: #DFF5E8;
+    color: #16834A;
+    box-shadow: 0 0 0 1px #BDE7CC;
+}
+
+.sv-review-step.current span {
+    background: var(--primary);
+    color: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(91, 75, 219, .12);
+}
+
+.sv-review-step small {
+    font-size: 7.5px;
+    font-weight: 650;
+}
+
+.sv-review-step.complete small {
+    color: #16834A;
+}
+
+.sv-linked-meeting {
+    min-height: 43px;
+    margin-top: 14px;
+    padding: 9px 11px;
+    border-radius: 10px;
+}
+
+.sv-linked-meeting.empty {
+    border-style: dashed;
+    border-color: #CDD6E4;
+    background: rgba(255,255,255,.7);
+}
+
+.sv-linked-meeting.empty > div {
+    min-width: 0;
+}
+
+.sv-linked-meeting.empty span,
+.sv-linked-meeting.empty small {
+    display: block;
+}
+
+.sv-linked-meeting.empty small {
+    margin-top: 3px;
+}
+
+.sv-link-meeting-btn {
+    flex: 0 0 auto;
+    border: 1px solid #CAD6EE;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: var(--primary-dark);
+    padding: 7px 10px;
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.sv-link-meeting-btn:hover {
+    background: #F3F6FF;
+}
+
+.sv-link-meeting-btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.chapter-equipment-list {
+    gap: 9px;
+    padding: 13px 20px 18px;
+    border-top: 1px solid #E5E9F0;
+    background: #FBFCFE;
+}
+
+.chapter-equipment-row {
+    grid-template-columns: minmax(190px, 1.5fr) minmax(130px, .9fr) minmax(90px, .65fr) minmax(110px, .75fr) auto;
+    gap: 12px;
+    padding: 12px 13px;
+    border: 1px solid #E2E7EF;
+    border-radius: 11px;
+    background: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(31, 42, 68, .025);
+}
+
+.chapter-equipment-row:first-child {
+    border-top: 1px solid #E2E7EF;
+}
+
+.chapter-equipment-row.ready {
+    border-color: #CDE8D8;
+    background: #FBFEFC;
+}
+
+.chapter-equipment-row.in-progress {
+    border-color: #E7E2D5;
+}
+
+.chapter-equipment-main,
+.chapter-equipment-pic {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.chapter-equipment-main {
+    gap: 10px;
+}
+
+.chapter-equipment-icon {
+    width: 31px;
+    height: 31px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: #EEF3FF;
+    color: #4568B2;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.chapter-equipment-row.ready .chapter-equipment-icon {
+    background: #E8F7EE;
+    color: #16834A;
+}
+
+.chapter-equipment-name strong {
+    font-size: 11.5px;
+}
+
+.chapter-equipment-name small {
+    margin-top: 3px;
+}
+
+.chapter-equipment-pic {
+    gap: 7px;
+    color: var(--muted);
+    font-size: 9px;
+}
+
+.chapter-equipment-avatar {
+    width: 25px;
+    height: 25px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #EEF2FA;
+    color: #51627F;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.chapter-equipment-pic strong {
+    color: #59647A;
+}
+
+.equipment-status-pill {
+    padding: 5px 8px;
+    font-size: 8px;
+}
+
+.equipment-progress-mini strong {
+    font-size: 11px;
+}
+
+.equipment-progress-mini div {
+    height: 6px;
+}
+
+@media (max-width: 920px) {
+    .chapter-equipment-row {
+        grid-template-columns: minmax(170px, 1fr) minmax(120px, .8fr) auto;
+    }
+
+    .chapter-equipment-row .equipment-progress-mini {
+        grid-column: 1 / 3;
+    }
+}
+
+@media (max-width: 720px) {
+    .chapter-progress-card-head {
+        align-items: flex-start;
+    }
+
+    .chapter-progress-score {
+        min-width: 70px;
+    }
+
+    .sv-review-steps {
+        overflow-x: auto;
+        grid-template-columns: repeat(6, minmax(82px, 1fr));
+        padding-bottom: 4px;
+    }
+
+    .sv-review-steps::before {
+        left: 42px;
+        right: 42px;
+    }
+
+    .sv-linked-meeting.empty {
+        align-items: stretch;
+    }
+
+    .sv-link-meeting-btn {
+        width: 100%;
+    }
+
+    .chapter-equipment-list {
+        padding: 12px;
+    }
+
+    .chapter-equipment-row {
+        grid-template-columns: 1fr auto;
+    }
+
+    .chapter-equipment-pic,
+    .chapter-equipment-row .equipment-progress-mini {
+        grid-column: 1 / -1;
+    }
+}
