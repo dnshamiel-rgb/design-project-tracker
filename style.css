@@ -4694,3 +4694,189 @@ tbody tr:last-child td {
     }
 
 }
+
+/* ============================================================
+   ENGINEERING WORKSPACE CARD (Resources)
+   Visible to everyone; launch control is enabled for leader only.
+============================================================ */
+
+.engineering-tools-block {
+    margin: 2px 0 20px;
+}
+
+.engineering-tools-label {
+    margin: 2px 0 9px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.35px;
+}
+
+.engineering-tool-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 17px 18px;
+    border: 1px solid #D7E1F7;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #F7FAFF 0%, #F7F4FF 100%);
+    box-shadow: var(--shadow-sm);
+}
+
+.engineering-tool-icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), #7C3AED);
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: .5px;
+    box-shadow: 0 10px 22px -10px rgba(37,99,235,.55);
+}
+
+.engineering-tool-content {
+    min-width: 0;
+}
+
+.engineering-tool-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.engineering-tool-title-row h4 {
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.2px;
+}
+
+.engineering-tool-title-row p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 11.5px;
+    line-height: 1.4;
+}
+
+.engineering-tool-access-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #EAF2FF;
+    color: var(--primary);
+    font-size: 8.5px;
+    font-weight: 900;
+    letter-spacing: .45px;
+    white-space: nowrap;
+}
+
+.engineering-tool-access-badge.locked {
+    background: #F1F2F7;
+    color: #727A8A;
+}
+
+.engineering-tool-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 11px;
+}
+
+.engineering-tool-tags span {
+    padding: 4px 7px;
+    border: 1px solid #E0E6F2;
+    border-radius: 7px;
+    background: rgba(255,255,255,.78);
+    color: #596277;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.engineering-tool-action {
+    display: grid;
+    min-width: 158px;
+    justify-items: stretch;
+    gap: 6px;
+}
+
+.engineering-tool-open-btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #FFFFFF;
+    font-size: 11.5px;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 9px 18px -10px rgba(37,99,235,.6);
+    transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+
+.engineering-tool-open-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px -10px rgba(37,99,235,.72);
+}
+
+.engineering-tool-open-btn:disabled,
+.engineering-tool-open-btn.locked {
+    background: #E9ECF2;
+    color: #858D9D;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.engineering-tool-action small {
+    color: var(--muted);
+    font-size: 8.5px;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.resources-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 19px 0 12px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.15px;
+}
+
+.resources-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+@media (max-width: 760px) {
+
+    .engineering-tool-card {
+        grid-template-columns: auto 1fr;
+        align-items: start;
+    }
+
+    .engineering-tool-action {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .engineering-tool-title-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+}
+
