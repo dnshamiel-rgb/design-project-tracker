@@ -747,9 +747,9 @@ function getEquipmentStatus(packageTasks) {
         task.status === "Blocked"
     );
 
-    return hasStarted
-        ? { label: "In Progress", cls: "progress" }
-        : { label: "Not Started", cls: "not-started" };
+return hasStarted
+    ? { label: "In Progress", cls: "in-progress" }
+    : { label: "Not Started", cls: "not-started" };
 
 }
 
