@@ -12849,8 +12849,7 @@ async function sendEmailReminder(
 
 
     if (
-        days < 0 ||
-        days > 3
+        days !== 1
     ) {
 
         return;
@@ -13066,13 +13065,12 @@ function checkEmailReminders() {
 
 
             if (
-                days < 0 ||
-                days > 3
-            ) {
+        days !== 1
+    ) {
 
-                return;
+        return;
 
-            }
+    }
 
 
             const recipients =
