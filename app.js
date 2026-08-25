@@ -709,6 +709,17 @@ function getTaskWorkPackage(task) {
 }
 
 
+const GENERAL_CHAPTER_PACKAGE_KEY = "__GENERAL_CHAPTER_TASKS__";
+const GENERAL_CHAPTER_PACKAGE_LABEL = "General Chapter Tasks";
+
+
+function getTaskPackageKey(task) {
+
+    return getTaskWorkPackage(task) || GENERAL_CHAPTER_PACKAGE_KEY;
+
+}
+
+
 // ============================================================
 // PHASE 2 — SV REVIEW CYCLE (per chapter)
 // ============================================================
@@ -984,25 +995,39 @@ function updateEquipmentFilterOptions() {
     const chapter = chapterSelect ? chapterSelect.value : "All";
     const previous = select.value || "All";
 
-    const names = [...new Set(
-        tasks
-            .filter(task => chapter === "All" || getTaskChapter(task) === chapter)
-            .map(getTaskWorkPackage)
-            .filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b));
+    const scopedTasks = tasks.filter(
+        task => chapter === "All" || getTaskChapter(task) === chapter
+    );
+
+    const packageKeys = [...new Set(
+        scopedTasks.map(getTaskPackageKey)
+    )].sort((a, b) => {
+
+        if (a === GENERAL_CHAPTER_PACKAGE_KEY) return 1;
+        if (b === GENERAL_CHAPTER_PACKAGE_KEY) return -1;
+
+        return a.localeCompare(b);
+
+    });
 
     select.innerHTML = `<option value="All">All Equipment / Work Packages</option>`;
 
-    names.forEach(name => {
+    packageKeys.forEach(key => {
 
         const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
+
+        option.value = key;
+
+        option.textContent =
+            key === GENERAL_CHAPTER_PACKAGE_KEY
+                ? GENERAL_CHAPTER_PACKAGE_LABEL
+                : key;
+
         select.appendChild(option);
 
     });
 
-    select.value = names.includes(previous) ? previous : "All";
+    select.value = packageKeys.includes(previous) ? previous : "All";
 
 }
 
@@ -1066,20 +1091,31 @@ function renderChapterProgress() {
         const avg = getAverageTaskProgress(group.tasks);
         const done = group.tasks.filter(task => task.status === "Done").length;
 
-        const packageNames = [...new Set(
-            group.tasks
-                .map(getTaskWorkPackage)
-                .filter(Boolean)
-        )].sort((a, b) => a.localeCompare(b));
+        const packageKeys = [...new Set(
+            group.tasks.map(getTaskPackageKey)
+        )].sort((a, b) => {
 
-        const packageInfo = packageNames.map(packageName => {
+            if (a === GENERAL_CHAPTER_PACKAGE_KEY) return 1;
+            if (b === GENERAL_CHAPTER_PACKAGE_KEY) return -1;
+
+            return a.localeCompare(b);
+
+        });
+
+        const packageInfo = packageKeys.map(packageKey => {
 
             const packageTasks = group.tasks.filter(
-                task => getTaskWorkPackage(task) === packageName
+                task => getTaskPackageKey(task) === packageKey
             );
 
+            const isGeneral = packageKey === GENERAL_CHAPTER_PACKAGE_KEY;
+
             return {
-                name: packageName,
+                key: packageKey,
+                name: isGeneral
+                    ? GENERAL_CHAPTER_PACKAGE_LABEL
+                    : packageKey,
+                isGeneral: isGeneral,
                 tasks: packageTasks,
                 avg: getAverageTaskProgress(packageTasks),
                 done: packageTasks.filter(task => task.status === "Done").length,
@@ -1092,15 +1128,20 @@ function renderChapterProgress() {
         const readyCount = packageInfo.filter(item => item.status.cls === "ready").length;
         const inProgressCount = packageInfo.filter(item => item.status.cls === "in-progress").length;
         const notStartedCount = packageInfo.filter(item => item.status.cls === "not-started").length;
+        const namedPackageCount = packageInfo.filter(item => !item.isGeneral).length;
+        const generalPackage = packageInfo.find(item => item.isGeneral);
 
-        const packageSummary = packageNames.length
-            ? [
-                `${packageNames.length} Work Package${packageNames.length === 1 ? "" : "s"}`,
-                readyCount ? `${readyCount} Ready` : "",
-                inProgressCount ? `${inProgressCount} In Progress` : "",
-                notStartedCount ? `${notStartedCount} Not Started` : ""
-            ].filter(Boolean).join(" · ")
-            : "No equipment work packages assigned";
+        const packageSummary = [
+            namedPackageCount
+                ? `${namedPackageCount} Work Package${namedPackageCount === 1 ? "" : "s"}`
+                : "",
+            generalPackage
+                ? `${generalPackage.tasks.length} General Chapter Task${generalPackage.tasks.length === 1 ? "" : "s"}`
+                : "",
+            readyCount ? `${readyCount} Ready` : "",
+            inProgressCount ? `${inProgressCount} In Progress` : "",
+            notStartedCount ? `${notStartedCount} Not Started` : ""
+        ].filter(Boolean).join(" · ");
 
         const packageRows = packageInfo.map(item => {
 
@@ -1108,10 +1149,12 @@ function renderChapterProgress() {
                 ? item.owner.charAt(0).toUpperCase()
                 : "?";
 
+            const packageIcon = item.isGeneral ? "📄" : "⚙";
+
             return `
                 <div class="chapter-equipment-row ${item.status.cls}">
                     <div class="chapter-equipment-main">
-                        <div class="chapter-equipment-icon">⚙</div>
+                        <div class="chapter-equipment-icon">${packageIcon}</div>
                         <div class="chapter-equipment-name">
                             <strong>${item.name}</strong>
                             <small>${item.done}/${item.tasks.length} task${item.tasks.length === 1 ? "" : "s"} completed</small>
@@ -1133,7 +1176,7 @@ function renderChapterProgress() {
                     <button
                         type="button"
                         class="chapter-view-btn"
-                        onclick="openChapterTasks('${group.chapter}', '${item.name.replace(/'/g, "\\'")}')"
+                        onclick="openChapterTasks('${group.chapter}', '${item.key.replace(/'/g, "\\'")}')"
                     >
                         View Tasks
                     </button>
@@ -8760,7 +8803,11 @@ function renderTasks() {
 
                 const equipmentMatch =
                     equipment === "All" ||
-                    taskEquipment === equipment;
+                    (
+                        equipment === GENERAL_CHAPTER_PACKAGE_KEY
+                            ? !taskEquipment
+                            : taskEquipment === equipment
+                    );
 
 
                 const taskMarkingStatus =
