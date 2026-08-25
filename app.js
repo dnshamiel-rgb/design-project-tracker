@@ -868,7 +868,18 @@ function renderLinkedMeetingSummary(chapter) {
     if (!meeting) {
         return `
             <div class="sv-linked-meeting empty">
-                <span>🗓️ No linked SV/F2F meeting yet</span>
+                <div>
+                    <span>🗓️ No SV/F2F meeting linked</span>
+                    <small>Link the next supervisor review meeting to this chapter.</small>
+                </div>
+                <button
+                    type="button"
+                    class="sv-link-meeting-btn"
+                    onclick="openMeetingForChapter('${chapter}')"
+                    ${isLecturer() ? "disabled" : ""}
+                >
+                    + Link Meeting
+                </button>
             </div>
         `;
     }
@@ -885,6 +896,19 @@ function renderLinkedMeetingSummary(chapter) {
             <small>${meeting.date || "No date"}${meeting.time ? " · " + meeting.time : ""}${equipment ? " · " + equipment : ""}</small>
         </button>
     `;
+
+}
+
+
+function openMeetingForChapter(chapter) {
+
+    if (!CHAPTERS.includes(chapter)) return;
+
+    showSection("meetings");
+
+    openMeetingModal(null, {
+        relatedChapter: chapter
+    });
 
 }
 
@@ -1048,33 +1072,68 @@ function renderChapterProgress() {
                 .filter(Boolean)
         )].sort((a, b) => a.localeCompare(b));
 
-        const packageRows = packageNames.map(packageName => {
+        const packageInfo = packageNames.map(packageName => {
 
             const packageTasks = group.tasks.filter(
                 task => getTaskWorkPackage(task) === packageName
             );
 
-            const packageAvg = getAverageTaskProgress(packageTasks);
-            const packageDone = packageTasks.filter(task => task.status === "Done").length;
-            const owner = getEquipmentOwner(packageTasks);
-            const status = getEquipmentStatus(packageTasks);
+            return {
+                name: packageName,
+                tasks: packageTasks,
+                avg: getAverageTaskProgress(packageTasks),
+                done: packageTasks.filter(task => task.status === "Done").length,
+                owner: getEquipmentOwner(packageTasks),
+                status: getEquipmentStatus(packageTasks)
+            };
+
+        });
+
+        const readyCount = packageInfo.filter(item => item.status.cls === "ready").length;
+        const inProgressCount = packageInfo.filter(item => item.status.cls === "in-progress").length;
+        const notStartedCount = packageInfo.filter(item => item.status.cls === "not-started").length;
+
+        const packageSummary = packageNames.length
+            ? [
+                `${packageNames.length} Work Package${packageNames.length === 1 ? "" : "s"}`,
+                readyCount ? `${readyCount} Ready` : "",
+                inProgressCount ? `${inProgressCount} In Progress` : "",
+                notStartedCount ? `${notStartedCount} Not Started` : ""
+            ].filter(Boolean).join(" · ")
+            : "No equipment work packages assigned";
+
+        const packageRows = packageInfo.map(item => {
+
+            const ownerInitial = item.owner && item.owner !== "-"
+                ? item.owner.charAt(0).toUpperCase()
+                : "?";
 
             return `
-                <div class="chapter-equipment-row">
-                    <div class="chapter-equipment-name">
-                        <strong>⚙️ ${packageName}</strong>
-                        <small>${packageDone}/${packageTasks.length} task${packageTasks.length === 1 ? "" : "s"} completed</small>
+                <div class="chapter-equipment-row ${item.status.cls}">
+                    <div class="chapter-equipment-main">
+                        <div class="chapter-equipment-icon">⚙</div>
+                        <div class="chapter-equipment-name">
+                            <strong>${item.name}</strong>
+                            <small>${item.done}/${item.tasks.length} task${item.tasks.length === 1 ? "" : "s"} completed</small>
+                        </div>
                     </div>
-                    <div class="chapter-equipment-pic">👤 PIC: <strong>${owner}</strong></div>
-                    <span class="equipment-status-pill ${status.cls}">${status.label}</span>
+
+                    <div class="chapter-equipment-pic">
+                        <span class="chapter-equipment-avatar">${ownerInitial}</span>
+                        <span>PIC <strong>${item.owner}</strong></span>
+                    </div>
+
+                    <span class="equipment-status-pill ${item.status.cls}">${item.status.label}</span>
+
                     <div class="equipment-progress-mini">
-                        <strong>${packageAvg}%</strong>
-                        <div><span style="width:${packageAvg}%"></span></div>
+                        <strong>${item.avg}%</strong>
+                        <div><span style="width:${item.avg}%"></span></div>
                     </div>
+
                     <button
                         type="button"
                         class="chapter-view-btn"
-                        onclick="openChapterTasks('${group.chapter}', '${packageName.replace(/'/g, "\\'")}')"
+                        onclick="openChapterTasks('${group.chapter}', '${item.name.replace(/'/g, "\\'")}')"
                     >
                         View Tasks
                     </button>
@@ -1083,21 +1142,24 @@ function renderChapterProgress() {
 
         }).join("");
 
+        const currentSvStatus = getChapterSvStatus(group.chapter);
+
         return `
             <div class="chapter-progress-card">
                 <div class="chapter-progress-card-head">
-                    <div>
+                    <div class="chapter-progress-head-copy">
+                        <div class="chapter-progress-kicker">CHAPTER PROGRESS</div>
                         <div class="chapter-progress-title">
                             <strong>${group.chapter}</strong>
                             <span class="task-classification-tag">${done}/${group.tasks.length} tasks done</span>
                         </div>
-                        <div class="chapter-progress-meta">
-                            ${packageNames.length
-                                ? `${packageNames.length} equipment / work package${packageNames.length === 1 ? "" : "s"}`
-                                : "No equipment work packages assigned"}
-                        </div>
+                        <div class="chapter-progress-meta">${packageSummary}</div>
                     </div>
-                    <div class="chapter-progress-percent">${avg}%</div>
+
+                    <div class="chapter-progress-score" title="Average progress of linked tasks">
+                        <strong>${avg}%</strong>
+                        <span>Overall</span>
+                    </div>
                 </div>
 
                 <div class="chapter-progress-bar">
@@ -1105,7 +1167,6 @@ function renderChapterProgress() {
                 </div>
 
                 <div class="chapter-progress-actions">
-                    <small>Chapter progress is the average progress of its linked tasks.</small>
                     <button
                         type="button"
                         class="chapter-view-btn"
@@ -1119,16 +1180,16 @@ function renderChapterProgress() {
                     <div class="sv-review-head">
                         <div>
                             <span>SV REVIEW CYCLE</span>
-                            <strong>${getSvReviewMeta(getChapterSvStatus(group.chapter)).label}</strong>
+                            <small>Supervisor review milestone for ${group.chapter}</small>
                         </div>
 
                         <select
-                            class="sv-status-select"
+                            class="sv-status-select status-${currentSvStatus}"
                             onchange="setChapterSvStatus('${group.chapter}', this.value)"
                             ${isLecturer() ? "disabled" : ""}
                         >
                             ${SV_REVIEW_FLOW.map(item => `
-                                <option value="${item.key}" ${getChapterSvStatus(group.chapter) === item.key ? "selected" : ""}>
+                                <option value="${item.key}" ${currentSvStatus === item.key ? "selected" : ""}>
                                     ${item.label}
                                 </option>
                             `).join("")}
@@ -1136,7 +1197,7 @@ function renderChapterProgress() {
                     </div>
 
                     <div class="sv-review-steps">
-                        ${renderSvReviewSteps(getChapterSvStatus(group.chapter))}
+                        ${renderSvReviewSteps(currentSvStatus)}
                     </div>
 
                     ${renderLinkedMeetingSummary(group.chapter)}
@@ -4666,7 +4727,8 @@ function setupMeetingProjectLinkEvents() {
 // ============================================================
 
 function openMeetingModal(
-    meeting = null
+    meeting = null,
+    prefill = null
 ) {
 
     const modal =
@@ -4795,8 +4857,16 @@ function openMeetingModal(
         ).value =
             "";
 
-        populateMeetingChapterSelect("Unassigned");
-        populateMeetingWorkPackageSelect("Unassigned", "");
+        const prefillChapter =
+            prefill && CHAPTERS.includes(prefill.relatedChapter)
+                ? prefill.relatedChapter
+                : "Unassigned";
+
+        const prefillWorkPackage =
+            prefill ? sanitizeText(prefill.relatedWorkPackage || "") : "";
+
+        populateMeetingChapterSelect(prefillChapter);
+        populateMeetingWorkPackageSelect(prefillChapter, prefillWorkPackage);
 
         renderMeetingAttendeeCheckboxes();
 
