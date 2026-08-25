@@ -747,9 +747,9 @@ function getEquipmentStatus(packageTasks) {
         task.status === "Blocked"
     );
 
-return hasStarted
-    ? { label: "In Progress", cls: "in-progress" }
-    : { label: "Not Started", cls: "not-started" };
+    return hasStarted
+        ? { label: "In Progress", cls: "in-progress" }
+        : { label: "Not Started", cls: "not-started" };
 
 }
 
@@ -3063,6 +3063,8 @@ function closeDailyQuoteModal() {
     const modal = getElement("dailyQuoteModal");
 
     if (modal) modal.classList.add("hidden");
+
+    maybeShowCriticalAttentionPopup();
 
 }
 
@@ -8082,97 +8084,237 @@ function updateStatus() {
 // ATTENTION / WARNING
 // ============================================================
 
+function getAttentionTasks() {
+
+    return tasks
+        .filter(task =>
+            task.status !== "Done" &&
+            task.deadline &&
+            getDaysLeft(task.deadline) <= 3
+        )
+        .sort((a, b) => getDaysLeft(a.deadline) - getDaysLeft(b.deadline));
+
+}
+
+
+function getAttentionCounts(items) {
+
+    return items.reduce(
+        (counts, task) => {
+
+            const days = getDaysLeft(task.deadline);
+
+            if (days < 0) counts.overdue += 1;
+            else if (days === 0) counts.today += 1;
+            else counts.soon += 1;
+
+            return counts;
+
+        },
+        { overdue: 0, today: 0, soon: 0 }
+    );
+
+}
+
+
 function updateAttention() {
 
-    const container =
-        getElement(
-            "attentionList"
-        );
+    const alert = getElement("attentionAlert");
+    const title = getElement("attentionAlertTitle");
+    const meta = getElement("attentionAlertMeta");
 
+    if (!alert) return;
 
-    if (!container) {
-        return;
-    }
+    const urgent = getAttentionTasks();
 
+    if (urgent.length === 0) {
 
-    container.innerHTML = "";
-
-
-    const urgent =
-        tasks.filter(
-            task =>
-                task.status !== "Done" &&
-                getDaysLeft(
-                    task.deadline
-                ) <= 3
-        );
-
-
-    if (
-        urgent.length === 0
-    ) {
-
-        container.innerHTML =
-            "<p>🎉 No urgent deadlines!</p>";
-
+        alert.classList.add("hidden");
+        renderAttentionModalList([]);
         return;
 
     }
 
+    const counts = getAttentionCounts(urgent);
+    const parts = [];
 
-    urgent.forEach(
-        task => {
+    if (counts.overdue) parts.push(`${counts.overdue} overdue`);
+    if (counts.today) parts.push(`${counts.today} due today`);
+    if (counts.soon) parts.push(`${counts.soon} due within 3 days`);
 
+    alert.classList.remove("hidden");
 
-            const deadline =
-                getDeadlineStatus(
-                    task
-                );
+    if (title) {
+        title.textContent = `${urgent.length} item${urgent.length === 1 ? "" : "s"} need attention`;
+    }
 
+    if (meta) {
+        meta.textContent = parts.join(" · ");
+    }
 
-            const icon =
-                deadline.type === "overdue"
-                    ? "🔴"
-                    : deadline.type === "urgent"
-                        ? "🚨"
-                        : "🟠";
+    renderAttentionModalList(urgent);
 
-
-            const assigned =
-                task.assigned || [];
-
-
-            container.innerHTML += `
-
-                <div class="attention">
-
-                    <strong>
-
-                        ${icon}
-
-                        ${task.name}
-
-                    </strong>
+}
 
 
+function renderAttentionModalList(items = getAttentionTasks()) {
+
+    const container = getElement("attentionModalList");
+    const summary = getElement("attentionModalSummary");
+
+    if (!container) return;
+
+    if (!items.length) {
+
+        container.innerHTML = `<div class="attention-modal-empty">🎉 No urgent deadlines right now.</div>`;
+
+        if (summary) summary.textContent = "Nothing requires immediate action";
+
+        return;
+
+    }
+
+    const counts = getAttentionCounts(items);
+    const summaryParts = [];
+
+    if (counts.overdue) summaryParts.push(`${counts.overdue} overdue`);
+    if (counts.today) summaryParts.push(`${counts.today} due today`);
+    if (counts.soon) summaryParts.push(`${counts.soon} due soon`);
+
+    if (summary) summary.textContent = summaryParts.join(" · ");
+
+    container.innerHTML = items.map(task => {
+
+        const deadline = getDeadlineStatus(task);
+        const days = getDaysLeft(task.deadline);
+
+        const urgencyClass =
+            days < 0 ? "overdue" :
+            days === 0 ? "today" :
+            "soon";
+
+        const icon =
+            days < 0 ? "🔴" :
+            days === 0 ? "🚨" :
+            "🟠";
+
+        const classification = [
+            getTaskChapter(task) !== "Unassigned" ? getTaskChapter(task) : "",
+            getTaskWorkPackage(task)
+        ].filter(Boolean).join(" · ");
+
+        return `
+            <button
+                type="button"
+                class="attention-modal-item ${urgencyClass}"
+                onclick="openAttentionTask(${task.id})"
+            >
+                <span class="attention-modal-status">${icon}</span>
+                <span class="attention-modal-task-copy">
+                    <strong>${task.name}</strong>
                     <small>
-
-                        Main PIC:
-                        ${task.mainPIC}
-
-                        · Assigned:
-                        ${assigned.join(", ")}
-
-                        · ${deadline.text}
-
+                        PIC: ${task.mainPIC || "-"}
+                        ${classification ? ` · ${classification}` : ""}
                     </small>
+                </span>
+                <span class="attention-modal-deadline">
+                    <strong>${deadline.text}</strong>
+                    <small>${task.deadline || ""}</small>
+                </span>
+                <span class="attention-modal-arrow">›</span>
+            </button>
+        `;
 
-                </div>
+    }).join("");
 
-            `;
+}
 
-        }
+
+function openAttentionModal() {
+
+    const modal = getElement("attentionModal");
+
+    if (!modal) return;
+
+    renderAttentionModalList();
+    modal.classList.remove("hidden");
+
+}
+
+
+function closeAttentionModal() {
+
+    const modal = getElement("attentionModal");
+
+    if (modal) modal.classList.add("hidden");
+
+}
+
+
+function openAttentionTask(taskId) {
+
+    closeAttentionModal();
+    showSection("tasks");
+    editTask(Number(taskId));
+
+}
+
+
+function openAttentionTasks() {
+
+    closeAttentionModal();
+    showSection("tasks");
+
+    const statusFilter = getElement("filterStatus");
+    const priorityFilter = getElement("filterPriority");
+    const memberFilter = getElement("filterMember");
+    const chapterFilter = getElement("filterChapter");
+    const equipmentFilter = getElement("filterEquipment");
+
+    if (statusFilter) statusFilter.value = "All";
+    if (priorityFilter) priorityFilter.value = "All";
+    if (memberFilter) memberFilter.value = "All";
+    if (chapterFilter) chapterFilter.value = "All";
+
+    updateEquipmentFilterOptions();
+
+    if (equipmentFilter) equipmentFilter.value = "All";
+
+    const search = getElement("search");
+    if (search) search.value = "";
+
+    renderTasks();
+
+}
+
+
+function maybeShowCriticalAttentionPopup() {
+
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) return;
+
+    const critical = getAttentionTasks().filter(task => getDaysLeft(task.deadline) <= 0);
+
+    if (!critical.length) return;
+
+    const today = formatDate(new Date());
+    const storageKey = `designProjectAttentionSeen_${currentUser}`;
+
+    if (localStorage.getItem(storageKey) === today) return;
+
+    const quoteModal = getElement("dailyQuoteModal");
+
+    if (quoteModal && !quoteModal.classList.contains("hidden")) return;
+
+    const otherOpenModal = document.querySelector(
+        ".modal:not(.hidden), .logout-modal:not(.hidden), .pin-modal:not(.hidden)"
     );
+
+    if (otherOpenModal) return;
+
+    openAttentionModal();
+    localStorage.setItem(storageKey, today);
 
 }
 
@@ -13646,6 +13788,8 @@ function startApp() {
     setupAutoLogout();
 
     maybeShowDailyQuotePopup();
+
+    maybeShowCriticalAttentionPopup();
 
     if (isLecturer()) {
 
