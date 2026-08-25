@@ -6128,3 +6128,167 @@ tbody tr:last-child td {
         grid-column: 1 / -1;
     }
 }
+
+/* ============================================================
+   THIS WEEK'S FOCUS — My Day + Leader Hub editor
+============================================================ */
+
+.myday-focus-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    padding: 15px 17px;
+    margin: -6px 0 22px;
+    border: 1px solid #DCE4FF;
+    border-left: 4px solid var(--primary);
+    border-radius: 13px;
+    background:
+        linear-gradient(90deg, rgba(37,99,235,.055), rgba(124,58,237,.025)),
+        #FFFFFF;
+}
+
+.myday-focus-card.hidden {
+    display: none;
+}
+
+.myday-focus-kicker {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+    color: var(--primary);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+}
+
+.myday-focus-title {
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.myday-focus-target {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.myday-focus-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+}
+
+.myday-focus-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #F1F4FF;
+    color: #4B58A7;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.myday-focus-action {
+    flex-shrink: 0;
+    border: 1px solid #CFD8F8;
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: var(--primary);
+    padding: 8px 11px;
+    font-size: 10.5px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.myday-focus-action:hover {
+    background: #F5F7FF;
+}
+
+.leaderhub-focus-panel {
+    border-top: 3px solid var(--primary);
+}
+
+.leaderhub-focus-form {
+    display: grid;
+    grid-template-columns: 170px minmax(240px, 1fr) 165px auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.leaderhub-focus-form label {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 10.5px;
+    font-weight: 800;
+}
+
+.leaderhub-focus-form input,
+.leaderhub-focus-form select {
+    width: 100%;
+    min-height: 39px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: var(--text);
+    padding: 9px 10px;
+    outline: none;
+}
+
+.leaderhub-focus-form input:focus,
+.leaderhub-focus-form select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+}
+
+.leaderhub-focus-note {
+    margin-top: 9px;
+    color: #9AA2B1;
+    font-size: 10px;
+}
+
+@media (max-width: 920px) {
+    .leaderhub-focus-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .leaderhub-focus-target {
+        grid-column: 1 / -1;
+    }
+
+    .leaderhub-focus-form .small-add {
+        justify-self: start;
+    }
+}
+
+@media (max-width: 620px) {
+    .myday-focus-card {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .myday-focus-action {
+        width: 100%;
+    }
+
+    .leaderhub-focus-form {
+        grid-template-columns: 1fr;
+    }
+
+    .leaderhub-focus-target {
+        grid-column: auto;
+    }
+}
+
