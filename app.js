@@ -14217,6 +14217,18 @@ function applyRoleRestrictions() {
     renderSubmissionCountdown();
     renderEngineeringToolAccess();
 
+    const brainstormWrap = getElement("brainstormHeaderWrap");
+    if (brainstormWrap) brainstormWrap.style.display = lecturer ? "none" : "";
+
+    if (lecturer) {
+        closeBrainstormDrawer();
+        closeFullBrainstorm();
+        stopBrainstormListeners();
+    }
+    else {
+        startBrainstormListeners();
+    }
+
 }
 
 
@@ -14304,6 +14316,704 @@ function startApp() {
 
     }
 
+}
+
+
+
+
+// ============================================================
+// BRAINSTORM V1 — TEAM-ONLY REAL-TIME COLLABORATION
+// ============================================================
+// Data model:
+// brainstormRooms/{roomId}
+// brainstormRooms/{roomId}/messages/{messageId}
+//
+// Lecturer access is blocked in the client. Deploy the companion
+// Firestore rules snippet for database-level protection as well.
+// ============================================================
+
+let brainstormInitialized = false;
+let brainstormStarting = false;
+let brainstormUnsubscribers = [];
+let brainstormRoomRegistry = {};
+let brainstormMessagesByRoom = {};
+let brainstormActiveRoomKey = "team";
+let brainstormReplyTo = null;
+let brainstormAiSummaryCache = {};
+
+function brainstormSafeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function brainstormMemberByName(name) {
+    return members.find(member => member.name === name) || null;
+}
+
+function brainstormCurrentEmail() {
+    const current = brainstormMemberByName(getCurrentUser());
+    return current ? current.email : ((auth && auth.currentUser && auth.currentUser.email) || "");
+}
+
+function brainstormSlug(value) {
+    return String(value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+}
+
+function brainstormDmRoomKey(nameA, nameB) {
+    return "dm_" + [brainstormSlug(nameA), brainstormSlug(nameB)].sort().join("_");
+}
+
+function buildBrainstormRoomRegistry() {
+    const current = getCurrentUser();
+    const teamEmails = members.map(member => member.email);
+    const teamNames = members.map(member => member.name);
+
+    const registry = {
+        team: {
+            key: "team",
+            type: "team",
+            title: "Team Room",
+            meta: "All project members",
+            pill: "TEAM",
+            participantNames: teamNames,
+            participantEmails: teamEmails
+        }
+    };
+
+    if (current) {
+        const currentMember = brainstormMemberByName(current);
+        members
+            .filter(member => member.name !== current)
+            .forEach(member => {
+                const key = brainstormDmRoomKey(current, member.name);
+                registry[key] = {
+                    key,
+                    type: "direct",
+                    title: member.name,
+                    meta: "Private direct chat",
+                    pill: "DIRECT",
+                    participantNames: [current, member.name].sort(),
+                    participantEmails: [currentMember && currentMember.email, member.email].filter(Boolean).sort()
+                };
+            });
+    }
+
+    brainstormRoomRegistry = registry;
+    return registry;
+}
+
+function getBrainstormRoom(key = brainstormActiveRoomKey) {
+    if (!brainstormRoomRegistry[key]) buildBrainstormRoomRegistry();
+    return brainstormRoomRegistry[key] || brainstormRoomRegistry.team;
+}
+
+async function ensureBrainstormRoom(room) {
+    if (!db || !room || isLecturer()) return;
+
+    const payload = {
+        type: room.type,
+        title: room.type === "team" ? "Team Room" : "Direct Chat",
+        participantNames: room.participantNames,
+        participantEmails: room.participantEmails,
+        updatedAt: new Date().toISOString()
+    };
+
+    await db.collection("brainstormRooms")
+        .doc(room.key)
+        .set(payload, { merge: true });
+}
+
+function stopBrainstormListeners() {
+    brainstormUnsubscribers.forEach(unsub => {
+        try { if (typeof unsub === "function") unsub(); } catch (_) {}
+    });
+    brainstormUnsubscribers = [];
+    brainstormInitialized = false;
+    brainstormStarting = false;
+    brainstormMessagesByRoom = {};
+    updateBrainstormUnreadBadge();
+}
+
+async function startBrainstormListeners() {
+    if (isLecturer() || !db || !getCurrentUser() || brainstormInitialized || brainstormStarting) return;
+
+    brainstormStarting = true;
+    buildBrainstormRoomRegistry();
+
+    try {
+        const rooms = Object.values(brainstormRoomRegistry);
+
+        for (const room of rooms) {
+            await ensureBrainstormRoom(room);
+        }
+
+        stopBrainstormListeners();
+        brainstormStarting = true;
+        buildBrainstormRoomRegistry();
+
+        Object.values(brainstormRoomRegistry).forEach(room => {
+            const unsub = db.collection("brainstormRooms")
+                .doc(room.key)
+                .collection("messages")
+                .orderBy("createdAt", "asc")
+                .onSnapshot(
+                    snapshot => {
+                        brainstormMessagesByRoom[room.key] = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...sanitizeStoredData(doc.data())
+                        }));
+
+                        renderBrainstormAll();
+                        updateBrainstormUnreadBadge();
+                    },
+                    error => {
+                        console.error("Brainstorm listener failed:", room.key, error);
+                        if (/permission/i.test(error && error.message || "")) {
+                            showToast("Brainstorm needs the included Firestore security rules before chat can sync.", "warning");
+                        }
+                    }
+                );
+            brainstormUnsubscribers.push(unsub);
+        });
+
+        brainstormInitialized = true;
+        populateBrainstormDirectPicker();
+        renderBrainstormAll();
+    }
+    catch (error) {
+        console.error("Brainstorm setup failed:", error);
+        if (/permission/i.test(error && error.message || "")) {
+            showToast("Brainstorm is ready in the UI, but Firestore rules still need to be deployed.", "warning");
+        }
+    }
+    finally {
+        brainstormStarting = false;
+    }
+}
+
+function brainstormMessagesForRoom(key = brainstormActiveRoomKey) {
+    return brainstormMessagesByRoom[key] || [];
+}
+
+function brainstormLastSeenMap() {
+    try {
+        return JSON.parse(localStorage.getItem("brainstormLastSeen") || "{}") || {};
+    }
+    catch (_) {
+        return {};
+    }
+}
+
+function brainstormRoomUnreadCount(key) {
+    const current = getCurrentUser();
+    const lastSeen = brainstormLastSeenMap()[key] || "";
+    return brainstormMessagesForRoom(key).filter(message =>
+        message.sender !== current && (message.createdAt || "") > lastSeen
+    ).length;
+}
+
+function markBrainstormRoomSeen(key = brainstormActiveRoomKey) {
+    const messages = brainstormMessagesForRoom(key);
+    const latest = messages.length ? (messages[messages.length - 1].createdAt || new Date().toISOString()) : new Date().toISOString();
+    const map = brainstormLastSeenMap();
+    map[key] = latest;
+    localStorage.setItem("brainstormLastSeen", JSON.stringify(map));
+    updateBrainstormUnreadBadge();
+    renderBrainstormFullRoomList();
+}
+
+function updateBrainstormUnreadBadge() {
+    const badge = getElement("brainstormBadge");
+    if (!badge) return;
+
+    if (isLecturer()) {
+        badge.classList.add("hidden");
+        return;
+    }
+
+    const total = Object.keys(brainstormRoomRegistry).reduce((sum, key) => sum + brainstormRoomUnreadCount(key), 0);
+    badge.textContent = total > 99 ? "99+" : total;
+    badge.classList.toggle("hidden", total === 0);
+}
+
+function populateBrainstormDirectPicker() {
+    const select = getElement("brainstormDirectSelect");
+    if (!select || isLecturer()) return;
+
+    const current = getCurrentUser();
+    const others = members.filter(member => member.name !== current);
+    const activeRoom = getBrainstormRoom();
+
+    select.innerHTML = others.map(member =>
+        `<option value="${brainstormSafeHtml(member.name)}">${brainstormSafeHtml(member.name)}</option>`
+    ).join("");
+
+    if (activeRoom && activeRoom.type === "direct") {
+        select.value = activeRoom.title;
+    }
+}
+
+function selectBrainstormMode(mode) {
+    if (isLecturer()) return;
+
+    const direct = mode === "direct";
+    const current = getCurrentUser();
+    const others = members.filter(member => member.name !== current);
+
+    if (direct) {
+        const selected = getElement("brainstormDirectSelect")?.value || others[0]?.name;
+        if (selected) brainstormActiveRoomKey = brainstormDmRoomKey(current, selected);
+    }
+    else {
+        brainstormActiveRoomKey = "team";
+    }
+
+    brainstormReplyTo = null;
+    renderBrainstormAll();
+    markBrainstormRoomSeen();
+}
+
+function selectBrainstormDirectMember(memberName) {
+    if (isLecturer() || !memberName || memberName === getCurrentUser()) return;
+    brainstormActiveRoomKey = brainstormDmRoomKey(getCurrentUser(), memberName);
+    brainstormReplyTo = null;
+    renderBrainstormAll();
+    markBrainstormRoomSeen();
+}
+
+function selectBrainstormRoom(key) {
+    if (isLecturer() || !brainstormRoomRegistry[key]) return;
+    brainstormActiveRoomKey = key;
+    brainstormReplyTo = null;
+    renderBrainstormAll();
+    markBrainstormRoomSeen();
+}
+
+function toggleBrainstormDrawer() {
+    if (isLecturer()) return;
+    const drawer = getElement("brainstormDrawer");
+    if (drawer && drawer.classList.contains("open")) closeBrainstormDrawer();
+    else openBrainstormDrawer();
+}
+
+function openBrainstormDrawer() {
+    if (isLecturer()) return;
+    startBrainstormListeners();
+    getElement("brainstormDrawer")?.classList.add("open");
+    getElement("brainstormDrawerOverlay")?.classList.add("open");
+    getElement("brainstormDrawer")?.setAttribute("aria-hidden", "false");
+    renderBrainstormAll();
+    markBrainstormRoomSeen();
+    setTimeout(() => getElement("brainstormMessageInput")?.focus(), 100);
+}
+
+function closeBrainstormDrawer() {
+    getElement("brainstormDrawer")?.classList.remove("open");
+    getElement("brainstormDrawerOverlay")?.classList.remove("open");
+    getElement("brainstormDrawer")?.setAttribute("aria-hidden", "true");
+}
+
+function openFullBrainstorm() {
+    if (isLecturer()) return;
+    closeBrainstormDrawer();
+    getElement("brainstormFullOverlay")?.classList.add("open");
+    getElement("brainstormFullModal")?.classList.add("open");
+    getElement("brainstormFullModal")?.setAttribute("aria-hidden", "false");
+    renderBrainstormAll();
+    markBrainstormRoomSeen();
+    setTimeout(() => getElement("brainstormFullMessageInput")?.focus(), 100);
+}
+
+function closeFullBrainstorm() {
+    getElement("brainstormFullOverlay")?.classList.remove("open");
+    getElement("brainstormFullModal")?.classList.remove("open");
+    getElement("brainstormFullModal")?.setAttribute("aria-hidden", "true");
+}
+
+function brainstormTimeLabel(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function brainstormInitials(name) {
+    return String(name || "?")
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(part => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+}
+
+function brainstormReactionLabel(key) {
+    return ({ idea: "💡", like: "👍", fire: "🔥" })[key] || "•";
+}
+
+function brainstormMessageHtml(message) {
+    const current = getCurrentUser();
+    const own = message.sender === current;
+    const reactions = message.reactions || {};
+    const reply = message.replyTo || null;
+
+    const reactionHtml = ["idea", "like", "fire"].map(key => {
+        const names = Array.isArray(reactions[key]) ? reactions[key] : [];
+        const mine = names.includes(current);
+        return `<button type="button" class="brainstorm-react ${mine ? "mine" : ""}" onclick="toggleBrainstormReaction('${message.id}','${key}')">${brainstormReactionLabel(key)}${names.length ? ` ${names.length}` : ""}</button>`;
+    }).join("");
+
+    return `
+        <div class="brainstorm-msg ${own ? "own" : ""}">
+            <div class="brainstorm-avatar">${brainstormSafeHtml(brainstormInitials(message.sender))}</div>
+            <div class="brainstorm-bubble-wrap">
+                <div class="brainstorm-msg-meta">
+                    <span class="brainstorm-msg-name">${brainstormSafeHtml(message.sender || "Unknown")}</span>
+                    <span>${brainstormSafeHtml(brainstormTimeLabel(message.createdAt))}</span>
+                </div>
+                <div class="brainstorm-bubble">
+                    ${(message.pinned || message.decision) ? `<div class="brainstorm-badges">${message.pinned ? '<span class="brainstorm-badge pin">📌 PINNED</span>' : ''}${message.decision ? '<span class="brainstorm-badge decision">✓ DECISION</span>' : ''}</div>` : ""}
+                    ${reply ? `<div class="brainstorm-reply-quote"><strong>${brainstormSafeHtml(reply.sender || "")}</strong><br>${brainstormSafeHtml(reply.text || "")}</div>` : ""}
+                    <div>${brainstormSafeHtml(message.text || "")}</div>
+                    <div class="brainstorm-reactions">${reactionHtml}</div>
+                </div>
+                <div class="brainstorm-msg-actions">
+                    <button type="button" class="brainstorm-action" onclick="replyToBrainstormMessage('${message.id}')">↩ Reply</button>
+                    <button type="button" class="brainstorm-action" onclick="toggleBrainstormPin('${message.id}')">${message.pinned ? "Unpin" : "📌 Pin"}</button>
+                    <button type="button" class="brainstorm-action" onclick="toggleBrainstormDecision('${message.id}')">${message.decision ? "Undo Decision" : "✓ Decision"}</button>
+                    <button type="button" class="brainstorm-action" onclick="convertBrainstormToTask('${message.id}')">→ Task</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function renderBrainstormMessagesInto(containerId) {
+    const container = getElement(containerId);
+    if (!container) return;
+
+    const messages = brainstormMessagesForRoom();
+    if (!messages.length) {
+        container.innerHTML = `<div class="brainstorm-empty"><div><strong>No messages yet.</strong><br><br>Start with an idea, question, calculation or design decision.</div></div>`;
+        return;
+    }
+
+    const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 110;
+    container.innerHTML = messages.map(brainstormMessageHtml).join("");
+    if (nearBottom || !container.dataset.rendered) {
+        container.scrollTop = container.scrollHeight;
+    }
+    container.dataset.rendered = "1";
+}
+
+function renderBrainstormRoomHeaders() {
+    const room = getBrainstormRoom();
+    const isDirect = room.type === "direct";
+
+    ["brainstormRoomTitle", "brainstormFullRoomTitle"].forEach(id => {
+        const el = getElement(id); if (el) el.textContent = room.title;
+    });
+    ["brainstormRoomMeta", "brainstormFullRoomMeta"].forEach(id => {
+        const el = getElement(id); if (el) el.textContent = room.meta;
+    });
+    ["brainstormRoomPill", "brainstormFullRoomPill"].forEach(id => {
+        const el = getElement(id); if (el) el.textContent = room.pill;
+    });
+
+    getElement("brainstormTeamTab")?.classList.toggle("active", !isDirect);
+    getElement("brainstormDirectTab")?.classList.toggle("active", isDirect);
+    getElement("brainstormDirectPicker")?.classList.toggle("hidden", !isDirect);
+
+    const directSelect = getElement("brainstormDirectSelect");
+    if (isDirect && directSelect) directSelect.value = room.title;
+}
+
+function renderBrainstormReplyPreviews() {
+    const html = brainstormReplyTo
+        ? `<span>Replying to <strong>${brainstormSafeHtml(brainstormReplyTo.sender)}</strong>: ${brainstormSafeHtml((brainstormReplyTo.text || "").slice(0, 90))}</span><button type="button" onclick="clearBrainstormReply()">×</button>`
+        : "";
+
+    ["brainstormReplyPreview", "brainstormFullReplyPreview"].forEach(id => {
+        const el = getElement(id);
+        if (!el) return;
+        el.innerHTML = html;
+        el.classList.toggle("hidden", !brainstormReplyTo);
+    });
+}
+
+function renderBrainstormFullRoomList() {
+    const container = getElement("brainstormFullRoomList");
+    if (!container || isLecturer()) return;
+
+    const team = brainstormRoomRegistry.team;
+    const directRooms = Object.values(brainstormRoomRegistry).filter(room => room.type === "direct");
+
+    const roomButton = room => {
+        const unread = brainstormRoomUnreadCount(room.key);
+        return `<button type="button" class="brainstorm-room-btn ${room.key === brainstormActiveRoomKey ? "active" : ""}" onclick="selectBrainstormRoom('${room.key}')"><span>${room.type === "team" ? "👥" : "👤"} ${brainstormSafeHtml(room.title)}</span>${unread ? `<span class="brainstorm-room-count">${unread}</span>` : ""}</button>`;
+    };
+
+    container.innerHTML = roomButton(team) +
+        `<div class="brainstorm-room-list-title">DIRECT MESSAGES</div>` +
+        directRooms.map(roomButton).join("");
+}
+
+function renderBrainstormSidePanels() {
+    const messages = brainstormMessagesForRoom();
+    const pinned = messages.filter(message => message.pinned).slice(-8).reverse();
+    const decisions = messages.filter(message => message.decision).slice(-8).reverse();
+
+    const renderItems = (items, empty) => items.length
+        ? items.map(message => `<div class="brainstorm-side-item"><strong>${brainstormSafeHtml(message.sender || "")}</strong><br>${brainstormSafeHtml((message.text || "").slice(0, 150))}</div>`).join("")
+        : `<div class="brainstorm-side-empty">${empty}</div>`;
+
+    const pinnedEl = getElement("brainstormPinnedList");
+    const decisionEl = getElement("brainstormDecisionList");
+    if (pinnedEl) pinnedEl.innerHTML = renderItems(pinned, "No pinned ideas yet.");
+    if (decisionEl) decisionEl.innerHTML = renderItems(decisions, "No decisions marked yet.");
+
+    const summaryBox = getElement("brainstormAiSummaryBox");
+    if (summaryBox && brainstormAiSummaryCache[brainstormActiveRoomKey]) {
+        summaryBox.textContent = brainstormAiSummaryCache[brainstormActiveRoomKey];
+    }
+}
+
+function renderBrainstormAll() {
+    if (isLecturer()) return;
+    if (!Object.keys(brainstormRoomRegistry).length) buildBrainstormRoomRegistry();
+    populateBrainstormDirectPicker();
+    renderBrainstormRoomHeaders();
+    renderBrainstormMessagesInto("brainstormMessages");
+    renderBrainstormMessagesInto("brainstormFullMessages");
+    renderBrainstormReplyPreviews();
+    renderBrainstormFullRoomList();
+    renderBrainstormSidePanels();
+}
+
+function brainstormComposerKeydown(event, source) {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendBrainstormMessage(source);
+    }
+}
+
+async function sendBrainstormMessage(source = "drawer") {
+    if (isLecturer()) return;
+    if (!db) {
+        showToast("Brainstorm is not connected to Firebase yet.", "warning");
+        return;
+    }
+
+    const input = getElement(source === "full" ? "brainstormFullMessageInput" : "brainstormMessageInput");
+    const text = sanitizeText(input ? input.value : "");
+    if (!text) return;
+
+    const room = getBrainstormRoom();
+    const current = getCurrentUser();
+    const email = brainstormCurrentEmail();
+    if (!room || !current || !email) return;
+
+    try {
+        await ensureBrainstormRoom(room);
+        await db.collection("brainstormRooms")
+            .doc(room.key)
+            .collection("messages")
+            .add({
+                sender: current,
+                senderEmail: email,
+                text,
+                createdAt: new Date().toISOString(),
+                pinned: false,
+                decision: false,
+                reactions: { idea: [], like: [], fire: [] },
+                replyTo: brainstormReplyTo ? {
+                    id: brainstormReplyTo.id,
+                    sender: brainstormReplyTo.sender,
+                    text: (brainstormReplyTo.text || "").slice(0, 220)
+                } : null
+            });
+
+        if (input) input.value = "";
+        brainstormReplyTo = null;
+        renderBrainstormReplyPreviews();
+        markBrainstormRoomSeen(room.key);
+    }
+    catch (error) {
+        console.error("Brainstorm send failed:", error);
+        showToast("❌ Message failed to send: " + (error.message || "Unknown error"));
+    }
+}
+
+function findBrainstormMessage(id) {
+    return brainstormMessagesForRoom().find(message => message.id === id) || null;
+}
+
+function brainstormMessageRef(id) {
+    return db.collection("brainstormRooms")
+        .doc(brainstormActiveRoomKey)
+        .collection("messages")
+        .doc(id);
+}
+
+function replyToBrainstormMessage(id) {
+    if (isLecturer()) return;
+    const message = findBrainstormMessage(id);
+    if (!message) return;
+    brainstormReplyTo = { id: message.id, sender: message.sender, text: message.text };
+    renderBrainstormReplyPreviews();
+    const fullOpen = getElement("brainstormFullModal")?.classList.contains("open");
+    setTimeout(() => getElement(fullOpen ? "brainstormFullMessageInput" : "brainstormMessageInput")?.focus(), 30);
+}
+
+function clearBrainstormReply() {
+    brainstormReplyTo = null;
+    renderBrainstormReplyPreviews();
+}
+
+async function toggleBrainstormReaction(id, reactionKey) {
+    if (isLecturer() || !db) return;
+    const message = findBrainstormMessage(id);
+    if (!message) return;
+
+    const current = getCurrentUser();
+    const reactions = { idea: [], like: [], fire: [], ...(message.reactions || {}) };
+    const existing = Array.isArray(reactions[reactionKey]) ? [...reactions[reactionKey]] : [];
+    reactions[reactionKey] = existing.includes(current)
+        ? existing.filter(name => name !== current)
+        : [...existing, current];
+
+    try {
+        await brainstormMessageRef(id).update({ reactions });
+    }
+    catch (error) {
+        console.error("Brainstorm reaction failed:", error);
+    }
+}
+
+async function toggleBrainstormPin(id) {
+    if (isLecturer() || !db) return;
+    const message = findBrainstormMessage(id);
+    if (!message) return;
+    try {
+        await brainstormMessageRef(id).update({ pinned: !message.pinned });
+    }
+    catch (error) {
+        showToast("❌ Pin update failed: " + error.message);
+    }
+}
+
+async function toggleBrainstormDecision(id) {
+    if (isLecturer() || !db) return;
+    const message = findBrainstormMessage(id);
+    if (!message) return;
+    try {
+        await brainstormMessageRef(id).update({ decision: !message.decision });
+    }
+    catch (error) {
+        showToast("❌ Decision update failed: " + error.message);
+    }
+}
+
+function convertBrainstormToTask(id) {
+    if (isLecturer()) return;
+    const message = findBrainstormMessage(id);
+    if (!message) return;
+
+    const excerpt = String(message.text || "").replace(/\s+/g, " ").trim();
+    const name = excerpt.length > 82 ? excerpt.slice(0, 79) + "..." : excerpt;
+
+    closeBrainstormDrawer();
+    closeFullBrainstorm();
+    openTaskModal(null, {
+        name: name || "Brainstorm action item",
+        mainPIC: getCurrentUser() || ""
+    });
+    showToast("Brainstorm idea copied into a new task. Add PIC/deadline and save.");
+}
+
+function buildLocalBrainstormSummary(messages) {
+    const decisions = messages.filter(message => message.decision);
+    const pinned = messages.filter(message => message.pinned && !message.decision);
+    const recent = messages.slice(-8);
+
+    const lines = [];
+    lines.push("Local structured summary (AI backend not connected)");
+    lines.push("");
+
+    if (decisions.length) {
+        lines.push("Decisions");
+        decisions.slice(-5).forEach(message => lines.push("• " + message.text));
+        lines.push("");
+    }
+
+    if (pinned.length) {
+        lines.push("Pinned ideas");
+        pinned.slice(-5).forEach(message => lines.push("• " + message.text));
+        lines.push("");
+    }
+
+    lines.push("Recent discussion");
+    recent.slice(-5).forEach(message => lines.push(`• ${message.sender}: ${message.text}`));
+    return lines.join("\n");
+}
+
+async function generateBrainstormSummary() {
+    if (isLecturer()) return;
+    const button = getElement("brainstormAiSummaryBtn");
+    const box = getElement("brainstormAiSummaryBox");
+    const messages = brainstormMessagesForRoom().slice(-60);
+    const room = getBrainstormRoom();
+
+    if (!messages.length) {
+        if (box) box.textContent = "No messages to summarise yet.";
+        return;
+    }
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Summarising...";
+    }
+    if (box) box.textContent = "Reviewing this discussion...";
+
+    try {
+        if (!functionsInstance) throw new Error("AI function not available");
+
+        const callable = functionsInstance.httpsCallable("generateBrainstormSummary");
+        const result = await callable({
+            room: { key: room.key, type: room.type, title: room.title },
+            messages: messages.map(message => ({
+                sender: message.sender,
+                text: message.text,
+                pinned: !!message.pinned,
+                decision: !!message.decision,
+                replyTo: message.replyTo || null
+            }))
+        });
+
+        const summary = result && result.data && (result.data.summary || result.data.text);
+        if (!summary) throw new Error("AI returned no summary");
+
+        brainstormAiSummaryCache[brainstormActiveRoomKey] = String(summary);
+        if (box) box.textContent = String(summary);
+    }
+    catch (error) {
+        console.warn("Brainstorm AI summary fallback:", error);
+        const fallback = buildLocalBrainstormSummary(messages);
+        brainstormAiSummaryCache[brainstormActiveRoomKey] = fallback;
+        if (box) box.textContent = fallback;
+    }
+    finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = "Summarise";
+        }
+    }
 }
 
 
