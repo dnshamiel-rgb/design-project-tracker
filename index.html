@@ -23,6 +23,89 @@
 
     <!-- jsPDF (for Contribution Report export) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+    <!-- BRAINSTORM V1 — team-only collaboration -->
+    <style>
+        .brainstorm-header-wrap{position:relative;display:flex;align-items:center}
+        .brainstorm-trigger{position:relative}
+        .brainstorm-drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.26);z-index:1190;opacity:0;pointer-events:none;transition:.2s}
+        .brainstorm-drawer-overlay.open{opacity:1;pointer-events:auto}
+        .brainstorm-drawer{position:fixed;top:0;right:0;width:min(430px,96vw);height:100vh;background:#fff;z-index:1200;box-shadow:-20px 0 55px rgba(15,23,42,.16);transform:translateX(102%);transition:.22s ease;display:flex;flex-direction:column}
+        .brainstorm-drawer.open{transform:translateX(0)}
+        .brainstorm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 18px 13px;border-bottom:1px solid #E8EDF3}
+        .brainstorm-head h3{margin:0;font-size:17px;letter-spacing:-.015em;color:#172033}
+        .brainstorm-head p{margin:4px 0 0;color:#7B8798;font-size:11px}
+        .brainstorm-close{border:0;background:#F3F5F8;color:#667085;width:32px;height:32px;border-radius:9px;font-size:20px;line-height:1}
+        .brainstorm-switch{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:12px 16px 8px}
+        .brainstorm-tab{border:1px solid #E1E7EE;background:#fff;border-radius:10px;padding:9px 10px;font-weight:750;color:#64748B;font-size:12px}
+        .brainstorm-tab.active{background:#EEF2FF;border-color:#C9D2FF;color:#4F46E5}
+        .brainstorm-direct-picker{padding:0 16px 10px}
+        .brainstorm-direct-picker select{width:100%;border:1px solid #DDE4EC;border-radius:10px;padding:9px 10px;background:#fff;color:#334155;font-size:12px}
+        .brainstorm-room-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 16px;border-top:1px solid #F0F2F5;border-bottom:1px solid #EEF1F5;background:#FBFCFE}
+        .brainstorm-room-title{font-size:12px;font-weight:800;color:#25324A}
+        .brainstorm-room-meta{font-size:10px;color:#94A3B8;margin-top:2px}
+        .brainstorm-room-pill{font-size:9px;font-weight:800;padding:4px 7px;border-radius:999px;background:#EAF7F5;color:#00877F;white-space:nowrap}
+        .brainstorm-messages{flex:1;overflow:auto;padding:14px 14px 8px;background:linear-gradient(#FBFCFF,#F8FAFD)}
+        .brainstorm-empty{height:100%;min-height:210px;display:grid;place-items:center;text-align:center;color:#94A3B8;font-size:12px;padding:28px}
+        .brainstorm-msg{display:flex;gap:8px;margin:0 0 12px;align-items:flex-start}
+        .brainstorm-msg.own{flex-direction:row-reverse}
+        .brainstorm-avatar{width:29px;height:29px;flex:0 0 29px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#2563EB,#7C3AED);color:white;font-size:10px;font-weight:850}
+        .brainstorm-bubble-wrap{max-width:82%;min-width:0}
+        .brainstorm-msg.own .brainstorm-bubble-wrap{text-align:right}
+        .brainstorm-msg-meta{display:flex;gap:7px;align-items:center;margin:0 4px 4px;font-size:9.5px;color:#94A3B8}
+        .brainstorm-msg.own .brainstorm-msg-meta{justify-content:flex-end}
+        .brainstorm-msg-name{font-weight:800;color:#64748B}
+        .brainstorm-bubble{position:relative;text-align:left;background:#fff;border:1px solid #E6EBF1;border-radius:13px;padding:9px 10px;box-shadow:0 2px 7px rgba(15,23,42,.035);color:#334155;font-size:12px;line-height:1.45;word-break:break-word}
+        .brainstorm-msg.own .brainstorm-bubble{background:#EEF2FF;border-color:#D9DFFF}
+        .brainstorm-reply-quote{border-left:2px solid #818CF8;background:rgba(255,255,255,.64);padding:5px 7px;border-radius:5px;margin-bottom:7px;color:#64748B;font-size:10px}
+        .brainstorm-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+        .brainstorm-badge{display:inline-flex;font-size:8.5px;font-weight:850;padding:3px 6px;border-radius:999px;letter-spacing:.02em}
+        .brainstorm-badge.pin{background:#FFF7E8;color:#B45309}.brainstorm-badge.decision{background:#EAF8EF;color:#178447}
+        .brainstorm-reactions{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+        .brainstorm-react{border:1px solid #E2E8F0;background:#fff;border-radius:999px;padding:3px 7px;font-size:10px;color:#64748B}
+        .brainstorm-react.mine{background:#EEF2FF;border-color:#C7D2FE;color:#4F46E5}
+        .brainstorm-msg-actions{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px;opacity:.7}
+        .brainstorm-msg.own .brainstorm-msg-actions{justify-content:flex-end}
+        .brainstorm-action{border:0;background:transparent;color:#8491A3;padding:2px 4px;font-size:9.5px;border-radius:5px}
+        .brainstorm-action:hover{background:#EEF2F7;color:#475569}
+        .brainstorm-reply-preview{margin:0 14px 8px;padding:7px 9px;border:1px solid #DDE4FF;background:#F7F8FF;border-radius:9px;display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:10.5px;color:#5B6475}
+        .brainstorm-reply-preview button{border:0;background:transparent;color:#94A3B8;font-size:16px}
+        .brainstorm-composer{padding:9px 12px 12px;border-top:1px solid #E8EDF3;background:#fff}
+        .brainstorm-composer-row{display:flex;gap:7px;align-items:flex-end}
+        .brainstorm-composer textarea{resize:none;min-height:39px;max-height:110px;flex:1;border:1px solid #DDE4EC;border-radius:11px;padding:9px 10px;font:inherit;font-size:12px;color:#334155;outline:none}
+        .brainstorm-composer textarea:focus{border-color:#A5B4FC;box-shadow:0 0 0 3px #EEF2FF}
+        .brainstorm-send{border:0;border-radius:10px;background:linear-gradient(135deg,#2563EB,#7C3AED);color:#fff;font-weight:800;padding:10px 12px;font-size:11px}
+        .brainstorm-drawer-footer{padding:0 12px 12px;background:#fff}
+        .brainstorm-full-link{width:100%;border:1px solid #E0E6ED;background:#FAFBFD;color:#536174;border-radius:9px;padding:8px 10px;font-size:10.5px;font-weight:750}
+
+        .brainstorm-full-overlay{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:1240;opacity:0;pointer-events:none;transition:.18s}
+        .brainstorm-full-overlay.open{opacity:1;pointer-events:auto}
+        .brainstorm-full{position:fixed;z-index:1250;left:50%;top:50%;transform:translate(-50%,-47%);width:min(1180px,94vw);height:min(760px,90vh);background:#fff;border-radius:18px;box-shadow:0 28px 90px rgba(15,23,42,.24);opacity:0;pointer-events:none;transition:.2s;overflow:hidden;display:grid;grid-template-rows:auto 1fr}
+        .brainstorm-full.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+        .brainstorm-full-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid #E8EDF3}
+        .brainstorm-full-head h2{margin:0;font-size:19px;color:#172033}.brainstorm-full-head p{margin:3px 0 0;font-size:10.5px;color:#8B96A6}
+        .brainstorm-full-body{min-height:0;display:grid;grid-template-columns:210px minmax(0,1fr) 260px}
+        .brainstorm-room-list{border-right:1px solid #E8EDF3;padding:13px;background:#FBFCFE;overflow:auto}
+        .brainstorm-room-list-title{font-size:9px;font-weight:850;color:#94A3B8;letter-spacing:.08em;margin:8px 7px 6px}
+        .brainstorm-room-btn{width:100%;border:0;background:transparent;border-radius:9px;padding:9px 10px;text-align:left;color:#536174;font-size:11px;font-weight:700;margin-bottom:3px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+        .brainstorm-room-btn:hover{background:#F0F3F8}.brainstorm-room-btn.active{background:#EEF2FF;color:#4F46E5}
+        .brainstorm-room-count{min-width:18px;text-align:center;border-radius:999px;background:#EF4444;color:#fff;font-size:8px;padding:2px 5px}
+        .brainstorm-full-chat{min-width:0;display:flex;flex-direction:column;background:#FAFBFD}
+        .brainstorm-full-chat .brainstorm-room-bar{padding:11px 14px}
+        .brainstorm-full-chat .brainstorm-messages{padding:16px;min-height:0}
+        .brainstorm-full-side{border-left:1px solid #E8EDF3;padding:14px;overflow:auto;background:#fff}
+        .brainstorm-side-block{margin-bottom:16px}.brainstorm-side-title{font-size:10px;font-weight:850;color:#64748B;letter-spacing:.04em;margin-bottom:7px}
+        .brainstorm-side-item{padding:8px 9px;border:1px solid #E7EBF0;border-radius:8px;margin-bottom:6px;background:#FAFBFC;color:#475569;font-size:10.5px;line-height:1.35}
+        .brainstorm-side-empty{color:#A0A9B6;font-size:10px;padding:4px 1px}
+        .brainstorm-ai-box{border:1px solid #DDE4FF;background:linear-gradient(180deg,#F8F9FF,#fff);border-radius:10px;padding:10px;color:#475569;font-size:10.5px;line-height:1.5;white-space:pre-wrap}
+        .brainstorm-ai-actions{display:flex;gap:6px;margin-top:7px}.brainstorm-ai-btn{border:1px solid #C7D2FE;background:#EEF2FF;color:#4F46E5;border-radius:8px;padding:7px 8px;font-size:9.5px;font-weight:800}
+        .brainstorm-security-note{margin-top:8px;color:#A0A9B6;font-size:8.8px;line-height:1.35}
+        body.role-lecturer #brainstormHeaderWrap{display:none!important}
+        @media(max-width:900px){.brainstorm-full-body{grid-template-columns:170px minmax(0,1fr)}.brainstorm-full-side{display:none}}
+        @media(max-width:650px){.brainstorm-full{width:100vw;height:100vh;border-radius:0}.brainstorm-full-body{grid-template-columns:1fr}.brainstorm-room-list{display:none}.brainstorm-bubble-wrap{max-width:88%}}
+    </style>
+
 </head>
 
 <body>
@@ -223,6 +306,21 @@
         </div>
 
         <div class="header-actions">
+
+
+            <div id="brainstormHeaderWrap" class="brainstorm-header-wrap">
+                <button
+                    type="button"
+                    id="brainstormBtn"
+                    class="notif-bell-btn brainstorm-trigger"
+                    onclick="toggleBrainstormDrawer()"
+                    aria-label="Open Brainstorm"
+                    title="Brainstorm"
+                >
+                    💬
+                    <span id="brainstormBadge" class="notif-badge hidden">0</span>
+                </button>
+            </div>
 
             <div class="notif-bell-wrap">
 
@@ -2352,6 +2450,106 @@
         </div>
     </div>
 </div>
+
+
+
+
+<!-- BRAINSTORM V1 — TEAM MEMBERS ONLY -->
+<div id="brainstormDrawerOverlay" class="brainstorm-drawer-overlay" onclick="closeBrainstormDrawer()"></div>
+<aside id="brainstormDrawer" class="brainstorm-drawer" aria-hidden="true">
+    <div class="brainstorm-head">
+        <div>
+            <h3>💬 Brainstorm</h3>
+            <p>Team discussion, decisions and direct chat</p>
+        </div>
+        <button type="button" class="brainstorm-close" onclick="closeBrainstormDrawer()" aria-label="Close">×</button>
+    </div>
+
+    <div class="brainstorm-switch">
+        <button id="brainstormTeamTab" type="button" class="brainstorm-tab active" onclick="selectBrainstormMode('team')">👥 Team Room</button>
+        <button id="brainstormDirectTab" type="button" class="brainstorm-tab" onclick="selectBrainstormMode('direct')">👤 Direct Chat</button>
+    </div>
+
+    <div id="brainstormDirectPicker" class="brainstorm-direct-picker hidden">
+        <select id="brainstormDirectSelect" onchange="selectBrainstormDirectMember(this.value)"></select>
+    </div>
+
+    <div class="brainstorm-room-bar">
+        <div>
+            <div id="brainstormRoomTitle" class="brainstorm-room-title">Team Room</div>
+            <div id="brainstormRoomMeta" class="brainstorm-room-meta">All project members</div>
+        </div>
+        <span id="brainstormRoomPill" class="brainstorm-room-pill">TEAM</span>
+    </div>
+
+    <div id="brainstormMessages" class="brainstorm-messages"></div>
+    <div id="brainstormReplyPreview" class="brainstorm-reply-preview hidden"></div>
+
+    <div class="brainstorm-composer">
+        <div class="brainstorm-composer-row">
+            <textarea id="brainstormMessageInput" rows="1" maxlength="1200" placeholder="Share an idea..." onkeydown="brainstormComposerKeydown(event,'drawer')"></textarea>
+            <button type="button" class="brainstorm-send" onclick="sendBrainstormMessage('drawer')">Send</button>
+        </div>
+    </div>
+    <div class="brainstorm-drawer-footer">
+        <button type="button" class="brainstorm-full-link" onclick="openFullBrainstorm()">Open Full Brainstorm →</button>
+    </div>
+</aside>
+
+<div id="brainstormFullOverlay" class="brainstorm-full-overlay" onclick="closeFullBrainstorm()"></div>
+<section id="brainstormFullModal" class="brainstorm-full" aria-hidden="true">
+    <div class="brainstorm-full-head">
+        <div>
+            <h2>Brainstorm Workspace</h2>
+            <p>Discuss → decide → convert into action</p>
+        </div>
+        <button type="button" class="brainstorm-close" onclick="closeFullBrainstorm()" aria-label="Close">×</button>
+    </div>
+
+    <div class="brainstorm-full-body">
+        <aside class="brainstorm-room-list">
+            <div class="brainstorm-room-list-title">ROOMS</div>
+            <div id="brainstormFullRoomList"></div>
+        </aside>
+
+        <div class="brainstorm-full-chat">
+            <div class="brainstorm-room-bar">
+                <div>
+                    <div id="brainstormFullRoomTitle" class="brainstorm-room-title">Team Room</div>
+                    <div id="brainstormFullRoomMeta" class="brainstorm-room-meta">All project members</div>
+                </div>
+                <span id="brainstormFullRoomPill" class="brainstorm-room-pill">TEAM</span>
+            </div>
+            <div id="brainstormFullMessages" class="brainstorm-messages"></div>
+            <div id="brainstormFullReplyPreview" class="brainstorm-reply-preview hidden"></div>
+            <div class="brainstorm-composer">
+                <div class="brainstorm-composer-row">
+                    <textarea id="brainstormFullMessageInput" rows="1" maxlength="1200" placeholder="Share an idea..." onkeydown="brainstormComposerKeydown(event,'full')"></textarea>
+                    <button type="button" class="brainstorm-send" onclick="sendBrainstormMessage('full')">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <aside class="brainstorm-full-side">
+            <div class="brainstorm-side-block">
+                <div class="brainstorm-side-title">📌 PINNED IDEAS</div>
+                <div id="brainstormPinnedList"></div>
+            </div>
+            <div class="brainstorm-side-block">
+                <div class="brainstorm-side-title">✅ DECISIONS</div>
+                <div id="brainstormDecisionList"></div>
+            </div>
+            <div class="brainstorm-side-block">
+                <div class="brainstorm-side-title">✨ AI SUMMARY</div>
+                <div id="brainstormAiSummaryBox" class="brainstorm-ai-box">Generate a concise summary of this room when you need it.</div>
+                <div class="brainstorm-ai-actions">
+                    <button id="brainstormAiSummaryBtn" type="button" class="brainstorm-ai-btn" onclick="generateBrainstormSummary()">Summarise</button>
+                </div>
+                <div class="brainstorm-security-note">Team-only feature. Lecturer / Supervisor accounts are blocked from this workspace in the UI; deploy the included Firestore rules for database-level enforcement.</div>
+            </div>
+        </aside>
+    </div>
+</section>
 
 
 <script src="app.js"></script>
