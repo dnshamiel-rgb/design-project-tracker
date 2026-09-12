@@ -683,6 +683,41 @@ const CHAPTERS = [
 
 ];
 
+// Resources can have extra user-created sections (e.g. Chapter 11, Appendix).
+// Keep CHAPTERS fixed because it is also used by the task / SV workflow.
+let customResourceSections = [];
+
+function normalizeCustomResourceSections(value) {
+
+    const raw = Array.isArray(value) ? value : [];
+    const seen = new Set(CHAPTERS.map(item => item.toLowerCase()));
+    const cleaned = [];
+
+    raw.forEach(item => {
+
+        const name = sanitizeText(item).slice(0, 60);
+        const key = name.toLowerCase();
+
+        if (!name || seen.has(key)) return;
+
+        seen.add(key);
+        cleaned.push(name);
+
+    });
+
+    return cleaned;
+
+}
+
+function getResourceSections() {
+
+    return [
+        ...CHAPTERS,
+        ...normalizeCustomResourceSections(customResourceSections)
+    ];
+
+}
+
 
 const TASK_CHAPTER_OPTIONS = [
     "Unassigned",
@@ -3842,11 +3877,31 @@ function listenToResources() {
                         sanitizeStoredData(doc.data().list) ||
                         [];
 
+                    const storedSections =
+                        normalizeCustomResourceSections(
+                            sanitizeStoredData(doc.data().sections) || []
+                        );
+
+                    // Backward-compatible recovery: if a resource already points to
+                    // a non-standard section, keep that section visible even if the
+                    // metadata field was not stored yet.
+                    const sectionsFromResources =
+                        resources
+                            .map(item => sanitizeText(item && item.chapter ? item.chapter : ""))
+                            .filter(name => name && !CHAPTERS.includes(name));
+
+                    customResourceSections =
+                        normalizeCustomResourceSections([
+                            ...storedSections,
+                            ...sectionsFromResources
+                        ]);
+
                 }
 
                 else {
 
                     resources = [];
+                    customResourceSections = [];
 
                 }
 
@@ -3887,8 +3942,9 @@ function saveResourcesData() {
             "resources"
         )
         .set({
-            list: resources
-        })
+            list: resources,
+            sections: normalizeCustomResourceSections(customResourceSections)
+        }, { merge: true })
         .catch(
             error => {
 
@@ -3924,7 +3980,7 @@ function populateChapterSelect(
 
     select.innerHTML = "";
 
-    CHAPTERS.forEach(
+    getResourceSections().forEach(
         chapter => {
 
             const option =
@@ -3953,6 +4009,186 @@ function populateChapterSelect(
 
         }
     );
+
+}
+
+
+// ============================================================
+// RESOURCE SECTIONS (custom sections after Chapter 1-10)
+// ============================================================
+
+function openResourceSectionModal(sectionName = "") {
+
+    if (isLecturer()) {
+        showToast("View-only access — lecturers cannot manage resource sections.");
+        return;
+    }
+
+    const modal = getElement("resourceSectionModal");
+    const input = getElement("resourceSectionName");
+    const oldInput = getElement("resourceSectionOldName");
+    const title = getElement("resourceSectionModalTitle");
+    const deleteBtn = getElement("deleteResourceSectionBtn");
+
+    if (!modal || !input || !oldInput || !title) return;
+
+    const isEdit = customResourceSections.includes(sectionName);
+
+    oldInput.value = isEdit ? sectionName : "";
+    input.value = isEdit ? sectionName : "";
+    title.textContent = isEdit ? "Rename Section" : "Add Section";
+
+    if (deleteBtn) {
+        deleteBtn.classList.toggle("hidden", !isEdit);
+    }
+
+    modal.classList.remove("hidden");
+
+    setTimeout(() => {
+        input.focus();
+        input.select();
+    }, 0);
+
+}
+
+
+function closeResourceSectionModal() {
+
+    const modal = getElement("resourceSectionModal");
+
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+
+}
+
+
+function saveResourceSection(event) {
+
+    event.preventDefault();
+
+    if (isLecturer()) {
+        showToast("View-only access — lecturers cannot manage resource sections.");
+        closeResourceSectionModal();
+        return;
+    }
+
+    const input = getElement("resourceSectionName");
+    const oldInput = getElement("resourceSectionOldName");
+
+    if (!input || !oldInput) return;
+
+    const newName = sanitizeText(input.value).slice(0, 60);
+    const oldName = sanitizeText(oldInput.value);
+
+    if (!newName) {
+        showToast("Please enter a section name.");
+        return;
+    }
+
+    const duplicate = getResourceSections().some(section =>
+        section.toLowerCase() === newName.toLowerCase() &&
+        section.toLowerCase() !== oldName.toLowerCase()
+    );
+
+    if (duplicate) {
+        showToast("That section already exists.");
+        return;
+    }
+
+    if (oldName) {
+
+        const index = customResourceSections.findIndex(
+            section => section === oldName
+        );
+
+        if (index === -1) {
+            showToast("Only custom sections can be renamed.");
+            return;
+        }
+
+        customResourceSections[index] = newName;
+
+        resources = resources.map(item =>
+            item.chapter === oldName
+                ? { ...item, chapter: newName }
+                : item
+        );
+
+        openChapters = openChapters.map(section =>
+            section === oldName ? newName : section
+        );
+
+        logActivity(`renamed resource section "${oldName}" to "${newName}"`);
+
+    }
+
+    else {
+
+        customResourceSections.push(newName);
+
+        if (!openChapters.includes(newName)) {
+            openChapters.push(newName);
+        }
+
+        logActivity(`added resource section "${newName}"`);
+
+    }
+
+    customResourceSections =
+        normalizeCustomResourceSections(customResourceSections);
+
+    saveResourcesData();
+    renderChapters();
+    closeResourceSectionModal();
+
+    showToast(oldName ? "Section renamed." : "Section added.");
+
+}
+
+
+function deleteResourceSection() {
+
+    if (isLecturer()) {
+        showToast("View-only access — lecturers cannot manage resource sections.");
+        return;
+    }
+
+    const oldInput = getElement("resourceSectionOldName");
+    const sectionName = sanitizeText(oldInput ? oldInput.value : "");
+
+    if (!sectionName || !customResourceSections.includes(sectionName)) {
+        showToast("Only custom sections can be deleted.");
+        return;
+    }
+
+    const itemCount = resources.filter(item => item.chapter === sectionName).length;
+
+    if (itemCount > 0) {
+        showToast(
+            `This section still contains ${itemCount} resource${itemCount === 1 ? "" : "s"}. Move or delete them first.`
+        );
+        return;
+    }
+
+    if (!confirm(`Delete empty section "${sectionName}"?`)) {
+        return;
+    }
+
+    customResourceSections = customResourceSections.filter(
+        section => section !== sectionName
+    );
+
+    openChapters = openChapters.filter(
+        section => section !== sectionName
+    );
+
+    saveResourcesData();
+    renderChapters();
+    closeResourceSectionModal();
+
+    logActivity(`deleted resource section "${sectionName}"`);
+    showToast("Section deleted.");
 
 }
 
@@ -4070,7 +4306,7 @@ function openResourceModal(
             "";
 
         populateChapterSelect(
-            CHAPTERS[0]
+            getResourceSections()[0] || CHAPTERS[0]
         );
 
         getElement(
@@ -4279,12 +4515,22 @@ async function saveResource(event) {
 
     }
 
+    const selectedResourceSection =
+        getElement(
+            "resourceChapter"
+        ).value;
+
+    if (!getResourceSections().includes(selectedResourceSection)) {
+
+        showToast("Please choose a valid resource section.");
+        return;
+
+    }
+
     const resourceData = {
 
         chapter:
-            getElement(
-                "resourceChapter"
-            ).value,
+            selectedResourceSection,
 
         title:
             title,
@@ -4714,7 +4960,7 @@ function renderChapters() {
 
     container.innerHTML = "";
 
-    CHAPTERS.forEach(
+    getResourceSections().forEach(
         (chapter, index) => {
 
             const chapterResources =
@@ -4830,8 +5076,23 @@ function renderChapters() {
 
                     </div>
 
-                    <div class="chapter-chevron">
-                        ▶
+                    <div class="resource-section-header-actions">
+
+                        ${customResourceSections.includes(chapter) && !isLecturer() ? `
+                            <button
+                                type="button"
+                                class="resource-section-menu-btn"
+                                title="Rename or delete section"
+                                aria-label="Manage ${chapter}"
+                            >
+                                •••
+                            </button>
+                        ` : ""}
+
+                        <div class="chapter-chevron">
+                            ▶
+                        </div>
+
                     </div>
 
                 </div>
@@ -4841,6 +5102,25 @@ function renderChapters() {
                 </div>
 
             `;
+
+            const manageSectionBtn =
+                card.querySelector(
+                    ".resource-section-menu-btn"
+                );
+
+            if (manageSectionBtn) {
+
+                manageSectionBtn.addEventListener(
+                    "click",
+                    event => {
+
+                        event.stopPropagation();
+                        openResourceSectionModal(chapter);
+
+                    }
+                );
+
+            }
 
             container.appendChild(
                 card
@@ -14217,6 +14497,9 @@ function applyRoleRestrictions() {
     renderSubmissionCountdown();
     renderEngineeringToolAccess();
 
+    const addResourceSectionBtn = getElement("addResourceSectionBtn");
+    if (addResourceSectionBtn) addResourceSectionBtn.style.display = lecturer ? "none" : "";
+
     const brainstormWrap = getElement("brainstormHeaderWrap");
     if (brainstormWrap) brainstormWrap.style.display = lecturer ? "none" : "";
 
@@ -14399,8 +14682,8 @@ function buildBrainstormRoomRegistry() {
                     title: member.name,
                     meta: "Private direct chat",
                     pill: "DIRECT",
-                    participantNames: [current, member.name].sort(),
-                    participantEmails: [currentMember && currentMember.email, member.email].filter(Boolean).sort()
+                    participantNames: [current, member.name],
+                    participantEmails: [currentMember && currentMember.email, member.email].filter(Boolean)
                 };
             });
     }
@@ -14419,7 +14702,7 @@ async function ensureBrainstormRoom(room) {
 
     const payload = {
         type: room.type,
-        title: room.type === "team" ? "Team Room" : "Direct Chat",
+        title: room.title,
         participantNames: room.participantNames,
         participantEmails: room.participantEmails,
         updatedAt: new Date().toISOString()

@@ -131,6 +131,87 @@
         @media(max-width:650px){.brainstorm-full{width:100vw;height:100vh;border-radius:0}.brainstorm-full-body{grid-template-columns:1fr}.brainstorm-room-list{display:none}.brainstorm-bubble-wrap{max-width:88%}}
     </style>
 
+
+    <!-- RESOURCE CUSTOM SECTIONS -->
+    <style>
+        .resource-panel-actions{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            flex-wrap:wrap;
+            justify-content:flex-end;
+        }
+        .resource-section-add-btn{
+            border:1px solid #D9E0EA;
+            background:#fff;
+            color:#475569;
+            border-radius:9px;
+            padding:8px 12px;
+            font:inherit;
+            font-size:12px;
+            font-weight:700;
+            cursor:pointer;
+            transition:.16s ease;
+        }
+        .resource-section-add-btn:hover{
+            border-color:#BFC9D8;
+            background:#F8FAFC;
+            transform:translateY(-1px);
+        }
+        .resource-section-header-actions{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        .resource-section-menu-btn{
+            width:30px;
+            height:28px;
+            border:1px solid #E2E8F0;
+            border-radius:8px;
+            background:#fff;
+            color:#64748B;
+            display:grid;
+            place-items:center;
+            padding:0;
+            font-size:12px;
+            font-weight:800;
+            cursor:pointer;
+        }
+        .resource-section-menu-btn:hover{
+            background:#F8FAFC;
+            border-color:#CBD5E1;
+            color:#334155;
+        }
+        .resource-section-modal-box{
+            max-width:480px;
+        }
+        .resource-section-help{
+            margin:2px 0 18px;
+            color:#8792A2;
+            font-size:11px;
+            line-height:1.5;
+        }
+        .resource-section-modal-actions{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            margin-top:18px;
+        }
+        .resource-section-modal-actions-right{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            margin-left:auto;
+        }
+        @media (max-width:640px){
+            .resource-panel-actions{width:100%;justify-content:flex-start}
+            .resource-section-modal-actions{align-items:stretch;flex-direction:column}
+            .resource-section-modal-actions-right{margin-left:0;width:100%}
+            .resource-section-modal-actions-right > button{flex:1}
+        }
+    </style>
+
 </head>
 
 <body>
@@ -957,17 +1038,30 @@
                     <h3>📁 Resources</h3>
 
                     <p>
-                        Files and links organized by chapter
+                        Files and links organized by section
                     </p>
                 </div>
 
-                <button
-                    class="small-add"
-                    id="addResourceBtn"
-                    onclick="openResourceModal()"
-                >
-                    + Add File / Link
-                </button>
+                <div class="resource-panel-actions">
+
+                    <button
+                        class="resource-section-add-btn"
+                        id="addResourceSectionBtn"
+                        type="button"
+                        onclick="openResourceSectionModal()"
+                    >
+                        + Add Section
+                    </button>
+
+                    <button
+                        class="small-add"
+                        id="addResourceBtn"
+                        onclick="openResourceModal()"
+                    >
+                        + Add File / Link
+                    </button>
+
+                </div>
 
             </div>
 
@@ -2146,6 +2240,93 @@
 </div>
 
 
+<!-- RESOURCE SECTION MODAL -->
+
+<div
+    id="resourceSectionModal"
+    class="modal hidden"
+    onclick="if (event.target === this) closeResourceSectionModal()"
+>
+
+    <div class="modal-box resource-section-modal-box">
+
+        <div class="modal-header">
+
+            <div>
+                <span class="eyebrow">RESOURCES</span>
+                <h2 id="resourceSectionModalTitle">Add Section</h2>
+            </div>
+
+            <button
+                type="button"
+                class="close-btn"
+                onclick="closeResourceSectionModal()"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <form onsubmit="saveResourceSection(event)">
+
+            <input
+                type="hidden"
+                id="resourceSectionOldName"
+            >
+
+            <label>
+                Section Name
+
+                <input
+                    type="text"
+                    id="resourceSectionName"
+                    maxlength="60"
+                    placeholder="Example: Chapter 11 or Appendix"
+                    required
+                >
+            </label>
+
+            <p class="resource-section-help">
+                Chapter 1–10 stay fixed. Custom sections can be renamed or deleted when empty.
+            </p>
+
+            <div class="resource-section-modal-actions">
+
+                <button
+                    type="button"
+                    id="deleteResourceSectionBtn"
+                    class="delete-btn hidden"
+                    onclick="deleteResourceSection()"
+                >
+                    Delete Section
+                </button>
+
+                <div class="resource-section-modal-actions-right">
+                    <button
+                        type="button"
+                        class="cancel-btn"
+                        onclick="closeResourceSectionModal()"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="save-btn"
+                    >
+                        Save Section
+                    </button>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
 <!-- RESOURCE MODAL -->
 
 <div id="resourceModal" class="modal hidden">
@@ -2184,7 +2365,7 @@
 
             <label>
 
-                Chapter
+                Section / Chapter
 
                 <select id="resourceChapter" required></select>
 
