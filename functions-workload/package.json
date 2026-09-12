@@ -1,0 +1,13 @@
+{
+  "name": "design-project-workload-functions",
+  "description": "Workload callable using the existing Anthropic integration",
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^14.3.0",
+    "firebase-functions": "^7.3.2"
+  },
+  "private": true
+}
