@@ -14816,8 +14816,8 @@ function buildBrainstormRoomRegistry() {
                     title: member.name,
                     meta: "Private direct chat",
                     pill: "DIRECT",
-                    participantNames: [current, member.name],
-                    participantEmails: [currentMember && currentMember.email, member.email].filter(Boolean)
+                    participantNames: [current, member.name].sort(),
+                    participantEmails: [currentMember && currentMember.email, member.email].filter(Boolean).sort()
                 };
             });
     }
@@ -14836,7 +14836,7 @@ async function ensureBrainstormRoom(room) {
 
     const payload = {
         type: room.type,
-        title: room.title,
+        title: room.type === "team" ? "Team Room" : "Direct Chat",
         participantNames: room.participantNames,
         participantEmails: room.participantEmails,
         updatedAt: new Date().toISOString()
