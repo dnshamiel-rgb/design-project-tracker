@@ -254,6 +254,21 @@
         }
     </style>
 
+
+    <!-- V1.4 — hide main page scrollbar while keeping page scrolling enabled -->
+    <style id="pageScrollbarHide">
+        html, body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+        }
+    </style>
+
 </head>
 
 <body>
