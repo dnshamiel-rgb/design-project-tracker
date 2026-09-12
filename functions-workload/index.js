@@ -1,10 +1,11 @@
 'use strict';
 const {onCall,HttpsError}=require('firebase-functions/v2/https');
 const {defineSecret}=require('firebase-functions/params');
-const admin=require('firebase-admin');
+const {getApps,initializeApp}=require('firebase-admin/app');
+const {getFirestore}=require('firebase-admin/firestore');
 const crypto=require('node:crypto');
-if(!admin.apps.length)admin.initializeApp();
-const db=admin.firestore();
+if(!getApps().length)initializeApp();
+const db=getFirestore();
 const key=defineSecret('ANTHROPIC_API_KEY');
 const model='claude-haiku-4-5-20251001';
 const roster={

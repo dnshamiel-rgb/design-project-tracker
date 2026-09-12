@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
-const context={exports:{},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({}),defineString:()=>({})}:n==='firebase-admin'?{apps:[1],firestore:()=>({})}:require(n)};
+const context={exports:{},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({}),defineString:()=>({})}:n==='firebase-admin/app'?{getApps:()=>[{}]}:n==='firebase-admin/firestore'?{getFirestore:()=>({})}:require(n)};
 vm.runInNewContext(fs.readFileSync(__dirname+'/index.js','utf8'),context);
 const v=context.exports._test;
 test('week validation rejects invalid dates and non Mondays',()=>{assert.equal(v.week('2026-09-14'),'2026-09-14');for(const x of ['2026-09-15','2026-02-30','bad'])assert.throws(()=>v.week(x));});
@@ -12,7 +12,7 @@ test('member cannot invoke leader actions; lecturer rejected',async()=>{const f=
 test('Anthropic integration creates a private draft without changing tasks',async()=>{
  const writes=[];
  const db={doc:path=>({get:async()=>({data:()=>path==='trackerData/tasks'?{list:[{id:1,name:'Sizing',mainPIC:'Shamiel',status:'In Progress'}]}:undefined}),set:async data=>writes.push({path,data})}),collection:()=>({where:()=>({get:async()=>({docs:[]})})}),runTransaction:async f=>f({get:async()=>({data:()=>undefined}),set:()=>{}})};
- const ctx={exports:{},AbortSignal,fetch:async(url,opts)=>{assert.equal(url,'https://api.anthropic.com/v1/messages');const b=JSON.parse(opts.body);assert.equal(b.model,'claude-haiku-4-5-20251001');assert.equal(typeof b.system,'string');assert.equal(b.messages.length,1);return {ok:true,json:async()=>({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify({brief:['Check-in required before assessing capacity.'],changes:[]})}]})};},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({value:()=> 'test-only'})}:n==='firebase-admin'?{apps:[1],firestore:()=>db}:require(n)};
+ const ctx={exports:{},AbortSignal,fetch:async(url,opts)=>{assert.equal(url,'https://api.anthropic.com/v1/messages');const b=JSON.parse(opts.body);assert.equal(b.model,'claude-haiku-4-5-20251001');assert.equal(typeof b.system,'string');assert.equal(b.messages.length,1);return {ok:true,json:async()=>({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify({brief:['Check-in required before assessing capacity.'],changes:[]})}]})};},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({value:()=> 'test-only'})}:n==='firebase-admin/app'?{getApps:()=>[{}]}:n==='firebase-admin/firestore'?{getFirestore:()=>db}:require(n)};
  vm.runInNewContext(fs.readFileSync(__dirname+'/index.js','utf8'),ctx);
  const result=await ctx.exports.workloadPlanner({auth:{uid:'leader',token:{email:'2023305361@student.uitm.edu.my'}},data:{action:'analyse',week:'2026-09-14',target:'Finish sizing'}});
  assert.equal(result.brief.length,1);assert.equal(writes.length,1);assert.match(writes[0].path,/^workloadPrivate\//);
