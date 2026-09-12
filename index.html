@@ -204,9 +204,34 @@
             gap:8px;
             margin-left:auto;
         }
+        .resource-section-reorder{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        .resource-section-move-btn{
+            border:1px solid #dbe2ea;
+            background:#fff;
+            color:#344054;
+            border-radius:9px;
+            padding:8px 11px;
+            font-size:12px;
+            font-weight:700;
+            cursor:pointer;
+        }
+        .resource-section-move-btn:hover:not(:disabled){
+            background:#f7f9fc;
+            border-color:#cbd5e1;
+        }
+        .resource-section-move-btn:disabled{
+            opacity:.4;
+            cursor:not-allowed;
+        }
         @media (max-width:640px){
             .resource-panel-actions{width:100%;justify-content:flex-start}
             .resource-section-modal-actions{align-items:stretch;flex-direction:column}
+            .resource-section-reorder{width:100%}
+            .resource-section-reorder > button{flex:1}
             .resource-section-modal-actions-right{margin-left:0;width:100%}
             .resource-section-modal-actions-right > button{flex:1}
         }
@@ -2287,8 +2312,28 @@
             </label>
 
             <p class="resource-section-help">
-                Chapter 1–10 stay fixed. Custom sections can be renamed or deleted when empty.
+                Chapter 1–10 cannot be renamed or deleted. Custom sections can be moved anywhere in the Resources list.
             </p>
+
+            <div id="resourceSectionReorder" class="resource-section-reorder">
+                <button
+                    type="button"
+                    id="moveResourceSectionUpBtn"
+                    class="resource-section-move-btn hidden"
+                    onclick="moveResourceSection('up')"
+                >
+                    ↑ Move Up
+                </button>
+
+                <button
+                    type="button"
+                    id="moveResourceSectionDownBtn"
+                    class="resource-section-move-btn hidden"
+                    onclick="moveResourceSection('down')"
+                >
+                    ↓ Move Down
+                </button>
+            </div>
 
             <div class="resource-section-modal-actions">
 

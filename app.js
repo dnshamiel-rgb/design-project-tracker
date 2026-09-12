@@ -685,7 +685,9 @@ const CHAPTERS = [
 
 // Resources can have extra user-created sections (e.g. Chapter 11, Appendix).
 // Keep CHAPTERS fixed because it is also used by the task / SV workflow.
+// resourceSectionOrder controls display order on the Resources page only.
 let customResourceSections = [];
+let resourceSectionOrder = [];
 
 function normalizeCustomResourceSections(value) {
 
@@ -709,12 +711,59 @@ function normalizeCustomResourceSections(value) {
 
 }
 
+function normalizeResourceSectionOrder(value, availableSections) {
+
+    const available = Array.isArray(availableSections)
+        ? availableSections
+        : [];
+
+    const availableMap = new Map(
+        available.map(section => [section.toLowerCase(), section])
+    );
+
+    const seen = new Set();
+    const ordered = [];
+
+    (Array.isArray(value) ? value : []).forEach(item => {
+
+        const name = sanitizeText(item);
+        const key = name.toLowerCase();
+        const canonical = availableMap.get(key);
+
+        if (!canonical || seen.has(key)) return;
+
+        seen.add(key);
+        ordered.push(canonical);
+
+    });
+
+    available.forEach(section => {
+
+        const key = section.toLowerCase();
+
+        if (!seen.has(key)) {
+            seen.add(key);
+            ordered.push(section);
+        }
+
+    });
+
+    return ordered;
+
+}
+
+
 function getResourceSections() {
 
-    return [
+    const available = [
         ...CHAPTERS,
         ...normalizeCustomResourceSections(customResourceSections)
     ];
+
+    resourceSectionOrder =
+        normalizeResourceSectionOrder(resourceSectionOrder, available);
+
+    return [...resourceSectionOrder];
 
 }
 
@@ -3896,12 +3945,24 @@ function listenToResources() {
                             ...sectionsFromResources
                         ]);
 
+                    const availableSections = [
+                        ...CHAPTERS,
+                        ...customResourceSections
+                    ];
+
+                    resourceSectionOrder =
+                        normalizeResourceSectionOrder(
+                            sanitizeStoredData(doc.data().sectionOrder) || [],
+                            availableSections
+                        );
+
                 }
 
                 else {
 
                     resources = [];
                     customResourceSections = [];
+                    resourceSectionOrder = [...CHAPTERS];
 
                 }
 
@@ -3943,7 +4004,8 @@ function saveResourcesData() {
         )
         .set({
             list: resources,
-            sections: normalizeCustomResourceSections(customResourceSections)
+            sections: normalizeCustomResourceSections(customResourceSections),
+            sectionOrder: getResourceSections()
         }, { merge: true })
         .catch(
             error => {
@@ -4029,6 +4091,8 @@ function openResourceSectionModal(sectionName = "") {
     const oldInput = getElement("resourceSectionOldName");
     const title = getElement("resourceSectionModalTitle");
     const deleteBtn = getElement("deleteResourceSectionBtn");
+    const moveUpBtn = getElement("moveResourceSectionUpBtn");
+    const moveDownBtn = getElement("moveResourceSectionDownBtn");
 
     if (!modal || !input || !oldInput || !title) return;
 
@@ -4036,10 +4100,23 @@ function openResourceSectionModal(sectionName = "") {
 
     oldInput.value = isEdit ? sectionName : "";
     input.value = isEdit ? sectionName : "";
-    title.textContent = isEdit ? "Rename Section" : "Add Section";
+    title.textContent = isEdit ? "Manage Section" : "Add Section";
 
     if (deleteBtn) {
         deleteBtn.classList.toggle("hidden", !isEdit);
+    }
+
+    const orderedSections = getResourceSections();
+    const position = orderedSections.indexOf(sectionName);
+
+    if (moveUpBtn) {
+        moveUpBtn.classList.toggle("hidden", !isEdit);
+        moveUpBtn.disabled = !isEdit || position <= 0;
+    }
+
+    if (moveDownBtn) {
+        moveDownBtn.classList.toggle("hidden", !isEdit);
+        moveDownBtn.disabled = !isEdit || position < 0 || position >= orderedSections.length - 1;
     }
 
     modal.classList.remove("hidden");
@@ -4109,6 +4186,10 @@ function saveResourceSection(event) {
 
         customResourceSections[index] = newName;
 
+        resourceSectionOrder = resourceSectionOrder.map(section =>
+            section === oldName ? newName : section
+        );
+
         resources = resources.map(item =>
             item.chapter === oldName
                 ? { ...item, chapter: newName }
@@ -4127,6 +4208,10 @@ function saveResourceSection(event) {
 
         customResourceSections.push(newName);
 
+        if (!resourceSectionOrder.includes(newName)) {
+            resourceSectionOrder.push(newName);
+        }
+
         if (!openChapters.includes(newName)) {
             openChapters.push(newName);
         }
@@ -4138,11 +4223,56 @@ function saveResourceSection(event) {
     customResourceSections =
         normalizeCustomResourceSections(customResourceSections);
 
+    resourceSectionOrder =
+        normalizeResourceSectionOrder(
+            resourceSectionOrder,
+            [...CHAPTERS, ...customResourceSections]
+        );
+
     saveResourcesData();
     renderChapters();
     closeResourceSectionModal();
 
     showToast(oldName ? "Section renamed." : "Section added.");
+
+}
+
+
+function moveResourceSection(direction) {
+
+    if (isLecturer()) {
+        showToast("View-only access — lecturers cannot manage resource sections.");
+        return;
+    }
+
+    const oldInput = getElement("resourceSectionOldName");
+    const sectionName = sanitizeText(oldInput ? oldInput.value : "");
+
+    if (!sectionName || !customResourceSections.includes(sectionName)) {
+        showToast("Only custom sections can be repositioned.");
+        return;
+    }
+
+    const ordered = getResourceSections();
+    const currentIndex = ordered.indexOf(sectionName);
+    const nextIndex = direction === "up"
+        ? currentIndex - 1
+        : currentIndex + 1;
+
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= ordered.length) {
+        return;
+    }
+
+    [ordered[currentIndex], ordered[nextIndex]] =
+        [ordered[nextIndex], ordered[currentIndex]];
+
+    resourceSectionOrder = ordered;
+
+    saveResourcesData();
+    renderChapters();
+    openResourceSectionModal(sectionName);
+
+    showToast(direction === "up" ? "Section moved up." : "Section moved down.");
 
 }
 
@@ -4176,6 +4306,10 @@ function deleteResourceSection() {
     }
 
     customResourceSections = customResourceSections.filter(
+        section => section !== sectionName
+    );
+
+    resourceSectionOrder = resourceSectionOrder.filter(
         section => section !== sectionName
     );
 
