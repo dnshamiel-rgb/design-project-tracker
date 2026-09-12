@@ -12,8 +12,32 @@ test('member cannot invoke leader actions; lecturer rejected',async()=>{const f=
 test('Anthropic integration creates a private draft without changing tasks',async()=>{
  const writes=[];
  const db={doc:path=>({get:async()=>({data:()=>path==='trackerData/tasks'?{list:[{id:1,name:'Sizing',mainPIC:'Shamiel',status:'In Progress'}]}:undefined}),set:async data=>writes.push({path,data})}),collection:()=>({where:()=>({get:async()=>({docs:[]})})}),runTransaction:async f=>f({get:async()=>({data:()=>undefined}),set:()=>{}})};
- const ctx={exports:{},AbortSignal,fetch:async(url,opts)=>{assert.equal(url,'https://api.anthropic.com/v1/messages');const b=JSON.parse(opts.body);assert.equal(b.model,'claude-haiku-4-5-20251001');assert.equal(typeof b.system,'string');assert.equal(b.messages.length,1);return {ok:true,json:async()=>({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify({brief:['Check-in required before assessing capacity.'],changes:[]})}]})};},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({value:()=> 'test-only'})}:n==='firebase-admin/app'?{getApps:()=>[{}]}:n==='firebase-admin/firestore'?{getFirestore:()=>db}:require(n)};
+ const ctx={exports:{},AbortSignal,fetch:async(url,opts)=>{assert.equal(url,'https://api.anthropic.com/v1/messages');const b=JSON.parse(opts.body);assert.equal(b.model,'claude-haiku-4-5-20251001');assert.equal(typeof b.system,'string');assert.equal(b.messages.length,1);assert.equal(b.tool_choice.name,'submit_plan');assert.equal(b.tools[0].input_schema.required.length,2);return {ok:true,json:async()=>({stop_reason:'tool_use',content:[{type:'tool_use',name:'submit_plan',input:{brief:['Check-in required before assessing capacity.'],changes:[]}}]})};},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({value:()=> 'test-only'})}:n==='firebase-admin/app'?{getApps:()=>[{}]}:n==='firebase-admin/firestore'?{getFirestore:()=>db}:require(n)};
  vm.runInNewContext(fs.readFileSync(__dirname+'/index.js','utf8'),ctx);
  const result=await ctx.exports.workloadPlanner({auth:{uid:'leader',token:{email:'2023305361@student.uitm.edu.my'}},data:{action:'analyse',week:'2026-09-14',target:'Finish sizing'}});
  assert.equal(result.brief.length,1);assert.equal(writes.length,1);assert.match(writes[0].path,/^workloadPrivate\//);
+});
+
+test('structured plan ignores prose and rejects truncated or missing tool output',()=>{
+ const input={brief:['Unknown capacity'],changes:[]};
+ assert.equal(v.readPlan({stop_reason:'tool_use',content:[{type:'text',text:'Here is your plan.'},{type:'tool_use',name:'submit_plan',input}]}),input);
+ for(const body of [{stop_reason:'max_tokens',content:[]},{stop_reason:'end_turn',content:[{type:'text',text:'not JSON'}]},{stop_reason:'tool_use',content:[]},{stop_reason:'tool_use',content:[{type:'tool_use',name:'wrong',input}]}])assert.throws(()=>v.readPlan(body));
+});
+test('quick reports validate ownership, dates and help reasons without hours',()=>{
+ const tasks=[{id:1,status:'In Progress',mainPIC:'Shamiel',deadline:'2026-09-28'}];
+ const base={taskId:'1',state:'on_track'};
+ assert.equal(v.validateUpdates([base],tasks,'Shamiel')[0].state,'on_track');
+ assert.equal(v.validateUpdates([{...base,state:'more_time',expectedDate:'2026-09-30'}],tasks,'Shamiel')[0].expectedDate,'2026-09-30');
+ assert.equal(v.validateUpdates([{...base,state:'help',reason:'waiting_data'}],tasks,'Shamiel')[0].reason,'waiting_data');
+ for(const entries of [[{...base,state:'bad'}],[{...base,state:'more_time'}],[{...base,state:'help',reason:'bad'}],[base,base],[]])assert.throws(()=>v.validateUpdates(entries,tasks,'Shamiel'));
+ assert.throws(()=>v.validateUpdates([base],tasks,'Hamizan'));
+ assert.throws(()=>v.validateUpdates([base],[{...tasks[0],status:'Done'}],'Shamiel'));
+});
+test('quick update preserves other task reports and never writes task deadlines',async()=>{
+ const writes=[];
+ const db={doc:path=>({path,get:async()=>({data:()=>({list:[{id:1,status:'In Progress',mainPIC:'Shamiel',deadline:'2026-09-28'}]})})}),runTransaction:async f=>f({get:async ref=>({data:()=>ref.path==='trackerData/tasks'?{list:[{id:1,status:'In Progress',mainPIC:'Shamiel',deadline:'2026-09-28'}]}:{quickEntries:[{taskId:'2',state:'help'}]}}),set:(ref,data,options)=>writes.push({path:ref.path,data,options})})};
+ const ctx={exports:{},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({value:()=> 'test-only'})}:n==='firebase-admin/app'?{getApps:()=>[{}]}:n==='firebase-admin/firestore'?{getFirestore:()=>db}:require(n)};
+ vm.runInNewContext(fs.readFileSync(__dirname+'/index.js','utf8'),ctx);
+ await ctx.exports.workloadPlanner({auth:{uid:'leader',token:{email:'2023305361@student.uitm.edu.my'}},data:{action:'quickUpdate',week:'2026-09-14',entries:[{taskId:'1',state:'more_time',expectedDate:'2026-09-30'}]}});
+ assert.equal(writes.length,1);assert.match(writes[0].path,/^workloadCheckins\//);assert.equal(writes[0].data.quickEntries.length,2);assert.equal(writes[0].options.merge,true);
 });
