@@ -12,8 +12,14 @@ test('member cannot invoke leader actions; lecturer rejected',async()=>{const f=
 test('Anthropic integration creates a private draft without changing tasks',async()=>{
  const writes=[];
  const db={doc:path=>({get:async()=>({data:()=>path==='trackerData/tasks'?{list:[{id:1,name:'Sizing',mainPIC:'Shamiel',status:'In Progress'}]}:undefined}),set:async data=>writes.push({path,data})}),collection:()=>({where:()=>({get:async()=>({docs:[]})})}),runTransaction:async f=>f({get:async()=>({data:()=>undefined}),set:()=>{}})};
- const ctx={exports:{},AbortSignal,fetch:async(url,opts)=>{assert.equal(url,'https://api.anthropic.com/v1/messages');const b=JSON.parse(opts.body);assert.equal(b.model,'claude-haiku-4-5-20251001');assert.equal(typeof b.system,'string');assert.equal(b.messages.length,1);return {ok:true,json:async()=>({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify({brief:['Check-in required before assessing capacity.'],changes:[]})}]})};},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({value:()=> 'test-only'})}:n==='firebase-admin/app'?{getApps:()=>[{}]}:n==='firebase-admin/firestore'?{getFirestore:()=>db}:require(n)};
+ const ctx={exports:{},AbortSignal,fetch:async(url,opts)=>{assert.equal(url,'https://api.anthropic.com/v1/messages');const b=JSON.parse(opts.body);assert.equal(b.model,'claude-haiku-4-5-20251001');assert.equal(typeof b.system,'string');assert.equal(b.messages.length,1);assert.equal(b.tool_choice.name,'submit_plan');assert.equal(b.tools[0].input_schema.required.length,2);return {ok:true,json:async()=>({stop_reason:'tool_use',content:[{type:'tool_use',name:'submit_plan',input:{brief:['Check-in required before assessing capacity.'],changes:[]}}]})};},require:n=>n==='firebase-functions/v2/https'?{onCall:(_,f)=>f,HttpsError:class extends Error{constructor(c,m){super(m);this.code=c;}}}:n==='firebase-functions/params'?{defineSecret:()=>({value:()=> 'test-only'})}:n==='firebase-admin/app'?{getApps:()=>[{}]}:n==='firebase-admin/firestore'?{getFirestore:()=>db}:require(n)};
  vm.runInNewContext(fs.readFileSync(__dirname+'/index.js','utf8'),ctx);
  const result=await ctx.exports.workloadPlanner({auth:{uid:'leader',token:{email:'2023305361@student.uitm.edu.my'}},data:{action:'analyse',week:'2026-09-14',target:'Finish sizing'}});
  assert.equal(result.brief.length,1);assert.equal(writes.length,1);assert.match(writes[0].path,/^workloadPrivate\//);
+});
+
+test('structured plan ignores prose and rejects truncated or missing tool output',()=>{
+ const input={brief:['Unknown capacity'],changes:[]};
+ assert.equal(v.readPlan({stop_reason:'tool_use',content:[{type:'text',text:'Here is your plan.'},{type:'tool_use',name:'submit_plan',input}]}),input);
+ for(const body of [{stop_reason:'max_tokens',content:[]},{stop_reason:'end_turn',content:[{type:'text',text:'not JSON'}]},{stop_reason:'tool_use',content:[]},{stop_reason:'tool_use',content:[{type:'tool_use',name:'wrong',input}]}])assert.throws(()=>v.readPlan(body));
 });
