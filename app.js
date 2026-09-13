@@ -3516,7 +3516,78 @@ function closeDailyQuoteModal() {
 // MY DAY (landing page after login)
 // ============================================================
 
+// Team mascot: visual companion driven by the shared task snapshot.
+const teamMascot = { previous: null, timer: null, state: 'wave', message: '', started: false };
+
+function renderTeamMascot() {
+    const host = getElement('mydayContent');
+    if (!host) return;
+    let card = getElement('teamMascot');
+    if (!card) {
+        const style = document.createElement('style');
+        style.textContent = `
+        .dp-mascot{display:flex;align-items:center;gap:18px;padding:16px 20px;margin:0 0 22px;border:1px solid #dce9e9;border-radius:16px;background:#f4faf9;color:#193b48;position:relative}
+        .dp-mascot svg{width:100px;height:108px;flex:none;overflow:visible}.dp-mascot-copy{flex:1;min-width:0}.dp-mascot-kicker{font-size:10px;letter-spacing:1.8px;font-weight:700;color:#4c787b}.dp-mascot h4{margin:5px 0;font-size:17px}.dp-mascot p{margin:0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.dp-mascot small{display:block;margin-top:7px;color:#5f747d;font-size:11px}
+        .dp-mascot-toggle{align-self:flex-start;border:1px solid #cddedd;background:white;border-radius:8px;padding:6px 10px;color:#31585c;cursor:pointer;font:inherit;font-size:12px}.dp-mascot-toggle:focus-visible{outline:3px solid #228b91;outline-offset:3px}
+        .dp-mascot .robot{animation:dp-breathe 3s ease-in-out infinite;transform-origin:50px 70px}.dp-mascot .arm{transform-box:fill-box;transform-origin:50% 15%}.dp-mascot[data-state=wave] .arm-right{animation:dp-wave .6s ease-in-out 6}.dp-mascot[data-state=working] .arm{animation:dp-type .5s ease-in-out infinite alternate}.dp-mascot[data-state=celebrate] .robot{animation:dp-hop .55s ease-in-out 6}.dp-mascot .spark{opacity:0}.dp-mascot[data-state=celebrate] .spark{opacity:1;animation:dp-twinkle .7s ease-in-out infinite alternate}.dp-mascot .laptop{display:none}.dp-mascot[data-state=working] .laptop{display:block}
+        .dp-mascot.is-small{padding:10px 14px;gap:10px}.dp-mascot.is-small svg{width:35px;height:38px}.dp-mascot.is-small .dp-mascot-detail,.dp-mascot.is-small .dp-mascot-kicker{display:none}.dp-mascot.is-small h4{font-size:13px;margin:0}.dp-mascot.is-small .robot{animation:none}
+        @keyframes dp-breathe{50%{transform:translateY(-3px)}}@keyframes dp-wave{50%{transform:rotate(-65deg)}}@keyframes dp-type{to{transform:rotate(15deg)}}@keyframes dp-hop{50%{transform:translateY(-9px) rotate(-4deg)}}@keyframes dp-twinkle{to{opacity:.25}}@media(prefers-reduced-motion:reduce){.dp-mascot *{animation:none!important}}@media(max-width:480px){.dp-mascot{gap:10px;padding:12px}.dp-mascot svg{width:66px;height:80px}.dp-mascot h4{font-size:15px}}
+        `;
+        document.head.appendChild(style);
+        card = document.createElement('aside');
+        card.id = 'teamMascot';
+        card.className = 'dp-mascot';
+        card.setAttribute('aria-label', 'Team mascot');
+        card.innerHTML = `<svg viewBox="0 0 100 110" aria-hidden="true"><ellipse cx="50" cy="103" rx="30" ry="4" fill="#d8e9e5"/><g class="robot"><path d="M36 86v12m28-12v12" stroke="#325967" stroke-width="10" stroke-linecap="round"/><rect x="27" y="59" width="46" height="32" rx="12" fill="#258f95"/><path d="M37 62v25m26-25v25" stroke="#b9e3d8" stroke-width="4"/><rect x="40" y="72" width="20" height="11" rx="3" fill="#e9f6ef"/><g class="arm arm-left"><path d="M25 65l-8 17" stroke="#325967" stroke-width="9" stroke-linecap="round"/></g><g class="arm arm-right"><path d="M76 64l9-17" stroke="#325967" stroke-width="9" stroke-linecap="round"/><circle cx="86" cy="44" r="6" fill="#258f95"/></g><rect x="23" y="25" width="54" height="38" rx="14" fill="#325967"/><rect x="28" y="31" width="44" height="25" rx="10" fill="#e4f7ee"/><circle cx="39" cy="42" r="3.5" fill="#244954"/><circle cx="61" cy="42" r="3.5" fill="#244954"/><path d="M45 49q5 4 10 0" fill="none" stroke="#244954" stroke-width="2" stroke-linecap="round"/><path d="M24 28a26 22 0 0 1 52 0" fill="#f0bf51"/><rect x="46" y="6" width="8" height="20" rx="3" fill="#ffda7c"/><rect x="18" y="25" width="64" height="6" rx="3" fill="#d99c2d"/></g><g class="laptop"><rect x="25" y="79" width="50" height="24" rx="4" fill="#476c7d"/><circle cx="50" cy="90" r="3" fill="#b9e3d8"/><path d="M20 104h60" stroke="#325967" stroke-width="4" stroke-linecap="round"/></g><g class="spark" fill="#e6ac35"><path d="m10 15 2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="m88 7 2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><circle cx="91" cy="77" r="3"/></g></svg><div class="dp-mascot-copy"><div class="dp-mascot-kicker">YOUR TEAM COMPANION</div><h4>Meet Pip, your little engineer</h4><div class="dp-mascot-detail"><p class="dp-mascot-message" role="status" aria-live="polite"></p><small class="dp-mascot-count"></small></div></div><button type="button" class="dp-mascot-toggle" aria-expanded="true">Minimise</button>`;
+        host.before(card);
+        const toggle = card.querySelector('button');
+        let collapsed = false;
+        try { collapsed = localStorage.getItem('dpMascotMinimised') === 'true'; } catch (_) {}
+        function setCollapsed(value) {
+            card.classList.toggle('is-small', value);
+            toggle.textContent = value ? 'Expand' : 'Minimise';
+            toggle.setAttribute('aria-expanded', String(!value));
+        }
+        setCollapsed(collapsed);
+        toggle.onclick = () => {
+            collapsed = !collapsed;
+            setCollapsed(collapsed);
+            try { localStorage.setItem('dpMascotMinimised', String(collapsed)); } catch (_) {}
+        };
+    }
+    const snapshot = new Map(tasks.map(task => [String(task.id), task.status]));
+    const completed = tasks.filter(task => task.status === 'Done').length;
+    const working = tasks.filter(task => task.status === 'In Progress').length;
+    const newlyDone = teamMascot.previous && tasks.find(task => task.status === 'Done' && teamMascot.previous.has(String(task.id)) && teamMascot.previous.get(String(task.id)) !== 'Done');
+    teamMascot.previous = snapshot;
+    const show = (state, message) => {
+        teamMascot.state = state;
+        teamMascot.message = message;
+        card.dataset.state = state;
+        card.querySelector('.dp-mascot-message').textContent = message;
+    };
+    const settle = () => {
+        teamMascot.timer = null;
+        const active = tasks.filter(task => task.status === 'In Progress').length;
+        show(active ? 'working' : 'idle', active ? `${active} task${active === 1 ? ' is' : 's are'} in progress. One step closer, team!` : 'Taking a little breather. Ready when the team is.');
+    };
+    if (newlyDone) {
+        clearTimeout(teamMascot.timer);
+        show('celebrate', `Team win! “${newlyDone.name || 'A task'}” is now Done.`);
+        teamMascot.timer = setTimeout(settle, 6000);
+    } else if (!teamMascot.started) {
+        teamMascot.started = true;
+        show('wave', `Hi${getCurrentUser() ? ', ' + getCurrentUser() : ''}! Let’s build something together.`);
+        teamMascot.timer = setTimeout(settle, 4000);
+    } else if (!teamMascot.timer) {
+        settle();
+    }
+    card.querySelector('.dp-mascot-count').textContent = tasks.length ? `${completed} / ${tasks.length} team tasks done · Based on shared task status` : 'Your team’s progress starts here';
+}
+
 function renderMyDay() {
+
+    renderTeamMascot();
 
     renderMydayQuote();
 
