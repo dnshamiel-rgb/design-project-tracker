@@ -14438,13 +14438,19 @@ function confirmLogout() {
 // AUTO LOGOUT AFTER INACTIVITY
 // ============================================================
 //
-// Auto logout selepas 5 minit tiada aktiviti (mouse, keyboard,
-// klik, scroll). Berguna untuk komputer awam / kongsi.
+// Team accounts log out after 5 idle minutes. Shamiel keeps the
+// Firebase-persisted session until explicit logout or session invalidation.
 // ============================================================
 
 const AUTO_LOGOUT_MINUTES = 5;
 
 let inactivityTimer = null;
+
+function hasPersistentLeaderSession() {
+    const user = auth && auth.currentUser;
+    const account = user && getAccountByEmail(user.email);
+    return !!account && account.name === LEADER_NAME;
+}
 
 
 function resetInactivityTimer() {
@@ -14459,12 +14465,17 @@ function resetInactivityTimer() {
 
     }
 
+    inactivityTimer = null;
+
+    // Use the authenticated account, never the cached display name.
+    if (hasPersistentLeaderSession()) return;
+
     inactivityTimer =
         setTimeout(
             () => {
 
                 if (
-                    getCurrentUser()
+                    getCurrentUser() && !hasPersistentLeaderSession()
                 ) {
 
                     showToast(
