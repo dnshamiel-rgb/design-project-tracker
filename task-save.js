@@ -1,6 +1,7 @@
 /* Task save acknowledgement and update attribution. */
 (() => {
  let baseline=null, pending=null, busy=false;
+ let noticeTimer=null, noticeVersion=0;
  const clone=x=>JSON.parse(JSON.stringify(x));
  const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
  const strip=t=>Object.fromEntries(Object.entries(t||{}).filter(([k])=>!["updatedAt","updatedBy"].includes(k)));
@@ -35,8 +36,11 @@
   return result;
  }
  function status(state,message){
+  clearTimeout(noticeTimer);
+  const version=++noticeVersion;
   let bar=document.getElementById("taskSaveNotice");
   if(!bar){bar=document.createElement("div");bar.id="taskSaveNotice";bar.setAttribute("role","status");document.body.append(bar);}
+  bar.style.removeProperty("display");
   bar.dataset.state=state;bar.replaceChildren();
   const text=document.createElement("span");text.textContent=message;bar.append(text);
   if(state==="failed"&&pending){
@@ -47,7 +51,16 @@
   if(form){
    let label=document.getElementById("taskFormSaveNotice");
    if(!label){label=document.createElement("p");label.id="taskFormSaveNotice";label.setAttribute("role","status");form.append(label);}
+   label.style.removeProperty("display");
    label.textContent=message;label.dataset.state=state;
+  }
+  if(state==="saved"){
+   noticeTimer=setTimeout(()=>{
+    if(version!==noticeVersion)return;
+    bar.style.display="none";
+    const label=document.getElementById("taskFormSaveNotice");
+    if(label && label.dataset.state==="saved")label.style.display="none";
+   },3000);
   }
  }
  async function attempt(batch){
