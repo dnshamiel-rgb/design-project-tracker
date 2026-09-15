@@ -31,7 +31,7 @@
   drawer.querySelector(".drawer-chapter").textContent=getTaskChapter(task)+(getTaskWorkPackage(task)?" · "+getTaskWorkPackage(task):"");
   const date = /^\d{4}-\d{2}-\d{2}$/.test(task.deadline||"") ? new Date(task.deadline+"T12:00:00") : null;
   const dateLabel=date && !isNaN(date.getTime()) ? date.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : task.deadline||"Not set";
-  body.innerHTML='' +
+  body.innerHTML=(window.taskUpdateLabel(task)?'<p class="drawer-muted task-updated-label" title="'+escape(new Date(task.updatedAt).toLocaleString())+'">'+escape(window.taskUpdateLabel(task))+'</p>':'') +
 
    '<div class="drawer-progress-heading"><span class="drawer-status '+(task.status==="Done"?'is-done':'')+'">'+escape(task.status||"Not Started")+'</span><strong>'+progress+'%</strong></div>'+
    '<div class="drawer-progress"><progress max="100" value="'+progress+'" aria-label="Task progress"></progress></div>'+

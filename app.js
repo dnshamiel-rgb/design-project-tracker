@@ -481,6 +481,8 @@ function listenToTasks() {
 
                 }
 
+                window.observeSavedTasks(tasks);
+
                 updateEquipmentFilterOptions();
 
                 updateDashboard();
@@ -523,45 +525,8 @@ function listenToTasks() {
 // ============================================================
 
 function saveData() {
-
-    if (!db) {
-
-        showToast(
-            "Firebase not configured yet — changes won't be saved. Ask the project owner to set up Firebase."
-        );
-
-        return;
-
-    }
-
-    db.collection(
-        "trackerData"
-    )
-        .doc(
-            "tasks"
-        )
-        .set({
-            list: tasks
-        })
-        .catch(
-            error => {
-
-                console.error(
-                    "Save tasks failed:",
-                    error
-                );
-
-                showToast(
-                    "❌ Save failed: " +
-                    error.message +
-                    "\n\nCheck Firestore Rules — the passcode may not match, or check your internet connection."
-                );
-
-            }
-        );
-
+    return window.persistTaskChanges(tasks);
 }
-
 
 // ============================================================
 // LOAD MEETINGS (real-time from Firestore)
@@ -9786,6 +9751,7 @@ function renderTasks() {
                             ${escapeAttachment(task.name)}
                         </button>
 
+                        ${window.taskUpdateLabel(task) ? '<small class="task-updated-label" title="'+escapeAttachment(new Date(task.updatedAt).toLocaleString())+'">'+escapeAttachment(window.taskUpdateLabel(task))+'</small>' : ''}
                         ${getLecturerMarkingBadge(task)}
 
                         <div class="task-classification-tags">
@@ -11020,6 +10986,7 @@ function reorderTaskModalForRole() {
 // ============================================================
 
 function closeTaskModal() {
+    if (taskFormSaving) return;
 
     const modal =
         getElement(
@@ -11044,9 +11011,16 @@ function closeTaskModal() {
 // SAVE TASK
 // ============================================================
 
+let taskFormSaving = false;
 async function saveTask(event) {
 
     event.preventDefault();
+    if (taskFormSaving) return;
+    taskFormSaving = true;
+    const form = event.target;
+    const submitButtons = Array.from(form.querySelectorAll('button[type="submit"], input[type="submit"]'));
+    submitButtons.forEach(button => button.disabled = true);
+    try {
 
     if (isLecturer()) {
 
@@ -11347,6 +11321,10 @@ async function saveTask(event) {
             );
 
 
+        if (index === -1) {
+            showToast("This task is no longer available. Reopen it before saving.");
+            return;
+        }
         if (
             index !== -1
         ) {
@@ -11369,6 +11347,7 @@ async function saveTask(event) {
     else {
 
         const newTaskId = Date.now();
+        getElement("taskId").value = newTaskId;
 
         tasks.push({
 
@@ -11389,7 +11368,12 @@ async function saveTask(event) {
     }
 
 
-    saveData();
+    if (hasNewTaskFile) fileInput.value = "";
+    const saved = await saveData();
+    if (!saved) {
+        // Keep the draft open; Retry in the save notice resubmits the captured change.
+        return;
+    }
 
     updateEquipmentFilterOptions();
 
@@ -11410,6 +11394,7 @@ async function saveTask(event) {
     renderKanban();
 
 
+    taskFormSaving = false;
     closeTaskModal();
 
 
@@ -11417,6 +11402,10 @@ async function saveTask(event) {
         "Task saved successfully!"
     );
 
+    } finally {
+        taskFormSaving = false;
+        submitButtons.forEach(button => button.disabled = false);
+    }
 }
 
 
