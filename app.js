@@ -9376,6 +9376,13 @@ function renderFilterMembers() {
 
 function renderTasks() {
 
+    const escapeAttachment = value => String(value ?? "").replace(/[&<>"']/g,
+        char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    const progressPercent = value => {
+        const number = Number(value || 0);
+        return Number.isFinite(number) ? Math.min(100, Math.max(0, number)) : 0;
+    };
+
     const table =
         getElement(
             "taskTable"
@@ -9712,18 +9719,21 @@ function renderTasks() {
                         ? `
                             <br>
                             <a
-                                class="open-link"
-                                href="${task.fileUrl}"
+                                class="open-link task-file-chip"
+                                title="${escapeAttachment(task.fileName)}"
+                                aria-label="Open ${escapeAttachment(task.fileName)}"
+                                href="${escapeAttachment(task.fileUrl)}"
                                 target="_blank"
                                 rel="noopener"
                             >
-                                📄 ${task.fileName}
+                                <span aria-hidden="true">📄</span>
+                                <span class="task-file-chip__name">${escapeAttachment(task.fileName)}</span>
                             </a>
                         `
                         : `
                             <br>
                             <small>
-                                📄 ${task.fileName} (no file uploaded)
+                                📄 ${escapeAttachment(task.fileName)} (no file uploaded)
                             </small>
                         `;
 
@@ -9855,9 +9865,11 @@ function renderTasks() {
 
                     <td data-label="Progress">
 
-                        ${Number(
-                            task.progress || 0
-                        )}%
+                        <span class="task-progress">
+                            <progress max="100" value="${progressPercent(task.progress)}"
+                                aria-label="Task progress">${progressPercent(task.progress)}%</progress>
+                            <span class="task-progress__value">${progressPercent(task.progress)}%</span>
+                        </span>
 
                     </td>
 
@@ -9887,13 +9899,13 @@ function renderTasks() {
 
                     <td data-label="Attachment">
 
-                        ${attachment}
+                        ${attachment === "-" ? attachment : attachment.replace(/^-/, "")}
 
                     </td>
 
 
                     <td data-label="Action">
-
+                        <div class="task-row-actions">
                         ${
                             isLecturer()
                                 ? getLecturerMarkingActionButton(task)
@@ -9905,15 +9917,20 @@ function renderTasks() {
                                         Edit
                                     </button>
 
-                                    <button
-                                        class="delete-btn"
-                                        onclick="deleteTask(${task.id})"
-                                    >
-                                        Delete
-                                    </button>
+                                    <details class="task-more-actions"
+                                        onkeydown="if(event.key==='Escape'){this.open=false;this.querySelector('summary').focus();}">
+                                        <summary aria-label="More task actions" title="More actions">⋯</summary>
+                                        <div class="task-more-actions__menu">
+                                            <button type="button" class="delete-btn"
+                                                onclick="this.closest('details').open=false;deleteTask(${task.id})">
+                                                Delete task
+                                            </button>
+                                        </div>
+                                    </details>
                                 `
                         }
 
+                        </div>
                     </td>
 
                 </tr>
