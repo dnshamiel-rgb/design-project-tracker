@@ -10516,26 +10516,56 @@ function renderTaskFileDraft() {
         controls.setAttribute("aria-label", "Attachment actions");
         label.after(controls);
     }
+    let card = getElement("taskFileCard");
+    if (!card) {
+        card = document.createElement("span");
+        card.id = "taskFileCard";
+        label.before(card);
+        card.append(label, controls);
+    }
     label.replaceChildren();
     const original = taskFileOriginal;
     const selected = input.files && input.files[0];
     const hasOriginal = !!(original && (original.fileName || original.fileUrl));
-    if (taskFileRemoved) {
-        label.textContent = "File will be removed when you save.";
-    } else if (selected) {
-        label.textContent = (hasOriginal ? (original.fileName || "Current file") + " → " : "Selected: ") + selected.name + " (save to apply)";
-    } else if (hasOriginal) {
-        label.append("Current file: ");
-        const link = document.createElement("a");
-        link.textContent = original.fileName || "Attached file";
-        if (/^https?:\/\//i.test(original.fileUrl || "")) {
-            link.href = original.fileUrl;
-            link.target = "_blank";
-            link.rel = "noopener";
-            label.append(link);
-        } else {
-            label.append(link.textContent + " (please re-attach)");
+    const hasDraft = !!(hasOriginal || selected || taskFileRemoved);
+    input.hidden = hasDraft;
+    card.hidden = !hasDraft;
+    card.className = "attachment-card" + (taskFileRemoved ? " attachment-card--removed" : "");
+    if (hasDraft) {
+        const name = selected ? selected.name : original.fileName || "Attached file";
+        const extension = name.includes(".") ? name.split(".").pop().toUpperCase() : "FILE";
+        const icon = document.createElement("span");
+        icon.className = "attachment-card__icon";
+        icon.textContent = ["DOC", "DOCX"].includes(extension) ? "DOC" : extension.slice(0, 5);
+        icon.setAttribute("aria-hidden", "true");
+        const details = document.createElement("span");
+        details.className = "attachment-card__details";
+        const title = document.createElement(selected || taskFileRemoved ? "span" : "a");
+        title.className = "attachment-card__name";
+        title.textContent = name;
+        const url = original && original.fileUrl || "";
+        if (!selected && !taskFileRemoved && (url.startsWith("https://") || url.startsWith("http://"))) {
+            title.href = url;
+            title.target = "_blank";
+            title.rel = "noopener";
         }
+        const status = document.createElement("span");
+        status.className = "attachment-card__status";
+        status.setAttribute("role", "status");
+        if (taskFileRemoved) {
+            status.textContent = "Will be removed when you save.";
+        } else if (selected) {
+            const size = selected.size < 1048576
+                ? Math.max(1, Math.round(selected.size / 1024)) + " KB"
+                : (selected.size / 1048576).toFixed(1) + " MB";
+            status.textContent = size + " · " + (hasOriginal
+                ? "Replaces " + (original.fileName || "current file") + " when saved"
+                : "Ready to upload when saved");
+        } else {
+            status.textContent = url ? "Current attachment" : "File unavailable · please replace";
+        }
+        details.append(title, status);
+        label.append(icon, details);
     }
     controls.replaceChildren();
     if (isLecturer()) return;
