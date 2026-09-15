@@ -10500,6 +10500,74 @@ function toggleLecturerChecklist() {
 // OPEN TASK MODAL
 // ============================================================
 
+// Attachment changes are staged until the task form is saved.
+let taskFileRemoved = false;
+let taskFileOriginal = null;
+
+function renderTaskFileDraft() {
+    const input = getElement("taskFile");
+    const label = getElement("currentFile");
+    if (!input || !label) return;
+    let controls = getElement("taskFileControls");
+    if (!controls) {
+        controls = document.createElement("span");
+        controls.id = "taskFileControls";
+        controls.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:10px";
+        label.after(controls);
+    }
+    label.replaceChildren();
+    const original = taskFileOriginal;
+    const selected = input.files && input.files[0];
+    const hasOriginal = !!(original && (original.fileName || original.fileUrl));
+    if (taskFileRemoved) {
+        label.textContent = "File will be removed when you save.";
+    } else if (selected) {
+        label.textContent = (hasOriginal ? (original.fileName || "Current file") + " → " : "Selected: ") + selected.name + " (save to apply)";
+    } else if (hasOriginal) {
+        label.append("Current file: ");
+        const link = document.createElement("a");
+        link.textContent = original.fileName || "Attached file";
+        if (/^https?:\/\//i.test(original.fileUrl || "")) {
+            link.href = original.fileUrl;
+            link.target = "_blank";
+            link.rel = "noopener";
+            label.append(link);
+        } else {
+            label.append(link.textContent + " (please re-attach)");
+        }
+    }
+    controls.replaceChildren();
+    if (isLecturer()) return;
+    function button(text, action) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-secondary";
+        button.textContent = text;
+        button.onclick = event => {
+            event.preventDefault();
+            if (!isLecturer()) action();
+        };
+        controls.append(button);
+    }
+    if (hasOriginal || selected || taskFileRemoved) {
+        button("Replace file", () => input.click());
+    }
+    if ((hasOriginal || selected) && !taskFileRemoved) {
+        button("Remove file", () => {
+            input.value = "";
+            taskFileRemoved = hasOriginal;
+            renderTaskFileDraft();
+        });
+    }
+    if (taskFileRemoved || selected) {
+        button("Undo", () => {
+            input.value = "";
+            taskFileRemoved = false;
+            renderTaskFileDraft();
+        });
+    }
+}
+
 function openTaskModal(
     task = null,
     prefill = null
@@ -10594,37 +10662,6 @@ function openTaskModal(
 
             attachment.value =
                 task.attachment || "";
-
-        }
-
-
-        const currentFile =
-            getElement(
-                "currentFile"
-            );
-
-
-        if (currentFile) {
-
-            if (task.fileName && task.fileUrl) {
-
-                currentFile.innerHTML =
-                    `Current file: <a href="${task.fileUrl}" target="_blank" rel="noopener">${task.fileName}</a>`;
-
-            }
-
-            else if (task.fileName) {
-
-                currentFile.textContent =
-                    "Current file: " + task.fileName + " (no file uploaded — please re-attach)";
-
-            }
-
-            else {
-
-                currentFile.textContent = "";
-
-            }
 
         }
 
@@ -10825,6 +10862,18 @@ function openTaskModal(
         taskProgressWrap.classList.add("hidden");
 
     }
+
+    taskFileOriginal = task ? { fileName: task.fileName, fileUrl: task.fileUrl } : null;
+    taskFileRemoved = false;
+    const draftFileInput = getElement("taskFile");
+    if (draftFileInput) {
+        draftFileInput.value = "";
+        draftFileInput.onchange = () => {
+            if (draftFileInput.files.length) taskFileRemoved = false;
+            renderTaskFileDraft();
+        };
+    }
+    renderTaskFileDraft();
 
     setModalFieldsDisabled("taskModal", isLecturer());
 
@@ -11035,6 +11084,11 @@ async function saveTask(event) {
             ? oldTask.fileUrl || ""
             : "";
 
+
+    if (taskFileRemoved) {
+        fileName = "";
+        fileUrl = "";
+    }
 
     const hasNewTaskFile =
         fileInput &&
