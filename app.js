@@ -10512,7 +10512,8 @@ function renderTaskFileDraft() {
     if (!controls) {
         controls = document.createElement("span");
         controls.id = "taskFileControls";
-        controls.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:10px";
+        controls.setAttribute("role", "group");
+        controls.setAttribute("aria-label", "Attachment actions");
         label.after(controls);
     }
     label.replaceChildren();
@@ -10541,7 +10542,8 @@ function renderTaskFileDraft() {
     function button(text, action) {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = "btn btn-secondary";
+        button.className = "attachment-action attachment-action--" +
+            (text === "Remove file" ? "remove" : text === "Replace file" ? "replace" : "undo");
         button.textContent = text;
         button.onclick = event => {
             event.preventDefault();
