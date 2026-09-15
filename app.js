@@ -13083,17 +13083,49 @@ function formatDate(
 // ============================================================
 
 let calendarSelectedDate = null;
+let calendarAudience = "team";
 
 function renderCalendar() {
     const grid=getElement("calendarGrid"), title=getElement("calendarMonth"), panel=getElement("calendarDayPanel");
     if(!grid || !title || !panel)return;
+    const currentMember = getCurrentUser();
+    const canUseMine = !!currentMember && !isLecturer();
+    if (!canUseMine) calendarAudience = "team";
+    let audience = getElement("calendarAudience");
+    if (!audience) {
+        audience = document.createElement("div");
+        audience.id = "calendarAudience";
+        audience.className = "calendar-audience";
+        audience.setAttribute("role", "group");
+        audience.setAttribute("aria-label", "Calendar task filter");
+        const controls = document.querySelector("#calendar .calendar-controls");
+        if (controls) controls.prepend(audience);
+    }
+    audience.replaceChildren();
+    for (const mode of ["team", "mine"]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = mode === "mine" ? "Mine" : "Team";
+        button.setAttribute("aria-pressed", String(calendarAudience === mode));
+        button.disabled = mode === "mine" && !canUseMine;
+        if (button.disabled) button.title = "Mine is available for team members";
+        button.onclick = () => {
+            calendarAudience = mode;
+            renderCalendar();
+            getElement("calendarAudience").querySelector('[aria-pressed="true"]')?.focus({preventScroll:true});
+        };
+        audience.append(button);
+    }
+    const includedTask = task => calendarAudience === "team" ||
+        task.mainPIC === currentMember ||
+        (Array.isArray(task.assigned) && task.assigned.includes(currentMember));
     const year=calendarDate.getFullYear(), month=calendarDate.getMonth();
     title.textContent=new Date(year,month,1).toLocaleDateString("en-GB",{month:"long",year:"numeric"});
     const today=formatDate(new Date()), prefix=formatDate(new Date(year,month,1)).slice(0,7);
     if(!calendarSelectedDate || !calendarSelectedDate.startsWith(prefix))
         calendarSelectedDate=today.startsWith(prefix)?today:prefix+"-01";
     const eventsFor=date=>[
-        ...tasks.filter(t=>t.deadline===date).map(t=>({kind:"task",item:t})),
+        ...tasks.filter(t=>t.deadline===date && includedTask(t)).map(t=>({kind:"task",item:t})),
         ...meetings.filter(m=>m.date===date).map(m=>({kind:"meeting",item:m}))
     ];
     const select=date=>{
@@ -13140,7 +13172,8 @@ function renderCalendar() {
     heading.id="calendarDayTitle";heading.setAttribute("aria-live","polite");panel.append(heading);
     const count=document.createElement("p");count.className="calendar-day-count";
     count.textContent=events.filter(e=>e.kind==="task").length+" tasks · "+events.filter(e=>e.kind==="meeting").length+" meetings";panel.append(count);
-    if(!events.length){const empty=document.createElement("p");empty.className="calendar-day-empty";empty.textContent="No tasks or meetings on this date. Select another day to see its schedule.";panel.append(empty);}
+    if(calendarAudience==="mine"){const note=document.createElement("p");note.className="calendar-filter-note";note.textContent="Your tasks · All team meetings";panel.append(note);}
+    if(!events.length){const empty=document.createElement("p");empty.className="calendar-day-empty";empty.textContent=calendarAudience==="mine"?"No tasks assigned to you or team meetings on this date. Switch to Team to see everyone’s tasks.":"No tasks or meetings on this date. Select another day to see its schedule.";panel.append(empty);}
     events.forEach(e=>{
         const button=document.createElement("button");button.type="button";button.className="calendar-detail-item "+eventClass(e);
         const name=document.createElement("strong");name.textContent=eventName(e)||"Untitled";button.append(name);

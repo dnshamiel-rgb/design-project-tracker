@@ -30,3 +30,11 @@
 #calendar button:focus-visible{outline:2px solid #2563eb;outline-offset:1px}
 @container (min-width:1050px){#calendar .calendar-layout{grid-template-columns:minmax(0,7fr) minmax(290px,3fr)}#calendar .calendar-day-panel{max-height:780px;overflow:auto}}
 @media(max-width:480px){#calendar>.panel{padding:12px}#calendar .calendar-day{height:116px;min-height:116px;padding:3px}#calendar .calendar-task{font-size:9px}#calendar .calendar-more{font-size:9px}#calendar .calendar-legend{gap:10px;font-size:10px}}
+
+/* Calendar task audience filter. */
+#calendar .calendar-controls { flex-wrap:wrap; align-items:center; }
+#calendar .calendar-audience { display:inline-flex; gap:3px; padding:3px; margin-right:6px; border:1px solid #e2e8f0; border-radius:10px; background:#f1f5f9; }
+#calendar .calendar-audience button { padding:7px 12px; border:0; border-radius:7px; background:transparent; color:#64748b; font:600 12px system-ui; cursor:pointer; }
+#calendar .calendar-audience button[aria-pressed="true"] { background:#fff; color:#2563eb; box-shadow:0 1px 3px #0f172a12; }
+#calendar .calendar-audience button:disabled { opacity:.45; cursor:not-allowed; }
+#calendar .calendar-filter-note { font-size:10px; color:#2563eb; margin:-8px 0 14px; }
