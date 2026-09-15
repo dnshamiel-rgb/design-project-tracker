@@ -1,27 +1,35 @@
-/* Desktop navigation and readable task names. */
+/* Header navigation and readable task names. */
 #desktopSidebarToggle { display:none; }
-#loginScreen:not(.hidden) ~ #desktopSidebarToggle { display:none; }
+#loginScreen:not(.hidden) ~ .main #desktopSidebarToggle { display:none; }
 @media (min-width:651px) {
-    body { --desktop-sidebar-width:258px; }
-    #desktopSidebarToggle {
-        display:grid; place-items:center; position:fixed;
-        top:16px; left:calc(var(--desktop-sidebar-width) + 16px);
-        width:36px; height:36px; z-index:80;
-        color:#475569; background:#fff; border:1px solid #e2e8f0;
-        border-radius:10px; cursor:pointer;
-        box-shadow:0 2px 6px rgba(15,23,42,.05);
-        transition:left .2s ease, background .15s ease;
+    .main > .header {
+        position:sticky; top:0; z-index:50;
+        padding:12px 0; background:var(--bg, #f4f7fc);
+        border-bottom:1px solid var(--border, #e7ebf3);
     }
-    #desktopSidebarToggle:hover { background:#eff6ff; color:#2563eb; }
+    .header-title-row { display:flex; align-items:center; gap:10px; min-width:0; }
+    .header-title-row h1 { min-width:0; overflow-wrap:anywhere; }
+    #desktopSidebarToggle {
+        display:grid; place-items:center; flex:0 0 36px;
+        width:36px; height:36px; padding:0;
+        color:#64748b; background:transparent; border:0;
+        border-radius:8px; cursor:pointer; box-shadow:none;
+        transition:background 120ms ease, color 120ms ease;
+    }
+    #desktopSidebarToggle:hover { background:#e8effc; color:#2563eb; }
     #desktopSidebarToggle:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
-    .sidebar { transition:transform .2s ease, visibility .2s ease; }
-    .main { min-width:0; max-width:none; padding-top:72px; transition:margin-left .2s ease; }
-    body.desktop-sidebar-collapsed .sidebar { transform:translateX(-100%); visibility:hidden; }
+    .sidebar {
+        transition:transform 200ms cubic-bezier(.2,0,0,1), visibility 0s;
+    }
+    .main {
+        min-width:0; max-width:none; padding-top:16px;
+        transition:margin-left 200ms cubic-bezier(.2,0,0,1);
+    }
+    body.desktop-sidebar-collapsed .sidebar {
+        transform:translateX(-100%); visibility:hidden;
+        transition:transform 200ms cubic-bezier(.2,0,0,1), visibility 0s 200ms;
+    }
     body.desktop-sidebar-collapsed .main { margin-left:0; }
-    body.desktop-sidebar-collapsed #desktopSidebarToggle { left:16px; }
-}
-@media (min-width:651px) and (max-width:1000px) {
-    body { --desktop-sidebar-width:210px; }
 }
 @media (min-width:901px) {
     #taskTableView .table-container { isolation:isolate; }

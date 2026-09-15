@@ -1,7 +1,8 @@
 /* Desktop navigation layout only; no task data or network changes. */
 (() => {
     const sidebar = document.getElementById("sidebar");
-    if (!sidebar) return;
+    const heading = document.querySelector(".main > .header h1");
+    if (!sidebar || !heading) return;
     const key = "dp.sidebarCollapsed";
     const desktop = window.matchMedia("(min-width: 651px)");
     let collapsed = false;
@@ -11,14 +12,17 @@
     button.type = "button";
     button.setAttribute("aria-controls", "sidebar");
     button.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>';
-    sidebar.before(button);
+    const titleRow = document.createElement("div");
+    titleRow.className = "header-title-row";
+    heading.before(titleRow);
+    titleRow.append(button, heading);
     function render() {
         const hidden = desktop.matches && collapsed;
         document.body.classList.toggle("desktop-sidebar-collapsed", hidden);
         sidebar.inert = hidden;
         button.setAttribute("aria-expanded", String(!hidden));
-        button.setAttribute("aria-label", hidden ? "Open sidebar" : "Close sidebar");
-        button.title = hidden ? "Open sidebar" : "Close sidebar";
+        button.setAttribute("aria-label", hidden ? "Show sidebar" : "Hide sidebar");
+        button.title = hidden ? "Show sidebar" : "Hide sidebar";
     }
     button.addEventListener("click", () => {
         collapsed = !collapsed;
