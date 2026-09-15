@@ -9375,6 +9375,7 @@ function renderFilterMembers() {
 // ============================================================
 
 function renderTasks() {
+    if (typeof window.refreshTaskDetails === "function") window.refreshTaskDetails();
 
     const escapeAttachment = value => String(value ?? "").replace(/[&<>"']/g,
         char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
@@ -9781,9 +9782,9 @@ function renderTasks() {
 
                     <td data-label="Task">
 
-                        <strong>
-                            ${task.name}
-                        </strong>
+                        <button type="button" class="task-detail-trigger" onclick="openTaskDetails(${Number(task.id)})" aria-haspopup="dialog">
+                            ${escapeAttachment(task.name)}
+                        </button>
 
                         ${getLecturerMarkingBadge(task)}
 
