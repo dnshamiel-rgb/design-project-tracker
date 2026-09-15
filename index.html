@@ -275,6 +275,7 @@
     <script src="attachment-preview.js" defer></script>
     <link rel="stylesheet" href="task-drawer.css">
     <script src="task-drawer.js" defer></script>
+    <link rel="stylesheet" href="calendar-layout.css">
 </head>
 
 <body>
@@ -984,7 +985,7 @@
 
                     <button
                         class="calendar-btn"
-                        onclick="previousMonth()"
+                        aria-label="Previous month" onclick="previousMonth()"
                     >
                         ←
                     </button>
@@ -998,7 +999,7 @@
 
                     <button
                         class="calendar-btn"
-                        onclick="nextMonth()"
+                        aria-label="Next month" onclick="nextMonth()"
                     >
                         →
                     </button>
@@ -1008,6 +1009,7 @@
             </div>
 
 
+            <div class="calendar-layout"><div class="calendar-month-pane">
             <div class="calendar-week">
 
                 <div>MON</div>
@@ -1027,6 +1029,7 @@
             ></div>
 
 
+            </div><aside id="calendarDayPanel" class="calendar-day-panel" aria-labelledby="calendarDayTitle"></aside></div>
             <div class="calendar-legend">
 
                 <span>

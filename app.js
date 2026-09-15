@@ -13082,363 +13082,78 @@ function formatDate(
 // RENDER CALENDAR
 // ============================================================
 
+let calendarSelectedDate = null;
+
 function renderCalendar() {
-
-    const grid =
-        getElement(
-            "calendarGrid"
-        );
-
-
-    const title =
-        getElement(
-            "calendarMonth"
-        );
-
-
-    if (
-        !grid ||
-        !title
-    ) {
-
-        return;
-
-    }
-
-
-    const year =
-        calendarDate.getFullYear();
-
-
-    const month =
-        calendarDate.getMonth();
-
-
-    const names = [
-
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"
-
+    const grid=getElement("calendarGrid"), title=getElement("calendarMonth"), panel=getElement("calendarDayPanel");
+    if(!grid || !title || !panel)return;
+    const year=calendarDate.getFullYear(), month=calendarDate.getMonth();
+    title.textContent=new Date(year,month,1).toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+    const today=formatDate(new Date()), prefix=formatDate(new Date(year,month,1)).slice(0,7);
+    if(!calendarSelectedDate || !calendarSelectedDate.startsWith(prefix))
+        calendarSelectedDate=today.startsWith(prefix)?today:prefix+"-01";
+    const eventsFor=date=>[
+        ...tasks.filter(t=>t.deadline===date).map(t=>({kind:"task",item:t})),
+        ...meetings.filter(m=>m.date===date).map(m=>({kind:"meeting",item:m}))
     ];
-
-
-    title.textContent =
-        `${names[month]} ${year}`;
-
-
-    grid.innerHTML = "";
-
-
-    const first =
-        new Date(
-            year,
-            month,
-            1
-        );
-
-
-    const last =
-        new Date(
-            year,
-            month + 1,
-            0
-        );
-
-
-    let start =
-        first.getDay();
-
-
-    start =
-        start === 0
-            ? 6
-            : start - 1;
-
-
-    const days =
-        last.getDate();
-
-
-    const total =
-        Math.ceil(
-            (
-                start +
-                days
-            ) / 7
-        ) * 7;
-
-
-    const today =
-        new Date();
-
-
-    today.setHours(
-        0,
-        0,
-        0,
-        0
-    );
-
-
-    for (
-        let i = 0;
-        i < total;
-        i++
-    ) {
-
-
-        let cellDate;
-
-        let number;
-
-
-        const cell =
-            document.createElement(
-                "div"
-            );
-
-
-        cell.className =
-            "calendar-day";
-
-
-        if (
-            i < start
-        ) {
-
-            number =
-                new Date(
-                    year,
-                    month,
-                    0
-                ).getDate()
-                -
-                start +
-                i +
-                1;
-
-
-            cellDate =
-                new Date(
-                    year,
-                    month - 1,
-                    number
-                );
-
-
-            cell.classList.add(
-                "other-month"
-            );
-
+    const select=date=>{
+        calendarSelectedDate=date;
+        const parsed=new Date(date+"T12:00:00");
+        if(parsed.getMonth()!==month || parsed.getFullYear()!==year)calendarDate=new Date(parsed.getFullYear(),parsed.getMonth(),1);
+        renderCalendar();
+        getElement("calendarGrid").querySelector('[data-date="'+date+'"] .calendar-number')?.focus({preventScroll:true});
+    };
+    const eventClass=e=>e.kind==="meeting"?"calendar-meeting":calendarClass(getDeadlineStatus(e.item).type);
+    const eventName=e=>e.kind==="meeting"?e.item.title:e.item.name;
+    const open=e=>e.kind==="meeting"?editMeeting(e.item.id):openTaskDetails(e.item.id);
+    grid.replaceChildren();
+    const offset=(new Date(year,month,1).getDay()+6)%7;
+    const total=Math.ceil((offset+new Date(year,month+1,0).getDate())/7)*7;
+    for(let i=0;i<total;i++){
+        const date=new Date(year,month,i-offset+1), key=formatDate(date), events=eventsFor(key);
+        const cell=document.createElement("div");
+        cell.className="calendar-day"+(date.getMonth()!==month?" other-month":"")+(key===today?" today":"")+(key===calendarSelectedDate?" selected-day":"");
+        cell.dataset.date=key;
+        const number=document.createElement("button");
+        number.type="button";number.className="calendar-number";number.textContent=date.getDate();
+        number.setAttribute("aria-label",date.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})+", "+events.length+" scheduled items");
+        number.setAttribute("aria-pressed",String(key===calendarSelectedDate));
+        if(key===today)number.setAttribute("aria-current","date");
+        number.onclick=()=>select(key);cell.append(number);
+        events.slice(0,2).forEach(e=>{
+            const chip=document.createElement("button");
+            chip.type="button";chip.className="calendar-task "+eventClass(e);
+            chip.textContent=(e.kind==="meeting"?"Meeting: ":"")+eventName(e);
+            chip.title=eventName(e)+(e.kind==="task"?" · "+(e.item.mainPIC||"Unassigned"):" · "+(e.item.time||"No time set"));
+            chip.onclick=()=>open(e);cell.append(chip);
+        });
+        if(events.length>2){
+            const more=document.createElement("button");more.type="button";more.className="calendar-more";
+            more.textContent="+"+(events.length-2)+" more";more.setAttribute("aria-label","Show all "+events.length+" items on "+key);
+            more.onclick=()=>select(key);cell.append(more);
         }
-
-        else if (
-            i <
-            start +
-            days
-        ) {
-
-            number =
-                i -
-                start +
-                1;
-
-
-            cellDate =
-                new Date(
-                    year,
-                    month,
-                    number
-                );
-
-        }
-
-        else {
-
-            number =
-                i -
-                (
-                    start +
-                    days
-                ) +
-                1;
-
-
-            cellDate =
-                new Date(
-                    year,
-                    month + 1,
-                    number
-                );
-
-
-            cell.classList.add(
-                "other-month"
-            );
-
-        }
-
-
-        const numberElement =
-            document.createElement(
-                "div"
-            );
-
-
-        numberElement.className =
-            "calendar-number";
-
-
-        numberElement.textContent =
-            number;
-
-
-        cell.appendChild(
-            numberElement
-        );
-
-
-        if (
-            cellDate.getTime() ===
-            today.getTime()
-        ) {
-
-            cell.classList.add(
-                "today"
-            );
-
-        }
-
-
-        const dateString =
-            formatDate(
-                cellDate
-            );
-
-
-        tasks
-            .filter(
-                task =>
-                    task.deadline ===
-                    dateString
-            )
-            .forEach(
-                task => {
-
-
-                    const item =
-                        document.createElement(
-                            "div"
-                        );
-
-
-                    const deadline =
-                        getDeadlineStatus(
-                            task
-                        );
-
-
-                    item.className =
-                        "calendar-task " +
-                        calendarClass(
-                            deadline.type
-                        );
-
-
-                    item.innerHTML = `
-
-                        <strong>
-                            ${task.name}
-                        </strong>
-
-                        <small>
-                            ${task.mainPIC}
-                        </small>
-
-                    `;
-
-
-                    item.onclick =
-                        () =>
-                            editTask(
-                                task.id
-                            );
-
-
-                    cell.appendChild(
-                        item
-                    );
-
-                }
-            );
-
-
-        meetings
-            .filter(
-                meeting =>
-                    meeting.date ===
-                    dateString
-            )
-            .forEach(
-                meeting => {
-
-
-                    const item =
-                        document.createElement(
-                            "div"
-                        );
-
-
-                    item.className =
-                        "calendar-task calendar-meeting";
-
-
-                    item.innerHTML = `
-
-                        <strong>
-                            🗓️ ${meeting.title}
-                        </strong>
-
-                        <small>
-                            ${meeting.time || "No time set"}
-                        </small>
-
-                    `;
-
-
-                    item.onclick =
-                        () =>
-                            editMeeting(
-                                meeting.id
-                            );
-
-
-                    cell.appendChild(
-                        item
-                    );
-
-                }
-            );
-
-
-        grid.appendChild(
-            cell
-        );
-
+        cell.onclick=e=>{if(e.target===cell)select(key);};grid.append(cell);
     }
-
+    const events=eventsFor(calendarSelectedDate), date=new Date(calendarSelectedDate+"T12:00:00");
+    panel.replaceChildren();
+    const heading=document.createElement("h3");heading.textContent=date.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+    heading.id="calendarDayTitle";heading.setAttribute("aria-live","polite");panel.append(heading);
+    const count=document.createElement("p");count.className="calendar-day-count";
+    count.textContent=events.filter(e=>e.kind==="task").length+" tasks · "+events.filter(e=>e.kind==="meeting").length+" meetings";panel.append(count);
+    if(!events.length){const empty=document.createElement("p");empty.className="calendar-day-empty";empty.textContent="No tasks or meetings on this date. Select another day to see its schedule.";panel.append(empty);}
+    events.forEach(e=>{
+        const button=document.createElement("button");button.type="button";button.className="calendar-detail-item "+eventClass(e);
+        const name=document.createElement("strong");name.textContent=eventName(e)||"Untitled";button.append(name);
+        const detail=document.createElement("span");
+        if(e.kind==="task"){
+            const value=Number(e.item.progress||0), progress=Number.isFinite(value)?Math.max(0,Math.min(100,value)):0;
+            detail.textContent=(e.item.mainPIC||"Unassigned")+" · "+(e.item.status||"Not Started")+" · "+progress+"%";
+            const due=document.createElement("small");due.textContent=getDeadlineStatus(e.item).text;
+            button.append(detail,due);
+        }else{detail.textContent="Meeting · "+(e.item.time||"No time set");button.append(detail);}
+        button.onclick=()=>open(e);panel.append(button);
+    });
 }
-
 
 // ============================================================
 // CALENDAR CLASS
@@ -13494,6 +13209,7 @@ function calendarClass(
 // ============================================================
 
 function previousMonth() {
+    calendarDate.setDate(1);
 
     calendarDate.setMonth(
         calendarDate.getMonth() -
@@ -13511,6 +13227,7 @@ function previousMonth() {
 // ============================================================
 
 function nextMonth() {
+    calendarDate.setDate(1);
 
     calendarDate.setMonth(
         calendarDate.getMonth() +
@@ -13528,6 +13245,7 @@ function nextMonth() {
 // ============================================================
 
 function goToday() {
+    calendarSelectedDate = formatDate(new Date());
 
     calendarDate =
         new Date();
