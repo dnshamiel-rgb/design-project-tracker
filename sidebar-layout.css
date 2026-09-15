@@ -1,0 +1,40 @@
+/* Desktop navigation and readable task names. */
+#desktopSidebarToggle { display:none; }
+#loginScreen:not(.hidden) ~ #desktopSidebarToggle { display:none; }
+@media (min-width:651px) {
+    body { --desktop-sidebar-width:258px; }
+    #desktopSidebarToggle {
+        display:grid; place-items:center; position:fixed;
+        top:16px; left:calc(var(--desktop-sidebar-width) + 16px);
+        width:36px; height:36px; z-index:80;
+        color:#475569; background:#fff; border:1px solid #e2e8f0;
+        border-radius:10px; cursor:pointer;
+        box-shadow:0 2px 6px rgba(15,23,42,.05);
+        transition:left .2s ease, background .15s ease;
+    }
+    #desktopSidebarToggle:hover { background:#eff6ff; color:#2563eb; }
+    #desktopSidebarToggle:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
+    .sidebar { transition:transform .2s ease, visibility .2s ease; }
+    .main { min-width:0; max-width:none; padding-top:72px; transition:margin-left .2s ease; }
+    body.desktop-sidebar-collapsed .sidebar { transform:translateX(-100%); visibility:hidden; }
+    body.desktop-sidebar-collapsed .main { margin-left:0; }
+    body.desktop-sidebar-collapsed #desktopSidebarToggle { left:16px; }
+}
+@media (min-width:651px) and (max-width:1000px) {
+    body { --desktop-sidebar-width:210px; }
+}
+@media (min-width:901px) {
+    #taskTableView .table-container { isolation:isolate; }
+    #taskTableView table { border-collapse:separate; border-spacing:0; }
+    #taskTableView th:first-child,
+    #taskTableView td[data-label="Task"] {
+        position:sticky; left:0; min-width:220px; max-width:300px;
+        overflow-wrap:anywhere; box-shadow:2px 0 0 #e7ebf3;
+    }
+    #taskTableView th:first-child { z-index:3; background:#10131f; }
+    #taskTableView td[data-label="Task"] { z-index:2; background:#fff; }
+    #taskTableView tr:hover td[data-label="Task"] { background:var(--primary-light); }
+}
+@media (prefers-reduced-motion:reduce) {
+    #desktopSidebarToggle, .sidebar, .main { transition:none !important; }
+}
