@@ -10006,104 +10006,34 @@ function renderTeam() {
 
             container.innerHTML += `
 
-                <div
-                    class="team-card"
-                    onclick="openMemberProfile('${member.name}')"
-                    style="cursor:pointer"
-                >
-
-                    <div class="avatar">
-
-                        ${getAvatarHtml(member.name)}
-
+                <article class="team-card">
+                    <div class="team-member-heading">
+                        <div class="avatar">${getAvatarHtml(member.name)}</div>
+                        <div class="team-member-identity">
+                            <h3>${member.name}</h3>
+                            <p class="team-member-role ${member.name === LEADER_NAME ? 'is-leader' : ''}">${member.name === LEADER_NAME ? 'Group Leader' : 'Team Member'}</p>
+                        </div>
                     </div>
-
-
-                    <h3>
-
-                        ${member.name}
-                        ${member.name === LEADER_NAME ? '<span class="leader-badge" title="Group Leader">👑</span>' : ""}
-
-                    </h3>
-
-
-                    <p>
-
-                        ${member.name === LEADER_NAME ? "Group Leader" : "Team Member"}
-
-                    </p>
-
-
-                    <p>
-
-                        ${memberTasks.length}
-                        task(s)
-
-                    </p>
-
-
-                    <strong>
-
-                        ${progress}% Progress
-
-                    </strong>
-
-
-                    <br><br>
-
-
-                    <button
-                        type="button"
-                        onclick="
-                            event.stopPropagation();
-                            openMemberProfile('${member.name}');
-                        "
-                    >
-
-                        View Profile
-
-                    </button>
-
-                    ${
-                        isGroupLeader()
-                            ? `
-                                <button
-                                    type="button"
-                                    onclick="
-                                        event.stopPropagation();
-                                        generateContributionReport('${member.name}');
-                                    "
-                                >
-                                    📄 Report
-                                </button>
-                            `
-                            : ""
-                    }
-
-                    ${
-                        getCurrentUser() === member.name
-                            ? `
-                                <label
-                                    class="change-photo-btn"
-                                    onclick="event.stopPropagation();"
-                                >
-                                    📷 Change Photo
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onclick="event.stopPropagation();"
-                                        onchange="changeMyPhoto(event)"
-                                        hidden
-                                    >
-                                </label>
-                            `
-                            : ""
-                    }
-
-                </div>
-
+                    <div class="team-member-progress">
+                        <div class="team-progress-meta">
+                            <span>${memberTasks.length} ${memberTasks.length === 1 ? 'task' : 'tasks'} assigned</span>
+                            <strong>${progress}%</strong>
+                        </div>
+                        <progress max="100" value="${progress}" aria-label="${member.name} task progress">${progress}%</progress>
+                        <p>Overall task progress</p>
+                    </div>
+                    <div class="team-member-actions">
+                        <button type="button" onclick="openMemberProfile('${member.name}')">View Profile <span aria-hidden="true">↗</span></button>
+                        ${isGroupLeader() ? `<button type="button" class="team-report-btn" onclick="generateContributionReport('${member.name}')">Report</button>` : ''}
+                    </div>
+                    ${getCurrentUser() === member.name ? `
+                        <label class="change-photo-btn">
+                            Change photo
+                            <input type="file" accept="image/*" onchange="changeMyPhoto(event)">
+                        </label>
+                    ` : ''}
+                </article>
             `;
-
         }
     );
 
