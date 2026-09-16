@@ -6932,6 +6932,22 @@ function saveMom(event) {
 }
 
 
+function getMomPdfFilename(meeting) {
+    const title = String(meeting.title || "Meeting").replace(/[^a-zA-Z0-9]/g, "_");
+    const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(meeting.date || ""));
+    let dateLabel = "DATE NOT SET";
+    if (parts) {
+        const year = Number(parts[1]), month = Number(parts[2]), day = Number(parts[3]);
+        const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+        const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+        if (month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1]) {
+            dateLabel = day + " " + months[month - 1] + " " + parts[1];
+        }
+    }
+    return title + "_Minutes_" + dateLabel + ".pdf";
+}
+
 function exportMomPdf() {
 
     if (typeof window.jspdf === "undefined") {
@@ -7250,7 +7266,7 @@ function exportMomPdf() {
     }
 
 
-    doc.save(`${meeting.title.replace(/[^a-zA-Z0-9]/g, "_")}_Minutes.pdf`);
+    doc.save(getMomPdfFilename(meeting));
 
     logActivity(`exported minutes of meeting PDF for "${meeting.title}"`);
 
