@@ -2169,7 +2169,7 @@
 
             <div>
 
-                <span class="eyebrow">MINUTES OF MEETING</span>
+                
 
                 <h2 id="momModalTitle">
                     Minutes of Meeting
@@ -2178,7 +2178,7 @@
             </div>
 
             <button
-                class="close-btn"
+                class="close-btn" type="button" aria-label="Close minutes of meeting"
                 onclick="closeMomModal()"
             >
                 ×
@@ -2189,6 +2189,7 @@
         <div id="momMeetingInfo" class="mom-meeting-info"></div>
 
         <form onsubmit="saveMom(event)">
+            <div class="mom-form-scroll">
 
             <input type="hidden" id="momMeetingId">
 
@@ -2207,7 +2208,7 @@
 
                 <textarea
                     id="momSummary"
-                    rows="6"
+                    rows="4" aria-label="Discussion summary"
                     placeholder="Summarize what was discussed in this meeting..."
                 ></textarea>
 
@@ -2233,15 +2234,19 @@
 
                 <div class="mom-action-add-row">
 
+                    <label class="mom-action-field">Action
                     <input
                         type="text"
                         id="momActionInput"
-                        placeholder="Action item..."
+                        placeholder="What needs to be done?"
                     >
+                    </label>
+                    <label class="mom-owner-field">PIC
 
                     <select id="momActionOwner">
-                        <option value="">No owner</option>
+                        <option value="">Select PIC</option>
                     </select>
+                    </label>
 
                     <button
                         type="button"
@@ -2257,6 +2262,7 @@
 
             <div id="momMeta" class="mom-meta hidden"></div>
 
+            </div>
             <div class="modal-buttons">
 
                 <button
@@ -2273,7 +2279,7 @@
                     class="cancel-btn"
                     onclick="exportMomPdf()"
                 >
-                    📄 Export PDF
+                    Export PDF
                 </button>
 
                 <button
@@ -2281,7 +2287,7 @@
                     id="momSaveBtn"
                     class="save-btn"
                 >
-                    💾 Save Minutes
+                    Save Minutes
                 </button>
 
             </div>
