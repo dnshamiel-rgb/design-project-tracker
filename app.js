@@ -6453,7 +6453,7 @@ function populateMomOwnerSelect(selected = "") {
 
     if (!select) return;
 
-    select.innerHTML = `<option value="">No owner</option>`;
+    select.innerHTML = `<option value="">Select PIC</option>`;
 
     members.forEach(member => {
 
@@ -6522,6 +6522,8 @@ function openMomModal(meetingId) {
     populateMomOwnerSelect();
 
     renderMomActionItems();
+    const scroller = modal.querySelector(".mom-form-scroll");
+    if (scroller) scroller.scrollTop = 0;
 
     const metaEl = getElement("momMeta");
 
