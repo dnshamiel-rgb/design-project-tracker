@@ -6489,3 +6489,31 @@ tbody tr:last-child td {
     #memberProfileContent .profile-header h1 { font-size:19px; }
     #memberProfileContent .profile-task { padding:12px !important; }
 }
+
+/* Resources: compact section list */
+#resources .chapter-list { gap:8px; }
+#resources .chapter-card { border-radius:12px; box-shadow:none; border-color:#e5eaf2; background:#fff; }
+#resources .chapter-header { padding:11px 14px; min-height:54px; gap:12px; background:#fff; }
+#resources .chapter-header:hover { background:#f8fafc; }
+#resources .chapter-card.open { border-color:#cbdcf8; }
+#resources .chapter-card.open .chapter-header { background:#f0f5ff; }
+#resources .chapter-header-left { gap:11px; min-width:0; flex:1; }
+#resources .chapter-badge { width:28px; height:28px; flex-shrink:0; border-radius:8px; background:#f0f3f8; color:#64748b; font-size:11px; font-weight:600; }
+#resources .chapter-card.open .chapter-badge { background:#e0ebff; color:#2563eb; }
+#resources .chapter-header-left > div:last-child { display:flex; align-items:baseline; flex-wrap:wrap; column-gap:10px; row-gap:2px; min-width:0; }
+#resources .chapter-title { font-size:13px; font-weight:650; line-height:1.5; overflow-wrap:anywhere; }
+#resources .chapter-count { margin:0; font-size:11px; font-weight:400; color:#718096; white-space:nowrap; }
+#resources .chapter-count::before { content:"·"; margin-right:8px; color:#9aa7b7; }
+#resources .resource-section-header-actions { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+#resources .resource-section-menu-btn { display:grid; place-items:center; width:32px; height:32px; padding:0; border:1px solid #e5eaf2; border-radius:8px; background:#fff; color:#64748b; font-size:14px; cursor:pointer; }
+#resources .resource-section-menu-btn:hover { background:#e9eff8; color:#2563eb; }
+#resources .resource-section-menu-btn:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
+#resources .chapter-chevron { display:grid; place-items:center; width:20px; font-size:9px; color:#8793a5; }
+#resources .chapter-body { padding:4px 14px 12px; }
+@media(max-width:520px) {
+    #resources .chapter-header { padding:10px 12px; gap:8px; }
+    #resources .chapter-header-left { gap:9px; }
+    #resources .chapter-header-left > div:last-child { column-gap:6px; }
+    #resources .resource-section-header-actions { gap:6px; }
+    #resources .chapter-count::before { margin-right:5px; }
+}
