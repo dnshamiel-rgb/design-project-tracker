@@ -5086,9 +5086,66 @@ function performDeleteResourceById(id) {
 }
 
 
+
+let resourceSearchQuery = "";
+const resourceSearchCollapsed = new Set();
+
+function resourceMatchesSearch(item, chapter, query) {
+    const terms = String(query || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const text = [chapter, item.title, item.fileName, item.url]
+        .map(value => String(value || "").toLowerCase()).join(" ");
+    return terms.every(term => text.includes(term));
+}
+
+function ensureResourceSearch(container) {
+    if (getElement("resourceSearchBar")) return;
+    const bar = document.createElement("div");
+    bar.id = "resourceSearchBar";
+    bar.innerHTML = `
+        <label for="resourceSearchInput">Search resources</label>
+        <div class="resource-search-controls">
+            <input id="resourceSearchInput" type="search" placeholder="Search files, links or sections…" autocomplete="off">
+            <button id="resourceSearchClear" type="button" hidden>Clear</button>
+        </div>
+        <p id="resourceSearchStatus" role="status" aria-live="polite" aria-atomic="true"></p>
+    `;
+    container.before(bar);
+    const style = document.createElement("style");
+    style.textContent = `
+        #resourceSearchBar { margin:0 0 18px; }
+        #resourceSearchBar label { display:block; font-size:12px; font-weight:600; color:#526179; margin-bottom:7px; }
+        #resourceSearchBar .resource-search-controls { display:flex; gap:8px; max-width:580px; }
+        #resourceSearchBar input { width:100%; min-width:0; padding:11px 13px; border:1px solid #dfe6f0; border-radius:10px; background:#fff; color:#16192b; font:inherit; font-size:13px; }
+        #resourceSearchBar button { padding:9px 14px; border:1px solid #dfe6f0; border-radius:10px; background:#f6f8fc; color:#2563eb; font:inherit; font-size:12px; cursor:pointer; }
+        #resourceSearchBar input:focus-visible, #resourceSearchBar button:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
+        #resourceSearchStatus { margin:7px 0 0; color:#68768d; font-size:11px; min-height:16px; }
+        #resources .resource-search-empty { padding:24px; text-align:center; border:1px dashed #dfe6f0; border-radius:12px; color:#68768d; font-size:13px; }
+    `;
+    bar.appendChild(style);
+    getElement("resourceSearchInput").addEventListener("input", event => {
+        resourceSearchQuery = event.target.value;
+        resourceSearchCollapsed.clear();
+        renderChapters();
+    });
+    getElement("resourceSearchClear").addEventListener("click", () => {
+        resourceSearchQuery = "";
+        resourceSearchCollapsed.clear();
+        getElement("resourceSearchInput").value = "";
+        renderChapters();
+        getElement("resourceSearchInput").focus();
+    });
+}
+
 function toggleChapter(
     chapterName
 ) {
+    if (resourceSearchQuery.trim()) {
+        if (resourceSearchCollapsed.has(chapterName)) resourceSearchCollapsed.delete(chapterName);
+        else resourceSearchCollapsed.add(chapterName);
+        renderChapters();
+        return;
+    }
+
 
     if (
         openChapters.includes(
@@ -5128,6 +5185,11 @@ function renderChapters() {
         return;
     }
 
+    ensureResourceSearch(container);
+    const query = resourceSearchQuery.trim();
+    let matchingItems = 0;
+    let matchingSections = 0;
+    getElement("resourceSearchClear").hidden = !resourceSearchQuery;
     container.innerHTML = "";
 
     getResourceSections().forEach(
@@ -5136,10 +5198,14 @@ function renderChapters() {
             const chapterResources =
                 resources.filter(
                     item =>
-                        item.chapter === chapter
+                        item.chapter === chapter && (!query || resourceMatchesSearch(item, chapter, query))
                 );
 
-            const isOpen =
+            if (query && !chapterResources.length && !resourceMatchesSearch({}, chapter, query)) return;
+            matchingItems += chapterResources.length;
+            matchingSections += 1;
+
+            const isOpen = query ? !resourceSearchCollapsed.has(chapter) :
                 openChapters.includes(
                     chapter
                 );
@@ -5299,8 +5365,16 @@ function renderChapters() {
         }
     );
 
+    getElement("resourceSearchStatus").textContent = query
+        ? matchingItems + " result" + (matchingItems === 1 ? "" : "s") + " in " + matchingSections + " section" + (matchingSections === 1 ? "" : "s")
+        : "";
+    if (query && !matchingSections) {
+        const empty = document.createElement("div");
+        empty.className = "resource-search-empty";
+        empty.textContent = "No matching resources. Try another name or clear your search.";
+        container.appendChild(empty);
+    }
 }
-
 
 // ============================================================
 // MEETING ATTENDEE CHECKBOXES (in modal)
