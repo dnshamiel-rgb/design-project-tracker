@@ -6251,6 +6251,7 @@ function getMeetingStatus(
 function renderMeetings() {
     const container = getElement("meetingList");
     if (!container) return;
+    const expandedAttendance = new Set(Array.from(container.querySelectorAll("[data-meeting-attendance][open]"), node => node.dataset.meetingAttendance));
     const pastOpen = Boolean(container.querySelector(".meeting-history")?.open);
     const styles = `<style>
         #meetingList .meeting-empty-compact { display:flex; align-items:center; gap:14px; padding:24px 18px; border:1px dashed #dfe6ef; border-radius:12px; background:#fafbfd; }
@@ -6280,6 +6281,9 @@ function renderMeetings() {
         '<section><h3 class="meeting-group-heading">Upcoming <span class="meeting-group-count">' + upcoming.length + '</span></h3>' +
         (upcoming.length ? '<div class="meeting-group-list">' + upcoming.map(renderMeetingListCard).join("") + '</div>' : '<p class="meeting-none">No upcoming meetings scheduled.</p>') + '</section>' +
         (past.length ? '<details class="meeting-history"' + (pastOpen ? ' open' : '') + '><summary>Past meetings · ' + past.length + '</summary><div class="meeting-group-list">' + past.map(renderMeetingListCard).join("") + '</div></details>' : '');
+    container.querySelectorAll("[data-meeting-attendance]").forEach(node => {
+        node.open = expandedAttendance.has(node.dataset.meetingAttendance);
+    });
 }
 
 function renderMeetingListCard(meeting) {
@@ -6346,13 +6350,9 @@ function renderMeetingListCard(meeting) {
                             : ""
                     }
 
-                    <div class="meeting-attendees">
-
-                        <div class="meeting-attendees-label">
-                            👥 Attendance
-                            (${attended.length}/${attendees.length})
-                        </div>
-
+                    ${attendees.length ? `
+                        <details class="meeting-attendance-details" data-meeting-attendance="${meeting.id}">
+                            <summary>Attendance <span>${attended.filter(name => attendees.includes(name)).length}/${attendees.length} attended</span></summary>
                         <div class="attendee-check-row">
 
                             ${
@@ -6382,7 +6382,9 @@ function renderMeetingListCard(meeting) {
 
                         </div>
 
-                    </div>
+
+                        </details>
+                    ` : '<p class="meeting-no-attendees">No attendees added</p>'}
 
                     ${
                         meeting.mom && meeting.mom.summary
@@ -6400,20 +6402,26 @@ function renderMeetingListCard(meeting) {
                             📝 ${meeting.mom && meeting.mom.summary ? "Minutes" : "Add Minutes"}
                         </button>
 
+                        <details class="meeting-overflow">
+                            <summary aria-label="More meeting actions" title="More actions">⋯</summary>
+                            <div class="meeting-overflow-panel">
                         <button
                             class="edit-btn"
-                            onclick="editMeeting(${meeting.id})"
+                            onclick="this.closest('details').open=false; editMeeting(${meeting.id})"
                         >
                             Edit
                         </button>
 
                         <button
                             class="delete-btn"
-                            onclick="deleteMeeting(${meeting.id})"
+                            onclick="this.closest('details').open=false; deleteMeeting(${meeting.id})"
                         >
                             Delete
                         </button>
 
+
+                            </div>
+                        </details>
                     </div>
 
                 </div>
