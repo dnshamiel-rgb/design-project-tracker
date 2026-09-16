@@ -92,11 +92,11 @@
         }
     }
     document.addEventListener("click",event=>{
-        const link=event.target.closest?.("a.task-file-chip, #currentFile a[href]");
+        const link=event.target.closest?.("a.task-file-chip, #currentFile a[href], #resources a.resource-file-preview");
         if(!link||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
         if(!["https:","http:"].includes(new URL(link.href).protocol))return;
         event.preventDefault();
-        const name=link.title||link.querySelector(".task-file-chip__name")?.textContent||link.textContent.trim();
+        const name=link.dataset.previewName||link.title||link.querySelector(".task-file-chip__name")?.textContent||link.textContent.trim();
         open(link.href,name);
     });
 })();
