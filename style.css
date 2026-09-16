@@ -6571,3 +6571,25 @@ tbody tr:last-child td {
  #meetingModal .modal-header, #meetingModal .meeting-form-scroll, #meetingModal .modal-buttons { padding-left:16px; padding-right:16px; }
  #meetingModal .form-row { grid-template-columns:1fr; gap:0; }
 }
+
+/* Compact meeting cards and secondary actions */
+#meetingList .meeting-card { padding:16px 18px; border-radius:14px; box-shadow:none; }
+#meetingList .meeting-card:hover { transform:none; }
+#meetingList .meeting-top { margin-bottom:8px; gap:12px; }
+#meetingList .meeting-top > div { min-width:0; }
+#meetingList .meeting-top h3 { font-size:15px; margin-bottom:5px; overflow-wrap:anywhere; }
+#meetingList .meeting-location { overflow-wrap:anywhere; }
+#meetingList .meeting-actions { margin-top:12px; gap:8px; align-items:center; flex-wrap:wrap; }
+#meetingList .meeting-no-attendees { font-size:12px; color:#718096; margin:8px 0 0; }
+#meetingList .meeting-attendance-details { margin-top:8px; }
+#meetingList .meeting-attendance-details > summary { width:fit-content; cursor:pointer; font-size:12px; color:#526179; padding:5px 0; font-weight:600; }
+#meetingList .meeting-attendance-details > summary span { margin-left:6px; font-weight:400; color:#718096; }
+#meetingList .meeting-attendance-details .attendee-check-row { margin-top:8px; gap:7px; }
+#meetingList .attendee-check-item { padding:6px 10px; font-size:12px; }
+#meetingList .meeting-overflow { position:relative; }
+#meetingList .meeting-overflow > summary { display:grid; place-items:center; list-style:none; width:34px; height:34px; border:1px solid #e2e8f0; border-radius:9px; cursor:pointer; color:#64748b; background:#fff; font-size:20px; }
+#meetingList .meeting-overflow > summary::-webkit-details-marker { display:none; }
+#meetingList .meeting-overflow-panel { position:absolute; bottom:calc(100% + 6px); right:0; z-index:5; display:grid; gap:4px; width:130px; padding:6px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 8px 24px #17243a20; }
+#meetingList .meeting-overflow-panel button { text-align:left; width:100%; padding:8px 10px; }
+#meetingList summary:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
+@media(max-width:480px) { #meetingList .meeting-card { padding:14px; } }
