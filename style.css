@@ -6536,3 +6536,38 @@ tbody tr:last-child td {
     #mydayQuoteCard { padding:9px 11px; }
     #myday #teamMascot.is-small { gap:8px; padding:10px; }
 }
+
+/* Compact Meeting form with a single scroll area */
+#meetingModal > .modal-box { display:flex; flex-direction:column; width:680px; max-width:100%; max-height:90dvh; padding:0; overflow:hidden; }
+#meetingModal .modal-header { flex:none; margin:0; padding:18px 22px; border-bottom:1px solid #e5eaf2; align-items:center; }
+#meetingModal .modal-header .eyebrow { display:none; }
+#meetingModal .modal-header h2 { font-size:22px; margin:0; }
+#meetingModal .close-btn { display:grid; place-items:center; width:34px; height:34px; border:1px solid #e5eaf2; border-radius:9px; font-size:22px; }
+#meetingModal form { display:flex; flex-direction:column; min-height:0; overflow:hidden; margin:0; }
+#meetingModal .meeting-form-scroll { min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:18px 22px; scrollbar-width:thin; }
+#meetingModal .modal-section { padding:0 0 16px; margin:0 0 16px; border:0; border-bottom:1px solid #e5eaf2; border-radius:0; background:transparent; box-shadow:none; }
+#meetingModal .modal-section-header { margin-bottom:12px; }
+#meetingModal .modal-section-icon, #meetingModal .modal-section-header .label-help { display:none; }
+#meetingModal .modal-section-title { font-size:14px; }
+#meetingModal label { font-size:12px; margin-bottom:12px; }
+#meetingModal input:not([type="checkbox"]):not([type="hidden"]), #meetingModal select, #meetingModal textarea { padding:9px 11px; font-size:13px; border-radius:9px; margin-top:6px; }
+#meetingModal .label-help { font-size:11px; line-height:1.4; margin-top:3px; }
+#meetingModal .form-row { gap:12px; }
+#meetingModal .meeting-project-label { margin:4px 0 10px; font-size:10px; }
+#meetingModal #meetingAttendeeCheckboxes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; max-height:none; overflow:visible; border:0; padding:0; background:transparent; }
+#meetingModal #meetingAttendeeCheckboxes label { margin:0 !important; padding:9px 11px !important; border:1px solid #e5eaf2; border-radius:9px; background:#fafbfd; font-size:12px; min-width:0; }
+#meetingModal #meetingAttendeeCheckboxes label:has(input:checked) { background:#edf3ff; border-color:#c7d9fc; }
+#meetingModal #meetingAttendeeCheckboxes input { margin:0 !important; flex:none; accent-color:#2563eb; }
+#meetingModal .meeting-select-all { display:block; margin:-4px 0 10px auto; padding:5px 9px; border:0; background:#edf3ff; color:#2563eb; border-radius:7px; cursor:pointer; font-size:11px; }
+#meetingModal .meeting-agenda { margin:0; border:0; padding:0; }
+#meetingModal .meeting-agenda summary { cursor:pointer; font-size:13px; font-weight:650; padding:4px 0; }
+#meetingModal .meeting-agenda summary span { color:#7c8496; font-weight:400; }
+#meetingModal .modal-buttons { flex:none; margin:0; padding:13px 22px; border-top:1px solid #e5eaf2; background:white; }
+#meetingModal .modal-buttons button { padding:10px 16px; font-size:12px; box-shadow:none; }
+#meetingModal button:focus-visible, #meetingModal summary:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
+@media(max-width:480px) {
+ #meetingModal { padding:10px; }
+ #meetingModal > .modal-box { max-height:94dvh; }
+ #meetingModal .modal-header, #meetingModal .meeting-form-scroll, #meetingModal .modal-buttons { padding-left:16px; padding-right:16px; }
+ #meetingModal .form-row { grid-template-columns:1fr; gap:0; }
+}
