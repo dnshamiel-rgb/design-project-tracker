@@ -5339,6 +5339,17 @@ function renderChapters() {
 
             `;
 
+            // Mark uploaded files for the shared preview; external links keep their normal behavior.
+            card.querySelectorAll(".resource-item").forEach((row, itemIndex) => {
+                const item = chapterResources[itemIndex];
+                const link = row.querySelector(".resource-info a");
+                if (link && item.fileName) {
+                    link.classList.add("resource-file-preview");
+                    link.dataset.previewName = item.fileName;
+                    link.title = "Preview " + item.fileName;
+                }
+            });
+
             const manageSectionBtn =
                 card.querySelector(
                     ".resource-section-menu-btn"
