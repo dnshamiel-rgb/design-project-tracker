@@ -5616,6 +5616,46 @@ function setupMeetingProjectLinkEvents() {
 // OPEN / CLOSE MEETING MODAL
 // ============================================================
 
+
+function validMeetingUrl(value) {
+    const text = String(value || "").trim();
+    if (!text || !/^https:\/\//i.test(text) || /[\s<>"`]/.test(text)) return "";
+    try {
+        const url = new URL(text);
+        return url.protocol === "https:" && url.hostname && !url.username && !url.password ? url.href : "";
+    } catch (_) { return ""; }
+}
+
+function getMeetingJoinUrl(meeting) {
+    return validMeetingUrl(meeting.meetingUrl === undefined ? meeting.location : meeting.meetingUrl);
+}
+
+function prepareMeetingLinkField(meeting) {
+    const location = getElement("meetingLocation");
+    if (!location) return;
+    if (!getElement("meetingUrl")) {
+        const label = document.createElement("label");
+        label.textContent = "Online meeting link (optional)";
+        const help = document.createElement("span");
+        help.className = "label-help";
+        help.textContent = "Paste an https:// Google Meet, Teams or Zoom link.";
+        const input = document.createElement("input");
+        input.id = "meetingUrl";
+        input.type = "url";
+        input.placeholder = "https://meet.google.com/...";
+        label.append(help, input);
+        location.closest("label").after(label);
+    }
+    getElement("meetingUrl").value = meeting ? getMeetingJoinUrl(meeting) : "";
+}
+
+function renderMeetingJoinLink(meeting) {
+    const url = getMeetingJoinUrl(meeting);
+    if (!url) return "";
+    const safe = url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return '<a class="meeting-join-btn" href="' + safe + '" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;padding:9px 14px;border-radius:9px;background:#2563eb;color:white;font-size:12px;font-weight:700;text-decoration:none">Join meeting ↗</a>';
+}
+
 function openMeetingModal(
     meeting = null,
     prefill = null
@@ -5633,6 +5673,8 @@ function openMeetingModal(
     modal.classList.remove(
         "hidden"
     );
+
+    prepareMeetingLinkField(meeting);
 
     // Lecturer boleh TAMBAH meeting baru, tapi tak boleh EDIT meeting sedia ada
     const lockForLecturer =
@@ -5856,7 +5898,16 @@ function saveMeeting(event) {
             )
             : null;
 
+    const rawMeetingUrl = getElement("meetingUrl")?.value.trim() || "";
+    const meetingUrl = validMeetingUrl(rawMeetingUrl);
+    if (rawMeetingUrl && !meetingUrl) {
+        showToast("Please enter a valid https:// meeting link without spaces or login credentials.", "warning");
+        getElement("meetingUrl")?.focus();
+        return;
+    }
+
     const meetingData = {
+        meetingUrl: meetingUrl,
 
         title:
             title,
@@ -6327,6 +6378,7 @@ function renderMeetingListCard(meeting) {
                     }
 
                     <div class="meeting-actions">
+                        ${renderMeetingJoinLink(meeting)}
 
                         <button
                             class="edit-btn"
