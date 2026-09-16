@@ -1985,7 +1985,7 @@
             </div>
 
             <button
-                class="close-btn"
+                class="close-btn" type="button" aria-label="Close meeting form"
                 onclick="closeMeetingModal()"
             >
                 ×
@@ -1995,6 +1995,7 @@
 
 
         <form onsubmit="saveMeeting(event)">
+<div class="meeting-form-scroll">
 
             <input
                 type="hidden"
@@ -2055,16 +2056,16 @@
 
                 <label>
 
-                    Location / Link
+                    Location (optional)
 
                     <span class="label-help">
-                        Physical location, Google Meet, Zoom, etc.
+                        Room, building or physical meeting point.
                     </span>
 
                     <input
                         type="text"
                         id="meetingLocation"
-                        placeholder="Example: Bilik Mesyuarat 2 or Google Meet link"
+                        placeholder="Example: Bilik Mesyuarat 2"
                     >
 
                 </label>
@@ -2123,28 +2124,13 @@
             </div>
 
 
-            <div class="modal-section">
+            <details id="meetingAgenda" class="modal-section meeting-agenda" open>
+                <summary>Notes / Agenda <span>(optional)</span></summary>
+                <textarea id="meetingNotes" rows="3" placeholder="Add talking points or preparation notes"></textarea>
+            </details>
 
-                <div class="modal-section-header">
-
-                    <span class="modal-section-icon">📝</span>
-
-                    <div>
-                        <div class="modal-section-title">Notes / Agenda</div>
-                        <span class="label-help">Optional talking points for this meeting</span>
-                    </div>
-
-                </div>
-
-                <textarea
-                    id="meetingNotes"
-                    rows="3"
-                    placeholder="Optional agenda or notes"
-                ></textarea>
 
             </div>
-
-
             <div class="modal-buttons">
 
                 <button
