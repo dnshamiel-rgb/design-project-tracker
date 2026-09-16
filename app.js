@@ -4575,6 +4575,41 @@ function closeResourceModal() {
 }
 
 
+
+function getResourceAttribution(oldResource, hasNewFile, actor, timestamp) {
+    const previous = oldResource || {};
+    return {
+        createdBy: previous.createdBy || (!oldResource ? actor : ""),
+        createdAt: previous.createdAt || (!oldResource ? timestamp : ""),
+        uploadedBy: hasNewFile ? actor : (previous.uploadedBy || ""),
+        uploadedAt: hasNewFile ? timestamp : (previous.uploadedAt || ""),
+        updatedBy: actor,
+        updatedAt: timestamp
+    };
+}
+
+function resourceAttributionText(item) {
+    const formatDate = value => {
+        if (!value) return "";
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-GB", {
+            day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kuala_Lumpur"
+        });
+    };
+    const isFile = Boolean(item.fileName);
+    const actor = isFile ? item.uploadedBy : item.createdBy;
+    const timestamp = isFile ? item.uploadedAt : item.createdAt;
+    const date = formatDate(timestamp);
+    let text = actor ? (isFile ? "Uploaded by " : "Added by ") + actor : (isFile ? "Uploader not recorded" : "Added by not recorded");
+    if (date) text += " · " + date;
+    if (item.updatedAt && item.updatedAt !== timestamp && item.updatedBy) {
+        text += " · Updated by " + item.updatedBy;
+        const updated = formatDate(item.updatedAt);
+        if (updated) text += " · " + updated;
+    }
+    return text;
+}
+
 async function saveResource(event) {
 
     event.preventDefault();
@@ -4698,6 +4733,8 @@ async function saveResource(event) {
     }
 
     const resourceData = {
+        ...getResourceAttribution(oldResource, Boolean(hasNewFile), getCurrentUser() || "", new Date().toISOString()),
+
 
         chapter:
             selectedResourceSection,
@@ -4738,6 +4775,7 @@ async function saveResource(event) {
         ) {
 
             resources[index] = {
+                ...oldResource,
 
                 id:
                     Number(id),
@@ -5342,6 +5380,15 @@ function renderChapters() {
             // Mark uploaded files for the shared preview; external links keep their normal behavior.
             card.querySelectorAll(".resource-item").forEach((row, itemIndex) => {
                 const item = chapterResources[itemIndex];
+                const info = row.querySelector(".resource-info");
+                if (info) {
+                    const metadata = document.createElement("small");
+                    metadata.className = "resource-attribution";
+                    metadata.textContent = resourceAttributionText(item);
+                    metadata.style.display = "block";
+                    metadata.style.marginTop = "5px";
+                    info.appendChild(metadata);
+                }
                 const link = row.querySelector(".resource-info a");
                 if (link && item.fileName) {
                     link.classList.add("resource-file-preview");
