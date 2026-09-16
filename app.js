@@ -3616,47 +3616,81 @@ function renderMyDay() {
             meeting => meeting.date === todayStr
         );
 
-    let html = "";
 
-    html += `<div class="myday-section-title">🔴 DUE TODAY / OVERDUE</div>`;
-
-    html +=
-        dueTasks.length === 0
-            ? `<div class="myday-empty">Nothing overdue. 🎉</div>`
-            : dueTasks.map(task => renderMydayTaskItem(task)).join("");
-
-    html += `<div class="myday-section-title">🟠 DUE SOON (NEXT 3 DAYS)</div>`;
-
-    html +=
-        upcomingTasks.length === 0
-            ? `<div class="myday-empty">Nothing due soon.</div>`
-            : upcomingTasks.map(task => renderMydayTaskItem(task)).join("");
-
-    html += `<div class="myday-section-title">🗓️ TODAY'S MEETINGS</div>`;
-
-    html +=
-        todaysMeetings.length === 0
-            ? `<div class="myday-empty">No meetings today.</div>`
-            : todaysMeetings
-                .map(
-                    meeting => `
-                        <div class="myday-item" onclick="editMeeting(${meeting.id})">
-                            <div>
-                                <div class="myday-item-title">📌 ${meeting.title}</div>
-                                <div class="myday-item-sub">
-                                    ${meeting.time || "No time set"}
-                                    ${meeting.location ? " · " + meeting.location : ""}
-                                </div>
-                            </div>
-                        </div>
-                    `
-                )
-                .join("");
-
+    const overdueCount = dueTasks.filter(task => getDaysLeft(task.deadline) < 0).length;
+    let html = `<div class="myday-brief" aria-label="Today's summary">
+        <span><strong>${overdueCount}</strong> overdue</span>
+        <span><strong>${dueTasks.length - overdueCount}</strong> due today</span>
+        <span><strong>${upcomingTasks.length}</strong> due in 3 days</span>
+        <span><strong>${todaysMeetings.length}</strong> meetings today</span>
+    </div>`;
+    if (!dueTasks.length && !upcomingTasks.length && !todaysMeetings.length) {
+        html += '<p class="myday-calm">No deadlines in the next 3 days or meetings today.</p>';
+    }
+    if (dueTasks.length) html += '<div class="myday-section-title">DUE TODAY / OVERDUE</div>' + dueTasks.map(renderMydayTaskItem).join("");
+    if (upcomingTasks.length) html += '<div class="myday-section-title">DUE SOON · NEXT 3 DAYS</div>' + upcomingTasks.map(renderMydayTaskItem).join("");
+    if (!dueTasks.length && !upcomingTasks.length) {
+        const continuing = selectMydayContinueTasks(myTasks);
+        html += continuing.length
+            ? '<div class="myday-section-title">CONTINUE WORKING</div>' + continuing.map(renderMydayContinueItem).join("")
+            : '<p class="myday-calm">No unfinished tasks assigned to you.</p>';
+    }
+    if (todaysMeetings.length) {
+        html += '<div class="myday-section-title">TODAY’S MEETINGS</div>' +
+            todaysMeetings.map(meeting => `
+                <div class="myday-item" onclick="editMeeting(${meeting.id})">
+                    <div><div class="myday-item-title">📌 ${meeting.title}</div>
+                    <div class="myday-item-sub">${meeting.time || "No time set"}${meeting.location ? " · " + meeting.location : ""}</div></div>
+                </div>`).join("");
+    }
     container.innerHTML = html;
-
+    container.querySelectorAll("[data-myday-view]").forEach(button => {
+        button.addEventListener("click", () => window.openTaskDetails(button.dataset.mydayView));
+    });
+    const quote = getElement("mydayQuoteCard");
+    if (quote && container.parentElement === quote.parentElement) quote.before(container);
+    if (!getElement("mydayBriefStyles")) {
+        const style = document.createElement("style");
+        style.id = "mydayBriefStyles";
+        style.textContent = `
+            #mydayContent { margin-bottom:22px; }
+            #mydayContent .myday-brief { display:flex; flex-wrap:wrap; gap:8px 20px; padding:13px 16px; background:#f5f8fc; border:1px solid #e5ebf3; border-radius:12px; color:#64748b; font-size:12px; }
+            #mydayContent .myday-brief strong { color:#1e293b; margin-right:3px; }
+            #mydayContent .myday-calm { margin:12px 0; color:#64748b; font-size:12px; line-height:1.6; }
+            #mydayContent .myday-continue-copy { flex:1; min-width:0; }
+            #mydayContent .myday-item-title { overflow-wrap:anywhere; }
+            #mydayContent .myday-continue { cursor:default; gap:14px; }
+            #mydayContent .myday-continue button { flex-shrink:0; padding:9px 12px; border:1px solid #dae5fc; border-radius:9px; background:#edf3ff; color:#2563eb; font-size:12px; cursor:pointer; }
+            #mydayContent .myday-continue button:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
+            #mydayContent progress { display:block; width:100%; max-width:320px; height:5px; margin-top:8px; accent-color:#2563eb; }
+            @media(max-width:480px) { #mydayContent .myday-continue { flex-wrap:wrap; } #mydayContent .myday-continue-copy { flex-basis:100%; } }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
+function selectMydayContinueTasks(taskList) {
+    return taskList.filter(task => task.status !== "Done").slice().sort((a, b) => {
+        const active = task => task.status === "In Progress" || task.status === "Blocked" || Number(task.progress) > 0 ? 0 : 1;
+        const days = task => { const value = getDaysLeft(task.deadline); return Number.isFinite(value) ? value : 9999; };
+        return active(a) - active(b) || days(a) - days(b);
+    }).slice(0, 3);
+}
+
+function renderMydayContinueItem(task) {
+    const escape = value => String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+    }[character]));
+    const progress = Math.max(0, Math.min(100, Number(task.progress) || 0));
+    return `<div class="myday-item myday-continue">
+        <div class="myday-continue-copy">
+            <div class="myday-item-title">${escape(task.name)}</div>
+            <div class="myday-item-sub">${escape(task.status || "Not Started")} · ${progress}% · ${escape(task.deadline || "No deadline")}</div>
+            <progress max="100" value="${progress}" aria-label="Task progress">${progress}%</progress>
+        </div>
+        <button type="button" data-myday-view="${escape(task.id)}">View task</button>
+    </div>`;
+}
 
 function renderMydayTaskItem(task) {
 
