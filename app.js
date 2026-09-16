@@ -7174,72 +7174,81 @@ function exportMomPdf() {
     }
 
     else {
+        const bottom = pageHeight - 20;
+        const lineHeight = 4.5;
+        const padding = 3;
+        const ownerX = margin + 130;
+        const statusX = margin + contentWidth - 3;
+        const actionWidth = 124;
+        const ownerWidth = Math.max(12, contentWidth - 155);
+        const freshCapacity = Math.floor((bottom - 28 - padding * 2) / lineHeight);
 
-        doc.setFillColor(...dark);
-
-        doc.rect(margin, y, contentWidth, 8, "F");
-
-        doc.setTextColor(255, 255, 255);
-
-        doc.setFontSize(8);
-
-        doc.setFont(undefined, "bold");
-
-        doc.text("ACTION ITEM", margin + 3, y + 5.5);
-
-        doc.text("OWNER", margin + 130, y + 5.5);
-
-        doc.text("STATUS", margin + contentWidth - 3, y + 5.5, { align: "right" });
-
-        y += 8;
-
-        currentMomActionItems.forEach((item, index) => {
-
-            y = checkPageBreak(11, y);
-
-            const rowH = 11;
-
-            if (index % 2 === 0) {
-
-                doc.setFillColor(249, 250, 252);
-
-                doc.rect(margin, y, contentWidth, rowH, "F");
-
-            }
-
-            doc.setTextColor(...dark);
-
-            doc.setFontSize(8.5);
-
-            doc.setFont(undefined, "normal");
-
-            const shortText =
-                item.text.length > 58 ? item.text.slice(0, 56) + "…" : item.text;
-
-            doc.text(shortText, margin + 3, y + 7);
-
-            doc.setTextColor(...muted);
-
-            doc.text(item.owner || "-", margin + 130, y + 7);
-
-            doc.setTextColor(item.done ? 34 : 217, item.done ? 197 : 119, item.done ? 94 : 6);
-
+        function drawActionHeader() {
+            doc.setFillColor(...dark);
+            doc.rect(margin, y, contentWidth, 8, "F");
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(8);
             doc.setFont(undefined, "bold");
+            doc.text("ACTION ITEM", margin + 3, y + 5.5);
+            doc.text("OWNER", ownerX, y + 5.5);
+            doc.text("STATUS", statusX, y + 5.5, { align: "right" });
+            y += 8;
+        }
 
-            doc.text(item.done ? "DONE" : "PENDING", margin + contentWidth - 3, y + 7, { align: "right" });
+        function nextActionPage() {
+            doc.addPage();
+            y = 20;
+            drawActionHeader();
+        }
 
-            y += rowH;
-
+        drawActionHeader();
+        currentMomActionItems.forEach((item, index) => {
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, "normal");
+            const actionLines = doc.splitTextToSize(String(item.text || "-"), actionWidth);
+            const ownerLines = doc.splitTextToSize(String(item.owner || "-"), ownerWidth);
+            const totalLines = Math.max(actionLines.length, ownerLines.length, 1);
+            const fullHeight = totalLines * lineHeight + padding * 2;
+            // Keep a row together when it can fit on one fresh page.
+            if (totalLines <= freshCapacity && y + fullHeight > bottom) nextActionPage();
+            let offset = 0;
+            while (offset < totalLines) {
+                let capacity = Math.floor((bottom - y - padding * 2) / lineHeight);
+                if (capacity < 1) {
+                    nextActionPage();
+                    capacity = freshCapacity;
+                }
+                const count = Math.min(capacity, totalLines - offset);
+                const rowHeight = count * lineHeight + padding * 2;
+                if (index % 2 === 0) {
+                    doc.setFillColor(249, 250, 252);
+                    doc.rect(margin, y, contentWidth, rowHeight, "F");
+                }
+                doc.setFontSize(8.5);
+                doc.setFont(undefined, "normal");
+                for (let line = 0; line < count; line++) {
+                    const baseline = y + padding + 3 + line * lineHeight;
+                    if (actionLines[offset + line] !== undefined) {
+                        doc.setTextColor(...dark);
+                        doc.text(actionLines[offset + line], margin + 3, baseline);
+                    }
+                    if (ownerLines[offset + line] !== undefined) {
+                        doc.setTextColor(...muted);
+                        doc.text(ownerLines[offset + line], ownerX, baseline);
+                    }
+                }
+                doc.setTextColor(item.done ? 34 : 217, item.done ? 197 : 119, item.done ? 94 : 6);
+                doc.setFont(undefined, "bold");
+                doc.text(item.done ? "DONE" : "PENDING", statusX, y + padding + 3, { align: "right" });
+                y += rowHeight;
+                offset += count;
+                if (offset < totalLines) nextActionPage();
+            }
+            doc.setDrawColor(...border);
+            doc.line(margin, y, margin + contentWidth, y);
         });
-
-        doc.setDrawColor(...border);
-
-        doc.line(margin, y, margin + contentWidth, y);
-
         y += 10;
-
     }
-
 
     // FOOTER
 
