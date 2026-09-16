@@ -5804,8 +5804,21 @@ function openMeetingModal(
 
     }
 
+    const agenda = getElement("meetingAgenda");
+    if (agenda) agenda.open = Boolean(meeting && meeting.notes);
+    const scroller = modal.querySelector(".meeting-form-scroll");
+    if (scroller) scroller.scrollTop = 0;
+    // Move a legacy online link into its dedicated field when editing.
+    if (meeting && meeting.meetingUrl === undefined && validMeetingUrl(meeting.location)) {
+        getElement("meetingLocation").value = "";
+    }
 }
 
+function selectAllMeetingAttendees() {
+    document.querySelectorAll('#meetingAttendeeCheckboxes input[name="meetingAttendee"]').forEach(input => {
+        if (!input.disabled) input.checked = true;
+    });
+}
 
 function closeMeetingModal() {
 
