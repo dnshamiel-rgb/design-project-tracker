@@ -6183,47 +6183,42 @@ function getMeetingStatus(
 // RENDER MEETINGS
 // ============================================================
 
+
 function renderMeetings() {
-
-    const container =
-        getElement(
-            "meetingList"
-        );
-
-    if (!container) {
+    const container = getElement("meetingList");
+    if (!container) return;
+    const pastOpen = Boolean(container.querySelector(".meeting-history")?.open);
+    const styles = `<style>
+        #meetingList .meeting-empty-compact { display:flex; align-items:center; gap:14px; padding:24px 18px; border:1px dashed #dfe6ef; border-radius:12px; background:#fafbfd; }
+        #meetingList .meeting-empty-icon { display:grid; place-items:center; width:40px; height:40px; flex-shrink:0; border-radius:10px; background:#edf3ff; font-size:20px; }
+        #meetingList .meeting-empty-compact h4 { margin:0 0 5px; font-size:14px; }
+        #meetingList .meeting-empty-compact p, #meetingList .meeting-none { margin:0; color:#718096; font-size:12px; line-height:1.6; }
+        #meetingList .meeting-group-heading { display:flex; align-items:center; gap:9px; margin:0 0 12px; font-size:14px; }
+        #meetingList .meeting-group-count { padding:3px 8px; background:#f0f4fa; border-radius:20px; color:#64748b; font-size:11px; font-weight:600; }
+        #meetingList .meeting-group-list { display:grid; gap:12px; }
+        #meetingList .meeting-history { margin-top:8px; border-top:1px solid #e5ebf3; padding-top:16px; }
+        #meetingList .meeting-history > summary { padding:7px 0; font-size:13px; font-weight:650; color:#526179; cursor:pointer; }
+        #meetingList .meeting-history > summary:focus-visible { outline:2px solid #2563eb; outline-offset:4px; }
+        #meetingList .meeting-history .meeting-group-list { margin-top:12px; }
+        #meetingList .meeting-card.meeting-past { opacity:1; background:#fafbfd; }
+    </style>`;
+    if (!meetings.length) {
+        container.innerHTML = styles + '<div class="meeting-empty-compact"><span class="meeting-empty-icon" aria-hidden="true">🗓️</span><div><h4>No meetings scheduled</h4><p>' +
+            (isLecturer() ? 'Scheduled team meetings will appear here.' : 'Use Add Meeting above to schedule your first team discussion.') +
+            '</p></div></div>';
         return;
     }
+    const sorted = [...meetings].sort((a, b) =>
+        `${a.date}T${a.time || "00:00"}`.localeCompare(`${b.date}T${b.time || "00:00"}`));
+    const upcoming = sorted.filter(meeting => getMeetingStatus(meeting).type !== "past");
+    const past = sorted.filter(meeting => getMeetingStatus(meeting).type === "past").reverse();
+    container.innerHTML = styles +
+        '<section><h3 class="meeting-group-heading">Upcoming <span class="meeting-group-count">' + upcoming.length + '</span></h3>' +
+        (upcoming.length ? '<div class="meeting-group-list">' + upcoming.map(renderMeetingListCard).join("") + '</div>' : '<p class="meeting-none">No upcoming meetings scheduled.</p>') + '</section>' +
+        (past.length ? '<details class="meeting-history"' + (pastOpen ? ' open' : '') + '><summary>Past meetings · ' + past.length + '</summary><div class="meeting-group-list">' + past.map(renderMeetingListCard).join("") + '</div></details>' : '');
+}
 
-    container.innerHTML = "";
-
-    if (
-        meetings.length === 0
-    ) {
-
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">🗓️</div>
-                <div class="empty-state-title">No meetings yet</div>
-                <div class="empty-state-text">Schedule your first team sync to keep everyone on the same page.</div>
-                ${!isLecturer() ? `<button class="small-add" onclick="openMeetingModal()">+ Add Meeting</button>` : ""}
-            </div>
-        `;
-
-        return;
-
-    }
-
-    const sorted =
-        [...meetings].sort(
-            (a, b) =>
-                `${a.date}T${a.time || "00:00"}`.localeCompare(
-                    `${b.date}T${b.time || "00:00"}`
-                )
-        );
-
-    sorted.forEach(
-        meeting => {
-
+function renderMeetingListCard(meeting) {
             const status =
                 getMeetingStatus(
                     meeting
@@ -6235,7 +6230,7 @@ function renderMeetings() {
             const attended =
                 meeting.attended || [];
 
-            container.innerHTML += `
+            return `
 
                 <div class="meeting-card ${status.type === "past" ? "meeting-past" : ""}">
 
@@ -6360,11 +6355,7 @@ function renderMeetings() {
 
             `;
 
-        }
-    );
-
 }
-
 
 // ============================================================
 // MINUTES OF MEETING (MOM)
