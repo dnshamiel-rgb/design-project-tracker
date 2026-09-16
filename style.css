@@ -6517,3 +6517,22 @@ tbody tr:last-child td {
     #resources .resource-section-header-actions { gap:6px; }
     #resources .chapter-count::before { margin-right:5px; }
 }
+
+/* My Day supporting content stays compact */
+#mydayQuoteCard { flex-direction:row; align-items:center; gap:9px; padding:10px 13px; margin-bottom:12px; border:1px solid #e5eaf2; border-radius:10px; background:#f8fafc; color:#526179; box-shadow:none; }
+#mydayQuoteCard:empty { display:none; }
+#mydayQuoteCard .myday-quote-icon { width:24px; height:24px; font-size:13px; background:transparent; }
+#mydayQuoteCard > div:last-child { min-width:0; }
+#mydayQuoteCard .myday-quote-text { font-size:12px; font-weight:500; line-height:1.5; }
+#mydayQuoteCard .myday-quote-author { display:none; }
+#myday #teamMascot { margin-bottom:12px; border-radius:12px; box-shadow:none; }
+#myday #teamMascot.is-small { padding:10px 13px; align-items:center; gap:10px; }
+#myday #teamMascot.is-small svg { width:34px; height:38px; }
+#myday #teamMascot.is-small h4, #myday #teamMascot.is-small .dp-mascot-count { display:none; }
+#myday #teamMascot.is-small .dp-mascot-detail { display:block; }
+#myday #teamMascot.is-small .dp-mascot-message { font-size:12px; line-height:1.5; }
+#myday #teamMascot.is-small .dp-mascot-toggle { align-self:center; flex-shrink:0; font-size:11px; padding:7px 10px; }
+@media(max-width:480px) {
+    #mydayQuoteCard { padding:9px 11px; }
+    #myday #teamMascot.is-small { gap:8px; padding:10px; }
+}
