@@ -11750,6 +11750,12 @@ function showSection(
 
     closeMobileSidebar();
 
+    if (name === "gantt" && !hasPersistentLeaderSession()) {
+        showSection("dashboard");
+        return;
+    }
+    if (name === "gantt" && window.dpGantt) window.dpGantt.open();
+
     document
         .querySelectorAll(
             ".section"
@@ -14720,6 +14726,9 @@ function applyRoleRestrictions() {
         }
 
     });
+
+    const ganttNav = getElement("navGantt");
+    if (ganttNav) ganttNav.style.display = hasPersistentLeaderSession() ? "" : "none";
 
     const adminNav = getElement("navAdmin");
 

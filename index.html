@@ -431,6 +431,7 @@
         <button id="navMyDay" onclick="showSection('myday')">☀️ My Day</button>
         <button id="navDashboard" onclick="showSection('dashboard')">📊 Dashboard</button>
         <button id="navTasks" onclick="showSection('tasks')">📋 Tasks</button>
+        <button id="navGantt" style="display:none" onclick="showSection('gantt')">▤ Gantt</button>
         <button id="navMeetings" onclick="showSection('meetings')">🗓️ Meetings</button>
         <button id="navCalendar" onclick="showSection('calendar')">📅 Calendar</button>
         <button id="navResources" onclick="showSection('resources')">📁 Resources</button>
@@ -925,6 +926,8 @@
 
 
     <!-- MEETINGS -->
+
+    <section id="gantt" class="section hidden"></section>
 
     <section id="meetings" class="section hidden">
 
@@ -2863,6 +2866,8 @@
 <script src="app.js"></script>
 <link rel="stylesheet" href="workload.css">
 <script src="workload.js"></script>
+<link rel="stylesheet" href="gantt.css">
+<script src="gantt.js"></script>
 
 </body>
 </html>
