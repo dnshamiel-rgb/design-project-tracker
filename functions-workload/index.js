@@ -114,3 +114,22 @@ exports.workloadPlanner=onCall({secrets:[key],timeoutSeconds:120,maxInstances:3}
  return {id,brief:result.brief,changes};
 });
 exports._test={date,week,hours,assigned,validateChanges,hash,readPlan,validateUpdates};
+
+// Private Gantt: existing server-only namespace; shared tasks remain unchanged.
+const {validatePlan}=require('./gantt-validation');
+exports.ganttPlanner=onCall({timeoutSeconds:30,maxInstances:3},async req=>{
+ const email=String(req.auth?.token?.email||'').toLowerCase();
+ if(!req.auth||roster[email]!=='Shamiel')fail('Shamiel admin access required.','permission-denied');
+ const data=req.data||{},ref=db.doc('workloadPrivate/gantt-plan'),tasksRef=db.doc('trackerData/tasks');
+ if(data.action==='read'){
+  const [p,t]=await Promise.all([ref.get(),tasksRef.get()]);
+  return {plan:p.data()||{milestones:[],schedules:[],revision:0},tasks:(t.data()?.list||[]).map(taskSummary)};
+ }
+ if(data.action!=='save')fail('Unknown action.');
+ await db.runTransaction(async tx=>{
+  const [p,t]=await Promise.all([tx.get(ref),tx.get(tasksRef)]),revision=p.data()?.revision||0;
+  if(!Number.isInteger(data.revision)||data.revision!==revision)fail('Plan changed in another window. Refresh before saving.','failed-precondition');
+  let plan;try{plan=validatePlan(data.plan,t.data()?.list||[]);}catch(e){fail(e.message);}
+  tx.set(ref,{...plan,revision:revision+1,updatedAt:Date.now(),updatedBy:req.auth.uid});
+ });return {ok:true};
+});
