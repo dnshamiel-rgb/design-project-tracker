@@ -482,6 +482,7 @@ function listenToTasks() {
                 }
 
                 window.observeSavedTasks(tasks);
+                window.dispatchEvent(new CustomEvent('tracker-tasks-synced', { detail: tasks }));
 
                 updateEquipmentFilterOptions();
 
