@@ -28,3 +28,42 @@
 #gantt .gt-key-overdue:before{background:#b91c1c}
 #gantt .gt-key-risk:before{background:#b45309}
 #gantt .gt-key-official{color:#7c3aed;font-weight:600}
+
+/* Compact workspace header and consistent controls. */
+#gantt{font-size:14px;line-height:1.45}
+#gantt .gt-heading{border:0;padding:18px 20px;margin:0;background:#fff;border:1px solid #e2e8f0;border-radius:14px;gap:12px}
+#gantt .gt-heading>div{min-width:0}
+#gantt .gt-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:1.1px;color:#61718a;font-weight:650}
+#gantt .gt-eyebrow:before{content:"";width:6px;height:6px;background:#2563eb;border-radius:50%}
+#gantt .gt-heading h2{font-size:24px;line-height:1.2;letter-spacing:-.5px;margin:6px 0}
+#gantt .gt-heading p{font-size:13px;line-height:1.5;margin:0;color:#64748b}
+#gantt button{font-size:12px;line-height:1.4;font-weight:550;padding:8px 12px;transition:background .15s,border-color .15s}
+#gantt #gt-refresh{background:#f8fafc;color:#475569;border-color:#dce3ed;white-space:nowrap}
+#gantt #gt-refresh:hover{background:#edf2fa;border-color:#b9c9e2}
+#gantt #gt-status{font-size:12px;line-height:1.5;margin:8px 2px 12px;color:#64748b;overflow-wrap:anywhere}
+#gantt #gt-status:empty{display:none}
+#gantt .gt-toolbar{margin:0 0 14px;padding:12px 14px;background:#fff;gap:10px;border-color:#e2e8f0;border-radius:12px}
+#gantt .gt-toolbar label{font-size:10px;font-weight:650;letter-spacing:.3px;gap:5px}
+#gantt .gt-toolbar input,#gantt .gt-toolbar select{font-size:12px;line-height:1.4;height:34px;padding:6px 10px}
+#gantt .gt-toolbar button{min-height:34px}
+#gantt #gt-preview{margin-left:auto;background:#eff5ff;border-color:#cfdef5;color:#2459a6}
+#gantt .gt-legend{font-size:11px;line-height:1.5;margin:0 2px 12px;gap:7px 14px}
+#gantt .gt-scroll{border-radius:12px;box-shadow:0 3px 14px #20395d05}
+#gantt button.gt-label{font-size:12px;line-height:1.5;padding:10px 14px;font-weight:550}
+#gantt .gt-bar{padding:4px 7px;font-size:11px}
+#gantt button.gt-marker{padding:0;font-size:20px}
+#gantt .gt-footnote{font-size:11px;line-height:1.6;margin:12px 2px;color:#718096;max-width:900px}
+#gantt .gt-form{padding:16px;gap:12px}
+#gantt .gt-form h3{font-size:16px}
+#gantt .gt-form p{font-size:12px}
+#gantt details{padding:10px 2px}
+#gantt summary{font-size:12px}
+@media(max-width:600px){
+ #gantt .gt-heading{padding:15px;align-items:flex-start}
+ #gantt .gt-heading h2{font-size:21px}
+ #gantt .gt-heading p{max-width:230px}
+ #gantt #gt-refresh{padding:7px 10px}
+ #gantt .gt-toolbar{padding:12px;gap:8px}
+ #gantt .gt-toolbar button{flex:1 1 auto}
+ #gantt #gt-preview{margin-left:0}
+}
