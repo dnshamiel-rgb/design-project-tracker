@@ -14671,29 +14671,20 @@ function renderCurrentUserBadge() {
     }
 
     container.innerHTML = `
-
-        <div class="user-row">
-
-            <span class="avatar">
-                ${getAvatarHtml(name)}
-            </span>
-
-            <div class="user-info">
-                <small>LOGGED IN AS</small>
-                <strong>${name}${isGroupLeader() ? ' <span class="leader-badge" title="Group Leader">👑</span>' : ""}</strong>
+        <details class="header-profile">
+            <summary aria-label="Account menu for ${presenceEscape(name)}">
+                <span class="avatar">${getAvatarHtml(name)}</span>
+                <strong>${presenceEscape(name)}</strong>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+            </summary>
+            <div class="header-profile-menu">
+                <div class="header-profile-role">${isGroupLeader() ? 'Group Leader' : isLecturer() ? 'Lecturer / Supervisor' : 'Team Member'}</div>
+                <button type="button" onclick="this.closest('details').open=false;logoutUser()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5v14h4M14 8l4 4-4 4M9 12h9"/></svg>
+                    Log out
+                </button>
             </div>
-
-        </div>
-
-        <button
-            class="logout-btn"
-            onclick="logoutUser()"
-            title="Logout"
-        >
-            🚪 Logout
-        </button>
-
-    `;
+        </details>`;
 
 }
 
@@ -15668,7 +15659,9 @@ function renderTeamPresence() {
     }
     trigger.hidden = !allowed;
     const online = members.filter(m => presenceState(teamPresence.records[m.name]) === 'Online');
-    trigger.textContent = teamPresence.failed || !navigator.onLine ? 'Team status unavailable' : `${online.length} online · Team`;
+    const unavailable = teamPresence.failed || !navigator.onLine;
+    trigger.innerHTML = unavailable ? '<span class="header-presence-dot is-muted"></span><span>Status unavailable</span>' :
+        `<span class="header-presence-avatars">${online.slice(0,3).map(m => `<span class="header-presence-avatar">${getAvatarHtml(m.name)}</span>`).join('')}</span><span class="header-presence-dot ${online.length ? '' : 'is-muted'}"></span><span>${online.length} online</span>`;
     trigger.title = online.length ? online.map(m => m.name).join(', ') : 'View team status';
     document.querySelectorAll('#teamList .team-card').forEach(card => {
         let box = card.querySelector('.presence-slot');
@@ -15761,3 +15754,59 @@ const presenceStyle=document.createElement('style');
 presenceStyle.textContent=`.presence-trigger{border:1px solid #dce5ed;background:#fff;color:#334155;border-radius:22px;padding:10px 14px;font:inherit;font-size:12px;cursor:pointer}.presence-meta{margin:12px 0;font-size:11px;line-height:1.7;color:#64748b}.presence-meta strong{font-weight:500;color:#334155}.presence-meta p{margin:8px 0 0;overflow-wrap:anywhere}.presence-status{display:inline-block;border-radius:20px;background:#f1f5f9;color:#64748b;padding:2px 9px;margin-bottom:7px;font-weight:700}.presence-online{background:#e8f8ee;color:#168447}.presence-away{background:#fff5db;color:#9a6700}.presence-summary{background:#fff;padding:22px;border:1px solid #e2e8f0;border-radius:16px;margin-top:20px}.presence-summary>p{font-size:12px;color:#64748b}.presence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}.presence-grid article{padding:14px;border:1px solid #e2e8f0;border-radius:12px}.presence-trigger[hidden],.presence-slot[hidden],.presence-summary[hidden]{display:none!important}`;
 presenceStyle.textContent += "\n#team .team-card{display:grid;grid-template-rows:70px auto auto auto 36px;align-content:start;row-gap:0}\n#team .team-member-heading{align-self:start;min-width:0}\n#team .team-member-progress{margin:18px 0!important}\n#team .team-member-actions{margin:0!important}\n#team .change-photo-btn{grid-row:5;align-self:end}\n.presence-meta{margin:10px 0 0;font-size:12px;line-height:1.5}\n.presence-time-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:6px 0}\n.presence-time-row>span{flex-shrink:0}\n.presence-time-row strong{font-size:12px!important;white-space:nowrap;font-weight:600}\n.presence-status{font-size:11px;margin-bottom:8px}\n.presence-activity{margin-top:14px;border-top:1px solid #edf0f5;padding-top:12px}\n.presence-activity-label{font-size:9px;font-weight:700;letter-spacing:.08em;color:#94a3b8}\n#team .presence-meta .presence-activity-text,.presence-meta .presence-activity-text{font-size:12px;line-height:1.5;margin:5px 0 4px;height:3em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:#536174}\n.presence-activity-time{display:block;font-size:10px;color:#94a3b8}\n";
 document.head.append(presenceStyle);
+
+function setupCompactHeader() {
+    const paths = {
+        brainstormBtn: '<path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 3 1.4-5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>',
+        notifBellBtn: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>'
+    };
+    Object.entries(paths).forEach(([id, path]) => {
+        const button = document.getElementById(id);
+        if (!button) return;
+        const badge = button.querySelector('.notif-badge');
+        button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + path + '</svg>';
+        if (badge) button.append(badge);
+    });
+}
+document.addEventListener('click', event => {
+    const profile = document.querySelector('.header-profile');
+    if (profile && !profile.contains(event.target)) profile.open = false;
+});
+document.addEventListener('keydown', event => {
+    const profile = document.querySelector('.header-profile[open]');
+    if (event.key === 'Escape' && profile) {
+        profile.open = false;
+        profile.querySelector('summary').focus();
+    }
+});
+const compactHeaderStyle = document.createElement('style');
+compactHeaderStyle.textContent = `
+.header-actions{gap:10px!important;align-items:center}
+.header-actions .notif-bell-btn{width:40px!important;height:40px!important;min-width:40px;padding:0!important;border-radius:12px!important;border:1px solid #e3e8f0!important;background:#fff!important;color:#64748b!important;box-shadow:none!important;display:grid!important;place-items:center}
+.header-actions .notif-bell-btn svg{width:21px!important;height:21px!important;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.header-actions .notif-bell-btn:hover{background:#eef3ff!important;color:#315de0!important;transform:none}
+.header-actions .notif-badge{top:-4px;right:-4px;border:2px solid #f5f7fc}
+#currentUserBadge{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:0;position:relative}
+.header-profile{position:relative}
+.header-profile summary{list-style:none;display:flex;align-items:center;gap:9px;height:40px;padding:0 9px 0 4px;cursor:pointer;border:1px solid #e3e8f0;border-radius:12px;background:#fff;color:#1e293b}
+.header-profile summary::-webkit-details-marker{display:none}
+.header-profile summary strong{font-size:12px;font-weight:650}
+.header-profile summary .avatar{width:30px!important;height:30px!important;min-width:30px;font-size:12px;margin:0;box-shadow:none}
+.header-profile svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.header-profile-menu{position:absolute;right:0;top:calc(100% + 9px);width:185px;padding:7px;background:#fff;border:1px solid #e3e8f0;border-radius:13px;box-shadow:0 12px 32px #1e293b1a;z-index:1100}
+.header-profile-role{padding:9px 10px;font-size:11px;color:#94a3b8;border-bottom:1px solid #f1f5f9;margin-bottom:4px}
+.header-profile-menu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;padding:10px;border-radius:8px;color:#dc4b4b;font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.header-profile-menu button:hover{background:#fff1f2}
+.header-actions .add-btn{height:40px!important;padding:0 17px!important;border-radius:12px!important;font-size:12px!important;font-weight:650;box-shadow:0 3px 8px #2563eb16!important;background:#2563eb!important;white-space:nowrap}
+.header-actions #teamPresenceTrigger{height:40px;display:flex;align-items:center;gap:7px;padding:0 10px 0 0;background:transparent;border:0;border-radius:8px;font-size:11px;color:#64748b;white-space:nowrap;box-shadow:none}
+.header-presence-avatars{display:flex;padding-left:5px}
+.header-presence-avatar{display:grid;place-items:center;width:25px;height:25px;margin-left:-5px;border:2px solid #f5f7fc;border-radius:50%;background:#e4eaff;color:#4265cc;font-size:10px;font-weight:700;overflow:hidden}
+.header-presence-avatar img{width:100%;height:100%;object-fit:cover}
+.header-presence-avatar .avatar-fallback{display:none}
+.header-presence-dot{height:6px;width:6px;border-radius:50%;background:#22b573}
+.header-presence-dot.is-muted{background:#a1aab8}
+.header-actions button:focus-visible,.header-profile summary:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+@media(max-width:600px){.header-actions{gap:7px!important;flex-wrap:wrap}.header-profile summary strong{display:none}.header-presence-avatars{display:none}.header-actions .add-btn{padding:0 12px!important}}
+`;
+document.head.append(compactHeaderStyle);
+setupCompactHeader();
