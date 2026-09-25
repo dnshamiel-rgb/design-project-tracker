@@ -15627,17 +15627,34 @@ function presenceTime(value) {
 function presenceEscape(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function presenceRelative(value, now = Date.now()) {
+    const ms = presenceMillis(value);
+    if (!ms) return 'Not recorded';
+    const minutes = Math.floor(Math.max(0, now - ms) / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return minutes + ' min ago';
+    if (minutes < 1440) return Math.floor(minutes / 60) + ' hr ago';
+    if (minutes < 10080) return Math.floor(minutes / 1440) + ' days ago';
+    return new Date(ms).toLocaleDateString('en-MY', {timeZone:'Asia/Kuala_Lumpur', day:'numeric', month:'short', year:'numeric'});
+}
 function presenceMemberHtml(name) {
     const r = teamPresence.records[name];
     const status = teamPresence.failed || !navigator.onLine ? 'Unavailable' : presenceState(r);
     const entry = activityLog.find(item => item.user === name);
-    // Existing activity messages can contain markup: show only their text.
     const text = document.createElement('div');
     text.innerHTML = entry ? entry.text : '';
+    const activityMs = entry ? Date.parse(entry.time) : NaN;
+    const activityTime = Number.isFinite(activityMs) ? {toMillis: () => activityMs} : null;
+    const timeLabel = (value) => {
+        const full = presenceEscape(presenceTime(value));
+        return `<strong title="${full}" aria-label="${full}">${presenceEscape(presenceRelative(value))}</strong>`;
+    };
     return `<div class="presence-meta"><span class="presence-status presence-${status.toLowerCase().replaceAll(' ','-')}">${status}</span>
-        <div>Last seen <strong>${presenceEscape(presenceTime(r && r.lastSeen))}</strong></div>
-        <div>Last login <strong>${presenceEscape(presenceTime(r && r.lastLogin))}</strong></div>
-        <p>${entry ? presenceEscape(text.textContent) + ' · ' + presenceEscape(new Date(entry.time).toLocaleString('en-MY', {timeZone:'Asia/Kuala_Lumpur'})) + ' MYT' : 'No recorded activity'}</p></div>`;
+        <div class="presence-time-row"><span>Last seen</span>${timeLabel(r && r.lastSeen)}</div>
+        <div class="presence-time-row"><span>Last login</span>${timeLabel(r && r.lastLogin)}</div>
+        <div class="presence-activity"><span class="presence-activity-label">LATEST ACTIVITY</span>
+        <p class="presence-activity-text" title="${presenceEscape(text.textContent || 'No recorded activity')}">${presenceEscape(text.textContent || 'No recorded activity')}</p>
+        <span class="presence-activity-time" title="${presenceEscape(presenceTime(activityTime))}">${activityTime ? presenceEscape(presenceRelative(activityTime)) : '—'}</span></div></div>`;
 }
 function renderTeamPresence() {
     const allowed = teamPresence.user && members.some(m => m.name === getCurrentUser());
@@ -15742,4 +15759,5 @@ window.addEventListener('online', writeTeamPresence);
 window.addEventListener('offline', renderTeamPresence);
 const presenceStyle=document.createElement('style');
 presenceStyle.textContent=`.presence-trigger{border:1px solid #dce5ed;background:#fff;color:#334155;border-radius:22px;padding:10px 14px;font:inherit;font-size:12px;cursor:pointer}.presence-meta{margin:12px 0;font-size:11px;line-height:1.7;color:#64748b}.presence-meta strong{font-weight:500;color:#334155}.presence-meta p{margin:8px 0 0;overflow-wrap:anywhere}.presence-status{display:inline-block;border-radius:20px;background:#f1f5f9;color:#64748b;padding:2px 9px;margin-bottom:7px;font-weight:700}.presence-online{background:#e8f8ee;color:#168447}.presence-away{background:#fff5db;color:#9a6700}.presence-summary{background:#fff;padding:22px;border:1px solid #e2e8f0;border-radius:16px;margin-top:20px}.presence-summary>p{font-size:12px;color:#64748b}.presence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}.presence-grid article{padding:14px;border:1px solid #e2e8f0;border-radius:12px}.presence-trigger[hidden],.presence-slot[hidden],.presence-summary[hidden]{display:none!important}`;
+presenceStyle.textContent += "\n#team .team-card{display:grid;grid-template-rows:70px auto auto auto 36px;align-content:start;row-gap:0}\n#team .team-member-heading{align-self:start;min-width:0}\n#team .team-member-progress{margin:18px 0!important}\n#team .team-member-actions{margin:0!important}\n#team .change-photo-btn{grid-row:5;align-self:end}\n.presence-meta{margin:10px 0 0;font-size:12px;line-height:1.5}\n.presence-time-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:6px 0}\n.presence-time-row>span{flex-shrink:0}\n.presence-time-row strong{font-size:12px!important;white-space:nowrap;font-weight:600}\n.presence-status{font-size:11px;margin-bottom:8px}\n.presence-activity{margin-top:14px;border-top:1px solid #edf0f5;padding-top:12px}\n.presence-activity-label{font-size:9px;font-weight:700;letter-spacing:.08em;color:#94a3b8}\n#team .presence-meta .presence-activity-text,.presence-meta .presence-activity-text{font-size:12px;line-height:1.5;margin:5px 0 4px;height:3em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:#536174}\n.presence-activity-time{display:block;font-size:10px;color:#94a3b8}\n";
 document.head.append(presenceStyle);
