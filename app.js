@@ -2885,6 +2885,7 @@ function listenToActivityLog() {
                     : [];
 
                 renderActivityLog();
+                renderTeamPresence();
 
             },
             error => {
@@ -8607,6 +8608,8 @@ function startFirebaseDataListeners() {
 
 function handleAuthStateChanged(firebaseUser) {
 
+    if (!firebaseUser) stopTeamPresence();
+
     if (!firebaseUser) {
 
         localStorage.removeItem("designProjectCurrentUser");
@@ -8639,6 +8642,7 @@ function handleAuthStateChanged(firebaseUser) {
     setSyncStatus(true, "Synced");
     startFirebaseDataListeners();
     enterApp();
+    startTeamPresence(firebaseUser);
 
 }
 
@@ -10294,6 +10298,8 @@ function renderTeam() {
             `;
         }
     );
+
+    renderTeamPresence();
 
 }
 
@@ -14524,7 +14530,9 @@ function closeLogoutModal() {
 }
 
 
-function confirmLogout() {
+async function confirmLogout() {
+
+    await releaseTeamPresence();
 
     closeLogoutModal();
 
@@ -15591,3 +15599,147 @@ else {
     initApplication();
 
 }
+
+
+// TEAM PRESENCE — independent tab leases; server timestamps; no activity-history writes.
+const teamPresence = {
+    records: {}, unsubscribers: [], timer: null, user: null,
+    session: null, lastInput: Date.now(), busy: false, failed: false
+};
+function presenceMillis(value) {
+    return value && typeof value.toMillis === 'function' ? value.toMillis() : 0;
+}
+function presenceState(record, now = Date.now()) {
+    if (!record) return 'Not recorded';
+    const live = Object.values(record.sessions || {}).filter(s =>
+        presenceMillis(s.seen) > now - 120000 && presenceMillis(s.seen) <= now + 120000);
+    if (!live.length) return 'Offline';
+    return live.some(s => s.active) ? 'Online' : 'Away';
+}
+function presenceTime(value) {
+    const ms = presenceMillis(value);
+    if (!ms) return 'Not recorded';
+    return new Date(ms).toLocaleString('en-MY', {
+        timeZone: 'Asia/Kuala_Lumpur', day: 'numeric', month: 'short',
+        year: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) + ' MYT';
+}
+function presenceEscape(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function presenceMemberHtml(name) {
+    const r = teamPresence.records[name];
+    const status = teamPresence.failed || !navigator.onLine ? 'Unavailable' : presenceState(r);
+    const entry = activityLog.find(item => item.user === name);
+    // Existing activity messages can contain markup: show only their text.
+    const text = document.createElement('div');
+    text.innerHTML = entry ? entry.text : '';
+    return `<div class="presence-meta"><span class="presence-status presence-${status.toLowerCase().replaceAll(' ','-')}">${status}</span>
+        <div>Last seen <strong>${presenceEscape(presenceTime(r && r.lastSeen))}</strong></div>
+        <div>Last login <strong>${presenceEscape(presenceTime(r && r.lastLogin))}</strong></div>
+        <p>${entry ? presenceEscape(text.textContent) + ' · ' + presenceEscape(new Date(entry.time).toLocaleString('en-MY', {timeZone:'Asia/Kuala_Lumpur'})) + ' MYT' : 'No recorded activity'}</p></div>`;
+}
+function renderTeamPresence() {
+    const allowed = teamPresence.user && members.some(m => m.name === getCurrentUser());
+    let trigger = document.getElementById('teamPresenceTrigger');
+    if (!trigger) {
+        trigger = document.createElement('button');
+        trigger.id = 'teamPresenceTrigger'; trigger.type = 'button';
+        trigger.className = 'presence-trigger';
+        trigger.onclick = () => showSection('team');
+        document.querySelector('.header-actions')?.prepend(trigger);
+    }
+    trigger.hidden = !allowed;
+    const online = members.filter(m => presenceState(teamPresence.records[m.name]) === 'Online');
+    trigger.textContent = teamPresence.failed || !navigator.onLine ? 'Team status unavailable' : `${online.length} online · Team`;
+    trigger.title = online.length ? online.map(m => m.name).join(', ') : 'View team status';
+    document.querySelectorAll('#teamList .team-card').forEach(card => {
+        let box = card.querySelector('.presence-slot');
+        if (!box) { box = document.createElement('div'); box.className='presence-slot'; card.querySelector('.team-member-heading')?.after(box); }
+        box.hidden = !allowed;
+        const name = card.querySelector('h3')?.textContent;
+        box.innerHTML = allowed ? presenceMemberHtml(name) : '';
+    });
+    let summary = document.getElementById('leaderPresence');
+    if (!summary) {
+        summary = document.createElement('div'); summary.id='leaderPresence'; summary.className='presence-summary';
+        document.getElementById('leaderhub')?.append(summary);
+    }
+    summary.hidden = !allowed || !isGroupLeader();
+    if (!summary.hidden) summary.innerHTML = `<h3>Team presence</h3><p>Status reflects dashboard connection, not work contribution. Times in Malaysia.</p><div class="presence-grid">${members.map(m => `<article><strong>${presenceEscape(m.name)}</strong>${presenceMemberHtml(m.name)}</article>`).join('')}</div>`;
+}
+async function writeTeamPresence() {
+    if (!teamPresence.user || teamPresence.busy || !navigator.onLine) return;
+    teamPresence.busy = true;
+    const user = teamPresence.user, session = teamPresence.session;
+    try {
+        const account = getAccountByEmail(user.email);
+        const ref = db.collection('trackerData').doc('presence_' + account.name);
+        const stamp = firebase.firestore.FieldValue.serverTimestamp;
+        const payload = {lastSeen: stamp(), sessions: {[session]: {
+            seen: stamp(), active: !document.hidden && Date.now() - teamPresence.lastInput < 300000
+        }}};
+        // Firebase's authentication time remains unchanged on a page refresh.
+        const login = Date.parse(user.metadata.lastSignInTime);
+        const previous = presenceMillis(teamPresence.records[account.name]?.lastLogin);
+        if (Number.isFinite(login) && login > previous) payload.lastLogin = firebase.firestore.Timestamp.fromMillis(login);
+        const stale = Object.entries(teamPresence.records[account.name]?.sessions || {}).filter(([key,s]) => key !== session && presenceMillis(s.seen) < Date.now()-86400000);
+        for (const [key] of stale) payload.sessions[key] = firebase.firestore.FieldValue.delete();
+        if (payload.lastLogin) {
+            await db.runTransaction(async transaction => {
+                const current = await transaction.get(ref);
+                const savedLogin = current.exists && current.data().lastLogin;
+                if (presenceMillis(savedLogin) > login) payload.lastLogin = savedLogin;
+                transaction.set(ref, payload, {merge:true});
+            });
+        } else {
+            await ref.set(payload, {merge:true});
+        }
+        teamPresence.failed = false;
+    } catch (error) {
+        teamPresence.failed = true;
+        console.warn('Team presence unavailable:', error.code);
+    } finally { teamPresence.busy = false; renderTeamPresence(); }
+}
+function stopTeamPresence() {
+    clearInterval(teamPresence.timer);
+    teamPresence.unsubscribers.forEach(fn => fn());
+    teamPresence.unsubscribers=[]; teamPresence.user=null; teamPresence.records={};
+    renderTeamPresence();
+}
+function startTeamPresence(user) {
+    stopTeamPresence();
+    const account = user && getAccountByEmail(user.email);
+    if (!account || !members.some(m => m.name === account.name)) return;
+    teamPresence.user=user; teamPresence.session=crypto.randomUUID();
+    teamPresence.lastInput=Date.now(); teamPresence.failed=false;
+    members.forEach(m => {
+        teamPresence.unsubscribers.push(db.collection('trackerData').doc('presence_' + m.name).onSnapshot({includeMetadataChanges:true}, snap => {
+            // Cached leases cannot prove someone is currently connected.
+            teamPresence.records[m.name] = snap.exists && !snap.metadata.fromCache ? snap.data() : undefined;
+            renderTeamPresence();
+        }, () => { teamPresence.failed=true; renderTeamPresence(); }));
+    });
+    writeTeamPresence();
+    teamPresence.timer=setInterval(() => {writeTeamPresence(); renderTeamPresence();}, 30000);
+}
+// A lease expires within two minutes even if a browser crashes or loses its connection.
+// Explicit sign-out clears this tab first; other tabs retain their own independent leases.
+async function releaseTeamPresence() {
+    if (!teamPresence.user) return;
+    const name = getAccountByEmail(teamPresence.user.email)?.name;
+    const session = teamPresence.session;
+    const ref = db.collection('trackerData').doc('presence_' + name);
+    stopTeamPresence();
+    try { await Promise.race([
+        ref.set({sessions:{[session]:firebase.firestore.FieldValue.delete()}}, {merge:true}),
+        new Promise(resolve => setTimeout(resolve, 1500))
+    ]); } catch (_) { /* Expiry handles a lost connection. */ }
+}
+['pointerdown','pointermove','keydown','scroll','touchstart'].forEach(event => document.addEventListener(event, () => {teamPresence.lastInput=Date.now();}, {passive:true}));
+document.addEventListener('visibilitychange', () => {if (!document.hidden) teamPresence.lastInput=Date.now(); writeTeamPresence();});
+window.addEventListener('online', writeTeamPresence);
+window.addEventListener('offline', renderTeamPresence);
+const presenceStyle=document.createElement('style');
+presenceStyle.textContent=`.presence-trigger{border:1px solid #dce5ed;background:#fff;color:#334155;border-radius:22px;padding:10px 14px;font:inherit;font-size:12px;cursor:pointer}.presence-meta{margin:12px 0;font-size:11px;line-height:1.7;color:#64748b}.presence-meta strong{font-weight:500;color:#334155}.presence-meta p{margin:8px 0 0;overflow-wrap:anywhere}.presence-status{display:inline-block;border-radius:20px;background:#f1f5f9;color:#64748b;padding:2px 9px;margin-bottom:7px;font-weight:700}.presence-online{background:#e8f8ee;color:#168447}.presence-away{background:#fff5db;color:#9a6700}.presence-summary{background:#fff;padding:22px;border:1px solid #e2e8f0;border-radius:16px;margin-top:20px}.presence-summary>p{font-size:12px;color:#64748b}.presence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}.presence-grid article{padding:14px;border:1px solid #e2e8f0;border-radius:12px}.presence-trigger[hidden],.presence-slot[hidden],.presence-summary[hidden]{display:none!important}`;
+document.head.append(presenceStyle);
