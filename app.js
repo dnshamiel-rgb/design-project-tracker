@@ -14876,6 +14876,8 @@ let brainstormStarting = false;
 let brainstormUnsubscribers = [];
 let brainstormRoomRegistry = {};
 let brainstormMessagesByRoom = {};
+let brainstormRoomReadBy = {};
+let brainstormReadWrites = {};
 let brainstormActiveRoomKey = "team";
 let brainstormReplyTo = null;
 let brainstormAiSummaryCache = {};
@@ -14903,6 +14905,29 @@ function brainstormSlug(value) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "_")
         .replace(/^_+|_+$/g, "");
+}
+
+function brainstormReadKey(email) {
+    return brainstormSlug(String(email || "").trim().toLowerCase());
+}
+
+function brainstormIsViewingRoom(key) {
+    return key === brainstormActiveRoomKey
+        && document.visibilityState !== "hidden"
+        && (getElement("brainstormDrawer")?.classList.contains("open")
+            || getElement("brainstormFullModal")?.classList.contains("open"));
+}
+
+function brainstormSeenByRecipient(message) {
+    const room = getBrainstormRoom();
+    if (room?.type !== "direct" || message.sender !== getCurrentUser()) return false;
+    const recipientEmail = room.participantEmails.find(email =>
+        String(email).toLowerCase() !== brainstormCurrentEmail().toLowerCase()
+    );
+    const lastReadId = brainstormRoomReadBy[room.key]?.[brainstormReadKey(recipientEmail)]?.messageId;
+    const messages = brainstormMessagesForRoom(room.key);
+    const readIndex = messages.findIndex(item => item.id === lastReadId);
+    return readIndex >= 0 && messages.findIndex(item => item.id === message.id) <= readIndex;
 }
 
 function brainstormDmRoomKey(nameA, nameB) {
@@ -14977,6 +15002,8 @@ function stopBrainstormListeners() {
     brainstormInitialized = false;
     brainstormStarting = false;
     brainstormMessagesByRoom = {};
+    brainstormRoomReadBy = {};
+    brainstormReadWrites = {};
     updateBrainstormUnreadBadge();
 }
 
@@ -14998,8 +15025,17 @@ async function startBrainstormListeners() {
         buildBrainstormRoomRegistry();
 
         Object.values(brainstormRoomRegistry).forEach(room => {
-            const unsub = db.collection("brainstormRooms")
-                .doc(room.key)
+            const roomRef = db.collection("brainstormRooms").doc(room.key);
+            const roomUnsub = roomRef.onSnapshot(snapshot => {
+                brainstormRoomReadBy[room.key] = snapshot.data()?.lastReadBy || {};
+                if (room.key === brainstormActiveRoomKey) {
+                    renderBrainstormMessagesInto("brainstormMessages");
+                    renderBrainstormMessagesInto("brainstormFullMessages");
+                }
+            }, error => console.error("Brainstorm receipt listener failed:", room.key, error));
+            brainstormUnsubscribers.push(roomUnsub);
+
+            const unsub = roomRef
                 .collection("messages")
                 .orderBy("createdAt", "asc")
                 .onSnapshot(
@@ -15011,6 +15047,7 @@ async function startBrainstormListeners() {
 
                         renderBrainstormAll();
                         updateBrainstormUnreadBadge();
+                        if (brainstormIsViewingRoom(room.key)) markBrainstormRoomSeen(room.key);
                     },
                     error => {
                         console.error("Brainstorm listener failed:", room.key, error);
@@ -15059,13 +15096,27 @@ function brainstormRoomUnreadCount(key) {
 }
 
 function markBrainstormRoomSeen(key = brainstormActiveRoomKey) {
+    if (!brainstormIsViewingRoom(key)) return;
     const messages = brainstormMessagesForRoom(key);
-    const latest = messages.length ? (messages[messages.length - 1].createdAt || new Date().toISOString()) : new Date().toISOString();
+    const latestMessage = messages[messages.length - 1];
     const map = brainstormLastSeenMap();
-    map[key] = latest;
+    map[key] = latestMessage?.createdAt || new Date().toISOString();
     localStorage.setItem("brainstormLastSeen", JSON.stringify(map));
     updateBrainstormUnreadBadge();
     renderBrainstormFullRoomList();
+
+    // A per-member cursor on the room lets the sender see a receipt across devices.
+    if (!db || !latestMessage || !auth?.currentUser) return;
+    const readKey = brainstormReadKey(brainstormCurrentEmail());
+    if (!readKey || brainstormRoomReadBy[key]?.[readKey]?.messageId === latestMessage.id
+        || brainstormReadWrites[key] === latestMessage.id) return;
+    brainstormReadWrites[key] = latestMessage.id;
+    db.collection("brainstormRooms").doc(key)
+        .set({ lastReadBy: { [readKey]: { messageId: latestMessage.id } } }, { merge: true })
+        .catch(error => console.error("Brainstorm read receipt failed:", key, error))
+        .finally(() => {
+            if (brainstormReadWrites[key] === latestMessage.id) delete brainstormReadWrites[key];
+        });
 }
 
 function updateBrainstormUnreadBadge() {
@@ -15176,6 +15227,12 @@ function closeFullBrainstorm() {
     getElement("brainstormFullModal")?.setAttribute("aria-hidden", "true");
 }
 
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && brainstormIsViewingRoom(brainstormActiveRoomKey)) {
+        markBrainstormRoomSeen();
+    }
+});
+
 function brainstormTimeLabel(value) {
     if (!value) return "";
     const date = new Date(value);
@@ -15223,6 +15280,7 @@ function brainstormMessageHtml(message) {
                     <div>${brainstormSafeHtml(message.text || "")}</div>
                     <div class="brainstorm-reactions">${reactionHtml}</div>
                 </div>
+                ${own && getBrainstormRoom()?.type === "direct" && brainstormSeenByRecipient(message) ? `<div class="brainstorm-seen">✓✓ Seen</div>` : ""}
                 <div class="brainstorm-msg-actions">
                     <button type="button" class="brainstorm-action" onclick="replyToBrainstormMessage('${message.id}')">↩ Reply</button>
                     <button type="button" class="brainstorm-action" onclick="toggleBrainstormPin('${message.id}')">${message.pinned ? "Unpin" : "📌 Pin"}</button>
