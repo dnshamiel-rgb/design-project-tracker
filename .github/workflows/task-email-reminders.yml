@@ -1,0 +1,32 @@
+name: Task email reminders
+on:
+  schedule:
+    # 08:17 Malaysia time (UTC+8). Avoid the top of the hour, when Actions can be delayed.
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: task-email-reminders
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  email:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --ignore-scripts firebase-admin@14.5.0
+      - name: Send task reminders
+        run: node reminders/send.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          EMAILJS_PUBLIC_KEY: ${{ secrets.EMAILJS_PUBLIC_KEY }}
+          EMAILJS_PRIVATE_KEY: ${{ secrets.EMAILJS_PRIVATE_KEY }}
+          EMAILJS_SERVICE_ID: ${{ secrets.EMAILJS_SERVICE_ID }}
+          EMAILJS_TEMPLATE_ID: ${{ secrets.EMAILJS_TEMPLATE_ID }}
