@@ -15815,7 +15815,7 @@ document.head.append(presenceStyle);
 
 function setupCompactHeader() {
     const paths = {
-        brainstormBtn: '<path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 3 1.4-5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>',
+        brainstormBtn: '<path d="M7 15H5l-3 3V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/><path d="M10 9h10a2 2 0 0 1 2 2v11l-3-3h-9a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/>',
         notifBellBtn: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>'
     };
     Object.entries(paths).forEach(([id, path]) => {
