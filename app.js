@@ -15823,6 +15823,14 @@ function setupCompactHeader() {
         if (!button) return;
         const badge = button.querySelector('.notif-badge');
         button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + path + '</svg>';
+        if (id === 'brainstormBtn') {
+            const label = document.createElement('span');
+            label.className = 'team-chat-label';
+            label.textContent = 'Team Chat';
+            button.append(label);
+            button.setAttribute('aria-label', 'Open Team Chat');
+            button.title = 'Team Chat';
+        }
         if (badge) button.append(badge);
     });
 }
@@ -15843,6 +15851,11 @@ compactHeaderStyle.textContent = `
 .header-actions .notif-bell-btn{width:40px!important;height:40px!important;min-width:40px;padding:0!important;border-radius:12px!important;border:1px solid #e3e8f0!important;background:#fff!important;color:#64748b!important;box-shadow:none!important;display:grid!important;place-items:center}
 .header-actions .notif-bell-btn svg{width:21px!important;height:21px!important;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .header-actions .notif-bell-btn:hover{background:#eef3ff!important;color:#315de0!important;transform:none}
+.header-actions #brainstormBtn{width:150px!important;min-width:150px;height:56px!important;padding:0 18px!important;display:flex!important;align-items:center;justify-content:center;gap:9px;border-radius:14px!important;background:#eaf1ff!important;border:1px solid #bfd2fb!important;color:#1e4fbd!important;box-shadow:0 3px 8px #2563eb0a!important;flex-shrink:0;cursor:pointer}
+.header-actions #brainstormBtn .team-chat-label{font:inherit;font-size:14px;font-weight:700;white-space:nowrap;line-height:1.2}
+.header-actions #brainstormBtn svg{width:23px!important;height:23px!important;flex-shrink:0}
+.header-actions #brainstormBtn:hover{background:#dce8ff!important;border-color:#93b4f5!important;color:#173e98!important}
+@media(max-width:600px){.header-actions #brainstormBtn{width:auto!important;min-width:122px;height:44px!important;padding:0 12px!important;gap:7px}.header-actions #brainstormBtn .team-chat-label{font-size:13px}}
 .header-actions .notif-badge{top:-4px;right:-4px;border:2px solid #f5f7fc}
 #currentUserBadge{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:0;position:relative}
 .header-profile{position:relative}
