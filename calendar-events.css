@@ -1,1 +1,42 @@
 #calendar [hidden]{display:none!important}#calendar .calendar-controls{flex-wrap:wrap}#calendar #ceAdd{background:#2563eb;color:white;border-color:#2563eb}#calendar .ce-status{font-size:12px;color:#64748b;line-height:1.6;margin:10px 0}.ce-legend{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px}.ce-legend span{font-size:11px;padding:5px 10px;border-radius:6px}#calendar .course-submission,.ce-legend .course-submission{background:#fff0f0;color:#b33448;border-left:3px solid #df5366}#calendar .course-assessment,.ce-legend .course-assessment{background:#f4edff;color:#7545ad;border-left:3px solid #9466c8}#calendar .course-briefing,.ce-legend .course-briefing{background:#edf4ff;color:#285baf;border-left:3px solid #5387d9}#calendar .course-internal,.ce-legend .course-internal{background:#fff5e6;color:#98611d;border-left:3px solid #d29b46}#calendar .ce-day-add{margin-top:16px;padding:9px 13px;border:1px dashed #9db8e4;background:#fff;color:#2563eb;border-radius:8px;cursor:pointer}#calendar .ce-timeline-row{display:grid;grid-template-columns:1fr auto;gap:7px 20px;width:100%;text-align:left;margin:12px 0;padding:18px;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;font:inherit}#calendar .ce-timeline-row span,#calendar .ce-timeline-row small{font-size:12px;line-height:1.5}#calendar .ce-timeline-row small{grid-column:1/-1}#courseEventDialog{width:620px;max-width:calc(100vw - 32px);max-height:90dvh;padding:0;border:1px solid #dce5f3;border-radius:18px;box-shadow:0 25px 90px #142c5740;color:#22344e;background:#fff}#courseEventDialog::backdrop{background:#13233d66}#courseEventDialog header,#courseEventDialog footer{display:flex;align-items:center;gap:10px;padding:18px 22px;background:#f3f7ff}#courseEventDialog header{justify-content:space-between}#courseEventDialog h2{font-size:20px;margin:0}#courseEventDialog button{padding:10px 14px;border:1px solid #d4dfef;border-radius:8px;background:white;cursor:pointer;font:inherit}#courseEventDialog #ceClose{font-size:22px;padding:3px 12px}.ce-fields{padding:20px 22px;overflow:auto;max-height:60dvh}#courseEventDialog label{display:block;font-size:12px;font-weight:600;margin-bottom:15px}#courseEventDialog input:not([type=checkbox]),#courseEventDialog select,#courseEventDialog textarea{display:block;box-sizing:border-box;width:100%;margin-top:6px;border:1px solid #cfd9e8;border-radius:8px;padding:10px;font:14px inherit;background:white;color:#25364d}#courseEventDialog .ce-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}#courseEventDialog .ce-check{display:flex;align-items:center;gap:8px}#courseEventDialog .ce-check input{width:16px;height:16px;margin:0}#courseEventDialog footer{justify-content:flex-end}#courseEventDialog #ceSave{background:#2563eb;color:white}#courseEventDialog #ceDelete{color:#b33448;margin-right:auto}#ceMeta,#ceError{font-size:12px;line-height:1.6}#ceError{color:#b33448}#courseEventDialog [hidden]{display:none!important}@media(max-width:600px){#calendar .ce-timeline-row{grid-template-columns:1fr}#courseEventDialog .ce-pair{grid-template-columns:1fr;gap:0}#courseEventDialog footer{flex-wrap:wrap}}
+
+/* Explicit layout overrides: global reset removes native dialog centering. */
+#courseEventDialog{position:fixed;inset:0;margin:auto;width:680px;max-width:calc(100vw - 32px);max-height:90dvh;border:1px solid #dbe4f3;border-radius:20px;font-family:inherit;overflow:hidden;background:#fff;box-shadow:0 30px 100px #10234740}
+#courseEventDialog[open]{display:flex;flex-direction:column}
+#courseEventDialog #ceForm{display:flex;flex-direction:column;min-height:0;max-height:90dvh;margin:0}
+#courseEventDialog header{flex:none;padding:22px 26px;background:linear-gradient(115deg,#edf4ff 0%,#f3edff 100%);border-bottom:1px solid #dde6f6}
+#courseEventDialog h2{color:#20385f;font-size:23px;letter-spacing:-.5px}
+#courseEventDialog #ceClose{height:34px;width:34px;padding:0;display:grid;place-items:center;color:#6b7b96;background:#ffffffc9;border-color:#dbe4f3}
+#courseEventDialog .ce-fields{flex:1;min-height:0;max-height:none;overflow-y:auto;padding:24px 26px;background:#fbfcff;scrollbar-width:thin}
+#courseEventDialog label{font-size:12px;color:#4a5e7c;margin-bottom:18px;letter-spacing:.1px}
+#courseEventDialog input:not([type=checkbox]),#courseEventDialog select,#courseEventDialog textarea{font-family:inherit;font-size:14px;line-height:1.5;padding:11px 12px;border-color:#dce4f0;box-shadow:0 1px 2px #162d5010;transition:border-color .15s,box-shadow .15s}
+#courseEventDialog input:focus,#courseEventDialog select:focus,#courseEventDialog textarea:focus{outline:none;border-color:#7297ed;box-shadow:0 0 0 3px #eaf0ff}
+#courseEventDialog #ceName{font-size:16px;font-weight:600}
+#courseEventDialog #ceCategory{background:#f2f5ff;color:#385ca4}
+#courseEventDialog #ceState{background:#fff8ea;color:#8e651f}
+#courseEventDialog input:disabled{background:#eef2f7;color:#94a3b8;box-shadow:none}
+#courseEventDialog .ce-check{width:fit-content;padding:8px 12px;border-radius:8px;background:#edf3ff;color:#36588f}
+#courseEventDialog .ce-check input{accent-color:#416fe0}
+#courseEventDialog footer{flex:none;background:white;border-top:1px solid #e5ebf5;padding:16px 26px;gap:10px}
+#courseEventDialog footer button{font-size:13px;font-weight:600;padding:10px 17px}
+#courseEventDialog #ceSave{background:linear-gradient(130deg,#3777ef,#3158d9);border-color:transparent;box-shadow:0 4px 12px #3158d925}
+#courseEventDialog::backdrop{background:#1a2c4c66;backdrop-filter:blur(3px)}
+#calendar .calendar-header{gap:18px;align-items:center;flex-wrap:wrap}
+#calendar .calendar-controls{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+#calendar #ceAdd,#calendar #ceView{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:10px 16px;border:1px solid #dce5f2;border-radius:10px;font-family:inherit;font-size:12px;font-weight:650;line-height:1.2;white-space:nowrap;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}
+#calendar #ceAdd{background:linear-gradient(125deg,#3479f4,#2e58dc);color:#fff;border-color:transparent;box-shadow:0 4px 12px #315fe329}
+#calendar #ceAdd:hover{box-shadow:0 6px 15px #315fe33d;transform:translateY(-1px)}
+#calendar #ceView{background:#f1edfc;color:#7350a4;border-color:#e1d8f2}
+#calendar #ceView:hover,#calendar #ceView[aria-pressed=true]{background:#e7def8;color:#5d3b91}
+#calendar .calendar-day-panel{background:linear-gradient(160deg,#f0f5ff,#faf8ff);border:1px solid #dce6f6;border-radius:16px;padding:22px}
+#calendar .calendar-day-panel h3{color:#243f69;font-size:18px}
+#calendar .calendar-day-count{display:inline-block;padding:5px 9px;margin-top:10px;border-radius:6px;background:#e5edfc;color:#56709a}
+#calendar .ce-day-add{display:inline-flex;align-items:center;justify-content:center;background:#e5edff;border:1px solid #cbdcfc;color:#2e60bf;border-radius:9px;padding:10px 14px;font:600 12px/1.4 inherit;cursor:pointer}
+#calendar .ce-day-add:hover{background:#dbe7ff}
+#calendar .ce-legend{gap:9px;margin:4px 0 20px}
+#calendar .ce-legend span{padding:6px 11px;border-radius:7px;font-size:10px;font-weight:600}
+#calendar #ceStatus:empty{display:none}
+#calendar .calendar-week{background:#f4f7fe;color:#667fa5}
+#calendar .calendar-day.selected-day{background:#f0f5ff;box-shadow:inset 0 0 0 2px #8eaeee}
+#calendar .ce-timeline-row{border-radius:12px;box-shadow:0 2px 5px #243d6010;padding:18px 20px}
+@media(max-width:650px){#courseEventDialog{max-width:calc(100vw - 20px);max-height:92dvh;border-radius:16px}#courseEventDialog #ceForm{max-height:92dvh}#courseEventDialog header,#courseEventDialog footer{padding:16px 18px}#courseEventDialog .ce-fields{padding:18px}#calendar .calendar-controls{justify-content:flex-start;gap:7px}#calendar #ceAdd,#calendar #ceView{padding:9px 12px}#calendar .calendar-day-panel{padding:17px}}
