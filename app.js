@@ -13299,6 +13299,7 @@ let calendarSelectedDate = null;
 let calendarAudience = "team";
 
 function renderCalendar() {
+    if(window.setupCourseEvents)window.setupCourseEvents();
     const grid=getElement("calendarGrid"), title=getElement("calendarMonth"), panel=getElement("calendarDayPanel");
     if(!grid || !title || !panel)return;
     const currentMember = getCurrentUser();
@@ -13338,6 +13339,7 @@ function renderCalendar() {
     if(!calendarSelectedDate || !calendarSelectedDate.startsWith(prefix))
         calendarSelectedDate=today.startsWith(prefix)?today:prefix+"-01";
     const eventsFor=date=>[
+        ...(window.courseEvents||[]).filter(e=>e.date===date).map(e=>({kind:"course",item:e})),
         ...tasks.filter(t=>t.deadline===date && includedTask(t)).map(t=>({kind:"task",item:t})),
         ...meetings.filter(m=>m.date===date).map(m=>({kind:"meeting",item:m}))
     ];
@@ -13348,9 +13350,9 @@ function renderCalendar() {
         renderCalendar();
         getElement("calendarGrid").querySelector('[data-date="'+date+'"] .calendar-number')?.focus({preventScroll:true});
     };
-    const eventClass=e=>e.kind==="meeting"?"calendar-meeting":calendarClass(getDeadlineStatus(e.item).type);
-    const eventName=e=>e.kind==="meeting"?e.item.title:e.item.name;
-    const open=e=>e.kind==="meeting"?editMeeting(e.item.id):openTaskDetails(e.item.id);
+    const eventClass=e=>e.kind==="course"?courseEventClass(e.item):e.kind==="meeting"?"calendar-meeting":calendarClass(getDeadlineStatus(e.item).type);
+    const eventName=e=>e.kind==="task"?e.item.name:e.item.title;
+    const open=e=>e.kind==="course"?openCourseEvent(e.item.id):e.kind==="meeting"?editMeeting(e.item.id):openTaskDetails(e.item.id);
     grid.replaceChildren();
     const offset=(new Date(year,month,1).getDay()+6)%7;
     const total=Math.ceil((offset+new Date(year,month+1,0).getDate())/7)*7;
@@ -13384,9 +13386,9 @@ function renderCalendar() {
     const heading=document.createElement("h3");heading.textContent=date.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
     heading.id="calendarDayTitle";heading.setAttribute("aria-live","polite");panel.append(heading);
     const count=document.createElement("p");count.className="calendar-day-count";
-    count.textContent=events.filter(e=>e.kind==="task").length+" tasks · "+events.filter(e=>e.kind==="meeting").length+" meetings";panel.append(count);
-    if(calendarAudience==="mine"){const note=document.createElement("p");note.className="calendar-filter-note";note.textContent="Your tasks · All team meetings";panel.append(note);}
-    if(!events.length){const empty=document.createElement("p");empty.className="calendar-day-empty";empty.textContent=calendarAudience==="mine"?"No tasks assigned to you or team meetings on this date. Switch to Team to see everyone’s tasks.":"No tasks or meetings on this date. Select another day to see its schedule.";panel.append(empty);}
+    count.textContent=events.filter(e=>e.kind==="task").length+" tasks · "+events.filter(e=>e.kind==="meeting").length+" meetings · "+events.filter(e=>e.kind==="course").length+" events";panel.append(count);
+    if(calendarAudience==="mine"){const note=document.createElement("p");note.className="calendar-filter-note";note.textContent="Your tasks · All team meetings and course events";panel.append(note);}
+    if(!events.length){const empty=document.createElement("p");empty.className="calendar-day-empty";empty.textContent=calendarAudience==="mine"?"No personal tasks, team meetings or course events on this date.":"No scheduled items on this date. Add an event below.";panel.append(empty);}
     events.forEach(e=>{
         const button=document.createElement("button");button.type="button";button.className="calendar-detail-item "+eventClass(e);
         const name=document.createElement("strong");name.textContent=eventName(e)||"Untitled";button.append(name);
@@ -13396,9 +13398,10 @@ function renderCalendar() {
             detail.textContent=(e.item.mainPIC||"Unassigned")+" · "+(e.item.status||"Not Started")+" · "+progress+"%";
             const due=document.createElement("small");due.textContent=getDeadlineStatus(e.item).text;
             button.append(detail,due);
-        }else{detail.textContent="Meeting · "+(e.item.time||"No time set");button.append(detail);}
+        }else{detail.textContent=e.kind==="course"?courseEventDetail(e.item):"Meeting · "+(e.item.time||"No time set");button.append(detail);if(e.kind==="course"&&e.item.source)button.append(Object.assign(document.createElement("small"),{textContent:"Source: "+e.item.source}));}
         button.onclick=()=>open(e);panel.append(button);
     });
+    if(window.renderCourseEventControls)window.renderCourseEventControls();
 }
 
 // ============================================================
