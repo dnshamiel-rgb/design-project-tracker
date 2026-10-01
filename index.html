@@ -277,6 +277,7 @@
     <link rel="stylesheet" href="task-drawer.css">
     <script src="task-drawer.js" defer></script>
     <link rel="stylesheet" href="calendar-layout.css">
+<link rel="stylesheet" href="mom-ai.css?v=1">
 </head>
 
 <body>
@@ -2196,6 +2197,22 @@
             <div class="mom-form-scroll">
 
             <input type="hidden" id="momMeetingId">
+            <section id="momAiSection">
+                <h3>Draft minutes from your notes</h3>
+                <p>Enter discussion points in Malay or English. Notes are sent to the AI service when you generate a draft.</p>
+                <textarea id="momRoughNotes" maxlength="12000" aria-label="Rough meeting notes" placeholder="Discussion points, agreed decisions, actions and PIC. Include exact dates where known."></textarea>
+                <div class="mom-ai-controls">
+                    <select id="momAiLanguage" aria-label="Draft language"><option value="English">English</option><option value="Bahasa Melayu">Bahasa Melayu</option></select>
+                    <button type="button" id="momGenerateBtn" class="save-btn">Generate draft</button>
+                </div>
+                <p id="momAiStatus" role="status" aria-live="polite"></p>
+                <div id="momAiPreview" hidden>
+                    <p>Review and edit the draft before applying it.</p>
+                    <textarea id="momDraftSummary" aria-label="Draft discussion summary"></textarea>
+                    <div id="momDraftActions"></div>
+                    <button type="button" id="momApplyDraft" class="save-btn">Apply reviewed draft</button>
+                </div>
+            </section>
 
             <div class="modal-section">
 
@@ -2870,6 +2887,7 @@
 <link rel="stylesheet" href="gantt.css">
 <script src="gantt.js"></script>
 
+<script src="mom-ai.js?v=1"></script>
 </body>
 </html>
 

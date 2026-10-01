@@ -6521,6 +6521,8 @@ function openMomModal(meetingId) {
             item => ({ ...item })
         );
 
+    if (window.resetMomDraft) window.resetMomDraft(meeting.mom?.roughNotes || "");
+
     populateMomOwnerSelect();
 
     renderMomActionItems();
@@ -6562,6 +6564,7 @@ function openMomModal(meetingId) {
 
 
 function closeMomModal() {
+    if (window.resetMomDraft) window.resetMomDraft();
 
     const modal = getElement("momModal");
 
@@ -6577,6 +6580,10 @@ function closeMomModal() {
 
 }
 
+
+function escapeMomText(value) {
+    return String(value || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 function renderMomActionItems() {
 
@@ -6611,12 +6618,12 @@ function renderMomActionItems() {
             >
 
             <span class="mom-action-text ${item.done ? "done-text" : ""}">
-                ${item.text}
+                ${escapeMomText(item.text)}
             </span>
 
             ${
                 item.owner
-                    ? `<span class="mom-action-owner-tag">👤 ${item.owner}</span>`
+                    ? `<span class="mom-action-owner-tag">👤 ${escapeMomText(item.owner)}</span>`
                     : ""
             }
 
@@ -6780,6 +6787,7 @@ function convertMomActionToTask(index) {
         meeting.mom = {
 
             summary: sanitizeText(getElement("momSummary").value),
+            roughNotes: getElement("momRoughNotes")?.value || "",
 
             actionItems: currentMomActionItems,
 
@@ -6912,6 +6920,7 @@ function saveMom(event) {
     meeting.mom = {
 
         summary: sanitizeText(getElement("momSummary").value),
+            roughNotes: getElement("momRoughNotes")?.value || "",
 
         actionItems: currentMomActionItems,
 
