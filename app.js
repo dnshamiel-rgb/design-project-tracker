@@ -6523,6 +6523,7 @@ function openMomModal(meetingId) {
 
     if (window.resetMomDraft) window.resetMomDraft(meeting.mom?.roughNotes || "");
 
+    if (window.renderMomPdf) window.renderMomPdf(meeting);
     populateMomOwnerSelect();
 
     renderMomActionItems();
@@ -6785,6 +6786,7 @@ function convertMomActionToTask(index) {
     if (meeting) {
 
         meeting.mom = {
+            ...meeting.mom,
 
             summary: sanitizeText(getElement("momSummary").value),
             roughNotes: getElement("momRoughNotes")?.value || "",
@@ -6918,6 +6920,7 @@ function saveMom(event) {
     }
 
     meeting.mom = {
+            ...meeting.mom,
 
         summary: sanitizeText(getElement("momSummary").value),
             roughNotes: getElement("momRoughNotes")?.value || "",
@@ -6959,7 +6962,7 @@ function getMomPdfFilename(meeting) {
     return title + "_Minutes_" + dateLabel + ".pdf";
 }
 
-function exportMomPdf() {
+function exportMomPdf(returnDocument = false) {
 
     if (typeof window.jspdf === "undefined") {
 
@@ -7286,6 +7289,7 @@ function exportMomPdf() {
     }
 
 
+    if (returnDocument === true) return doc;
     doc.save(getMomPdfFilename(meeting));
 
     logActivity(`exported minutes of meeting PDF for "${meeting.title}"`);

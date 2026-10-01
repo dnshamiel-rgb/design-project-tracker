@@ -277,7 +277,7 @@
     <link rel="stylesheet" href="task-drawer.css">
     <script src="task-drawer.js" defer></script>
     <link rel="stylesheet" href="calendar-layout.css">
-<link rel="stylesheet" href="mom-ai.css?v=1">
+<link rel="stylesheet" href="mom-ai.css?v=2">
 </head>
 
 <body>
@@ -2281,6 +2281,7 @@
 
             </div>
 
+            <section id="momSavedPdf" aria-label="Saved meeting PDF"></section>
             <div id="momMeta" class="mom-meta hidden"></div>
 
             </div>
@@ -2302,6 +2303,8 @@
                 >
                     Export PDF
                 </button>
+
+                <button type="button" id="momSavePdfBtn" class="cancel-btn" onclick="saveMomPdf()">Save PDF to MOM</button>
 
                 <button
                     type="submit"
@@ -2888,6 +2891,7 @@
 <script src="gantt.js"></script>
 
 <script src="mom-ai.js?v=1"></script>
+<script src="mom-files.js?v=1"></script>
 </body>
 </html>
 
