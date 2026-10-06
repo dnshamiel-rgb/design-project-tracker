@@ -3736,6 +3736,47 @@ const KANBAN_STATUSES = [
 
 
 let draggedTaskId = null;
+let kanbanScrollFrame = null;
+let kanbanDragPosition = null;
+
+function stopKanbanDragScroll() {
+    if (kanbanScrollFrame !== null) cancelAnimationFrame(kanbanScrollFrame);
+    kanbanScrollFrame = null;
+    kanbanDragPosition = null;
+    document.querySelectorAll(".kanban-column.drag-over").forEach(column => {
+        column.classList.remove("drag-over");
+    });
+}
+
+// Native drag events are infrequent; keep edge scrolling running between events.
+function updateKanbanDragScroll(column, event) {
+    kanbanDragPosition = { column, x: event.clientX, y: event.clientY };
+    if (kanbanScrollFrame !== null) return;
+    let lastTime = null;
+    const edgeSpeed = (position, start, end) => {
+        const edge = Math.min(48, (end - start) / 3);
+        if (position < start + edge) return -600 * Math.min(1, (start + edge - position) / edge);
+        if (position > end - edge) return 600 * Math.min(1, (position - end + edge) / edge);
+        return 0;
+    };
+    const scroll = time => {
+        if (draggedTaskId === null || !kanbanDragPosition?.column.isConnected) {
+            stopKanbanDragScroll();
+            return;
+        }
+        const seconds = lastTime === null ? 0 : Math.min(time - lastTime, 32) / 1000;
+        lastTime = time;
+        const { column: target, x, y } = kanbanDragPosition;
+        const lane = target.querySelector(".kanban-column-tasks");
+        const board = target.parentElement;
+        const laneRect = lane.getBoundingClientRect();
+        const boardRect = board.getBoundingClientRect();
+        lane.scrollTop += edgeSpeed(y, laneRect.top, laneRect.bottom) * seconds;
+        board.scrollLeft += edgeSpeed(x, boardRect.left, boardRect.right) * seconds;
+        kanbanScrollFrame = requestAnimationFrame(scroll);
+    };
+    kanbanScrollFrame = requestAnimationFrame(scroll);
+}
 
 
 function renderKanban() {
@@ -3744,6 +3785,12 @@ function renderKanban() {
 
     if (!board) return;
 
+    stopKanbanDragScroll();
+    board.classList.remove("is-dragging");
+    const scrollPositions = new Map(Array.from(board.querySelectorAll(".kanban-column"), column => [
+        column.dataset.status, column.querySelector(".kanban-column-tasks")?.scrollTop || 0
+    ]));
+    const boardScrollLeft = board.scrollLeft;
     board.innerHTML = "";
 
     KANBAN_STATUSES.forEach(status => {
@@ -3774,21 +3821,28 @@ function renderKanban() {
                 <span class="kanban-count">${columnTasks.length}</span>
             </div>
 
-            ${cardsHtml}
+            <div class="kanban-column-tasks" tabindex="0" role="region" aria-label="${status} tasks">
+                ${cardsHtml}
+            </div>
 
         `;
 
         column.addEventListener("dragover", event => {
 
+            if (draggedTaskId === null || isLecturer()) return;
             event.preventDefault();
-
+            event.dataTransfer.dropEffect = "move";
+            board.querySelectorAll(".drag-over").forEach(other => {
+                if (other !== column) other.classList.remove("drag-over");
+            });
             column.classList.add("drag-over");
+            updateKanbanDragScroll(column, event);
 
         });
 
-        column.addEventListener("dragleave", () => {
+        column.addEventListener("dragleave", event => {
 
-            column.classList.remove("drag-over");
+            if (!column.contains(event.relatedTarget)) stopKanbanDragScroll();
 
         });
 
@@ -3796,27 +3850,34 @@ function renderKanban() {
 
             event.preventDefault();
 
-            column.classList.remove("drag-over");
+            stopKanbanDragScroll();
+            board.classList.remove("is-dragging");
 
             if (draggedTaskId === null) return;
 
-            moveTaskToStatus(draggedTaskId, status);
+            const taskId = draggedTaskId;
+            draggedTaskId = null;
+            moveTaskToStatus(taskId, status);
 
         });
 
         board.appendChild(column);
+        column.querySelector(".kanban-column-tasks").scrollTop = scrollPositions.get(status) || 0;
 
     });
 
 
     board.querySelectorAll(".kanban-card").forEach(card => {
 
-        card.addEventListener("dragstart", () => {
+        card.addEventListener("dragstart", event => {
 
             draggedTaskId =
                 Number(card.dataset.id);
 
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", String(draggedTaskId));
             card.classList.add("dragging");
+            board.classList.add("is-dragging");
 
         });
 
@@ -3825,6 +3886,8 @@ function renderKanban() {
             card.classList.remove("dragging");
 
             draggedTaskId = null;
+            stopKanbanDragScroll();
+            board.classList.remove("is-dragging");
 
         });
 
@@ -3838,6 +3901,7 @@ function renderKanban() {
 
     });
 
+    board.scrollLeft = boardScrollLeft;
 }
 
 
