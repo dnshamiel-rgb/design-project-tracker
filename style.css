@@ -2417,7 +2417,13 @@ tbody tr:last-child td {
 }
 
 .kanban-column {
-    background: #F6F7FC;
+    --kanban-bg: #F3F5F9;
+    --kanban-accent: #94A3B8;
+    --kanban-text: #475569;
+    --kanban-badge: #E2E8F0;
+    --kanban-drop-bg: #E8EDF5;
+    background: var(--kanban-bg);
+    box-shadow: inset 0 3px 0 var(--kanban-accent);
     border-radius: 14px;
     padding: 12px;
     display: flex;
@@ -2428,9 +2434,34 @@ tbody tr:last-child td {
     transition: background .15s ease, outline .15s ease;
 }
 
+/* Status colors follow the existing labels used by renderKanban. */
+.kanban-column[data-status="In Progress"] {
+    --kanban-bg: #EFF6FF;
+    --kanban-accent: #60A5FA;
+    --kanban-text: #1D4ED8;
+    --kanban-badge: #DBEAFE;
+    --kanban-drop-bg: #DBEAFE;
+}
+
+.kanban-column[data-status="Done"] {
+    --kanban-bg: #F0FDF4;
+    --kanban-accent: #4ADE80;
+    --kanban-text: #166534;
+    --kanban-badge: #DCFCE7;
+    --kanban-drop-bg: #DCFCE7;
+}
+
+.kanban-column[data-status="Blocked"] {
+    --kanban-bg: #FFF1F2;
+    --kanban-accent: #FB7185;
+    --kanban-text: #BE123C;
+    --kanban-badge: #FFE4E6;
+    --kanban-drop-bg: #FFE4E6;
+}
+
 .kanban-column.drag-over {
-    background: var(--primary-light);
-    outline: 2px dashed var(--primary);
+    background: var(--kanban-drop-bg);
+    outline: 2px dashed var(--kanban-text);
 }
 
 .kanban-column-title {
@@ -2441,16 +2472,16 @@ tbody tr:last-child td {
     font-size: 11px;
     font-weight: 800;
     letter-spacing: .5px;
-    color: #6E7686;
+    color: var(--kanban-text);
     padding: 4px 6px 12px;
 }
 
 .kanban-count {
-    background: white;
+    background: var(--kanban-badge);
     border-radius: 20px;
     padding: 2px 9px;
     font-size: 10px;
-    color: #6E7686;
+    color: var(--kanban-text);
     font-weight: 700;
 }
 
