@@ -9678,6 +9678,29 @@ function renderFilterMembers() {
 // RENDER TASKS
 // ============================================================
 
+function handleHideDoneChange() {
+    const hideDoneToggle = getElement("hideDoneToggle");
+    const statusFilter = getElement("filterStatus");
+
+    // Keep the two status controls from requesting conflicting results.
+    if (hideDoneToggle && hideDoneToggle.checked && statusFilter && statusFilter.value === "Done") {
+        statusFilter.value = "All";
+    }
+
+    renderTasks();
+}
+
+function handleTaskStatusFilterChange() {
+    const statusFilter = getElement("filterStatus");
+    const hideDoneToggle = getElement("hideDoneToggle");
+
+    if (statusFilter && statusFilter.value === "Done" && hideDoneToggle) {
+        hideDoneToggle.checked = false;
+    }
+
+    renderTasks();
+}
+
 function renderTasks() {
     if (typeof window.refreshTaskDetails === "function") window.refreshTaskDetails();
 
@@ -9783,6 +9806,10 @@ function renderTasks() {
             : false;
 
 
+    const hideDoneToggle = getElement("hideDoneToggle");
+    const hideDone = hideDoneToggle ? hideDoneToggle.checked : false;
+
+
     const filtered =
         tasks.filter(
             task => {
@@ -9815,6 +9842,9 @@ function renderTasks() {
                 const statusMatch =
                     status === "All" ||
                     task.status === status;
+
+
+                const doneMatch = !hideDone || task.status !== "Done";
 
 
                 const priorityMatch =
@@ -9859,6 +9889,7 @@ function renderTasks() {
                     searchMatch &&
                     memberMatch &&
                     statusMatch &&
+                    doneMatch &&
                     priorityMatch &&
                     chapterMatch &&
                     equipmentMatch &&
@@ -14204,6 +14235,11 @@ function resetFilters() {
         showApprovedToggle.checked = false;
 
     }
+
+
+    const hideDoneToggle = getElement("hideDoneToggle");
+
+    if (hideDoneToggle) hideDoneToggle.checked = false;
 
 
     renderTasks();

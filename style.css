@@ -427,6 +427,14 @@ body {
     color: #4B5164;
 }
 
+.task-visibility-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 24px;
+    margin-bottom: 14px;
+}
+
 .settings-toggle-row {
     display: flex !important;
     align-items: center;
@@ -6693,3 +6701,4 @@ tbody tr:last-child td {
  #momModal .mom-action-field { grid-column:1 / -1; }
  #momModal .mom-action-item { flex-wrap:wrap; }
 }
+
